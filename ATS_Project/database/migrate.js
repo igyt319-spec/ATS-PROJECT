@@ -13,52 +13,47 @@ function splitSqlStatements(sql) {
   let stringChar = '';
   let inLineComment = false;
   let inBlockComment = false;
-  let i = 0;
 
-  while (i < sql.length) {
+  for (let i = 0; i < sql.length; i++) {
     const char = sql[i];
-    const nextChar = sql[i + 1] || '';
+    const next = sql[i + 1] || '';
 
     if (inLineComment) {
       if (char === '\n') inLineComment = false;
-      i++;
       continue;
     }
 
     if (inBlockComment) {
-      if (char === '*' && nextChar === '/') {
+      if (char === '*' && next === '/') {
         inBlockComment = false;
-        i += 2;
-        continue;
+        i++;
       }
-      i++;
       continue;
     }
 
     if (inString) {
       current += char;
+
       if (char === stringChar) {
-        if (nextChar === stringChar) {
-          current += nextChar;
-          i += 2;
-          continue;
+        if (next === stringChar) {
+          current += next;
+          i++;
         } else if (sql[i - 1] !== '\\') {
           inString = false;
         }
       }
+      continue;
+    }
+
+    if (char === '-' && next === '-') {
+      inLineComment = true;
       i++;
       continue;
     }
 
-    if (char === '-' && nextChar === '-') {
-      inLineComment = true;
-      i += 2;
-      continue;
-    }
-
-    if (char === '/' && nextChar === '*') {
+    if (char === '/' && next === '*') {
       inBlockComment = true;
-      i += 2;
+      i++;
       continue;
     }
 
@@ -66,28 +61,34 @@ function splitSqlStatements(sql) {
       inString = true;
       stringChar = char;
       current += char;
-      i++;
       continue;
     }
 
     if (char === ';') {
       const stmt = current.trim();
-      if (stmt && !/^USE\s/i.test(stmt) &&
-          !/^CREATE\s+DATABASE\s/i.test(stmt)) {
+
+      if (
+        stmt &&
+        !/^USE\s/i.test(stmt) &&
+        !/^CREATE\s+DATABASE\s/i.test(stmt)
+      ) {
         statements.push(stmt);
       }
+
       current = '';
-      i++;
       continue;
     }
 
     current += char;
-    i++;
   }
 
   const stmt = current.trim();
-  if (stmt && !/^USE\s/i.test(stmt) &&
-      !/^CREATE\s+DATABASE\s/i.test(stmt)) {
+
+  if (
+    stmt &&
+    !/^USE\s/i.test(stmt) &&
+    !/^CREATE\s+DATABASE\s/i.test(stmt)
+  ) {
     statements.push(stmt);
   }
 
@@ -95,24 +96,46 @@ function splitSqlStatements(sql) {
 }
 
 async function migrate() {
-  const host = (process.env.DB_HOST || '').replace(/^"|"$/g, '');
-  const user = (process.env.DB_USER || '').replace(/^"|"$/g, '');
-  const password = (process.env.DB_PASSWORD || '').replace(/^"|"$/g, '');
-  const port = parseInt(process.env.DB_PORT, 10) || 3306;
-  const database = (process.env.DB_NAME || '').replace(/^"|"$/g, '');
+  const clean = value =>
+    (value || '').replace(/^"|"$/g, '').trim();
 
-  if (!host || !user || !database) {
-    throw new Error('Missing DB_HOST, DB_USER, or DB_NAME in .env');
+  const host = clean(process.env.DB_HOST);
+  const user = clean(process.env.DB_USER);
+  const password = clean(process.env.DB_PASSWORD);
+  const port = Number(process.env.DB_PORT);
+  const database = clean(process.env.DB_NAME);
+
+  if (
+    !host ||
+    !user ||
+    !password ||
+    !Number.isInteger(port) ||
+    port <= 0 ||
+    !database
+  ) {
+    throw new Error(
+      'Missing or invalid DB_HOST, DB_USER, DB_PASSWORD, DB_PORT or DB_NAME.'
+    );
   }
 
-  console.log(`Connecting to MySQL at ${host}:${port}/${database} as ${user}...`);
+  let ssl;
 
-  const caPath = process.env.DB_SSL_CA || '';
-  const ssl = host === 'localhost' || host === '127.0.0.1'
-    ? undefined
-    : caPath && fs.existsSync(caPath)
-      ? { ca: fs.readFileSync(caPath) }
-      : { rejectUnauthorized: false };
+  if (host.includes('aivencloud.com')) {
+    const caPath = clean(process.env.DB_SSL_CA);
+
+    if (!caPath || !fs.existsSync(caPath)) {
+      throw new Error(
+        'DB_SSL_CA is missing or the SSL certificate file was not found.'
+      );
+    }
+
+    ssl = {
+      ca: fs.readFileSync(caPath),
+      rejectUnauthorized: true
+    };
+  }
+
+  console.log(`Connecting to MySQL at ${host}:${port}/${database}...`);
 
   const conn = await mysql.createConnection({
     host,
@@ -130,7 +153,6 @@ async function migrate() {
 
     const basePath = __dirname;
 
-    // 1. Run schema.sql
     console.log('Applying schema.sql...');
     const schemaStmts = splitSqlStatements(
       fs.readFileSync(path.join(basePath, 'schema.sql'), 'utf8')
@@ -142,15 +164,14 @@ async function migrate() {
 
     await conn.query(
       'ALTER TABLE marks MODIFY grade_point DECIMAL(4,2) NOT NULL DEFAULT 0'
-    ).catch(() => {});
+    ).catch(() => { });
 
     await conn.query(
       'ALTER TABLE grading_rules MODIFY grade_point DECIMAL(4,2) NOT NULL'
-    ).catch(() => {});
+    ).catch(() => { });
 
     console.log(`schema.sql applied (${schemaStmts.length} statements).`);
 
-    // 2. Run college_data.sql
     console.log('Applying college_data.sql...');
     const collegeStmts = splitSqlStatements(
       fs.readFileSync(path.join(basePath, 'college_data.sql'), 'utf8')
@@ -160,9 +181,10 @@ async function migrate() {
       await conn.query(stmt);
     }
 
-    console.log(`college_data.sql applied (${collegeStmts.length} statements).`);
+    console.log(
+      `college_data.sql applied (${collegeStmts.length} statements).`
+    );
 
-    // 3. Run seed_data.sql
     console.log('Applying seed_data.sql (100 synthetic students)...');
     const seedStmts = splitSqlStatements(
       fs.readFileSync(path.join(basePath, 'seed_data.sql'), 'utf8')
@@ -172,12 +194,9 @@ async function migrate() {
 
     for (let i = 0; i < seedStmts.length; i += chunkSize) {
       const chunk = seedStmts.slice(i, i + chunkSize);
-      const combined = chunk.join(';\n') + ';';
+      await conn.query(chunk.join(';\n') + ';');
 
-      await conn.query(combined);
-
-      if ((i + chunkSize) % 500 === 0 ||
-          i + chunkSize >= seedStmts.length) {
+      if (i + chunkSize >= seedStmts.length) {
         console.log(
           `Executed ${Math.min(i + chunkSize, seedStmts.length)} / ${seedStmts.length} seed statements...`
         );
@@ -186,7 +205,6 @@ async function migrate() {
 
     console.log('seed_data.sql applied successfully!');
 
-    // 4. Verify data
     const [tables] = await conn.query('SHOW TABLES');
     console.log('\n--- VERIFICATION: TABLES IN DATABASE ---');
     console.table(tables);
@@ -194,26 +212,34 @@ async function migrate() {
     const [[studentCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM students'
     );
+
     const [[bitdCount]] = await conn.query(
       "SELECT COUNT(*) AS total FROM students WHERE register_number LIKE 'BITD%'"
     );
+
     const [[userCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM users'
     );
+
     const [[deptCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM departments'
     );
+
     const [[subjectCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM subjects'
     );
+
     const [[marksCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM marks'
     );
+
     const [[attendanceCount]] = await conn.query(
       'SELECT COUNT(*) AS total FROM attendance'
     );
 
-    console.log(`Total Students: ${studentCount.total} (Synthetic BITD students: ${bitdCount.total})`);
+    console.log(
+      `Total Students: ${studentCount.total} (Synthetic BITD students: ${bitdCount.total})`
+    );
     console.log(`Total Users: ${userCount.total}`);
     console.log(`Total Departments: ${deptCount.total}`);
     console.log(`Total Subjects: ${subjectCount.total}`);
@@ -225,6 +251,14 @@ async function migrate() {
 }
 
 migrate().catch(err => {
-  console.error('Migration failed:', err.message, err.sqlMessage, 'code:', err.code);
-  process.exit(1);
+  console.error(
+    'Migration failed:',
+    err.message,
+    err.sqlMessage || '',
+    'code:',
+    err.code || ''
+  );
+
+  process.exitCode = 1;
 });
+```

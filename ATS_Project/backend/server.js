@@ -1,0 +1,121 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const db = require('./config/db');
+
+// Route Imports
+const authRoutes = require('./routes/authRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const performanceRoutes = require('./routes/performanceRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const achievementRoutes = require('./routes/achievementRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const catalogRoutes = require('./routes/catalogRoutes');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve Frontend Static Files
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/performance', performanceRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/achievements', achievementRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api', catalogRoutes);
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  const dbStatus = db.getDbStatus();
+  let dataSummary = { provenance: 'Legacy in-memory sample data; not persistent and not the 100-student MySQL seed.' };
+  if (dbStatus.isMySQL) {
+    try {
+      const [[students]] = await db.query("SELECT COUNT(*) AS total FROM students WHERE register_number LIKE 'BITD%'");
+      const [[departments]] = await db.query('SELECT COUNT(*) AS total FROM departments');
+      const [[subjects]] = await db.query('SELECT COUNT(*) AS total FROM subjects');
+      dataSummary = { provenance: 'Seed records are synthetic; college structure is based on public official information.', syntheticStudents: Number(students.total), departments: Number(departments.total), subjects: Number(subjects.total) };
+    } catch (error) {
+      dataSummary = { provenance: 'MySQL connected, but dataset summary could not be queried.', error: error.message };
+    }
+  }
+  res.status(200).json({
+    status: 'online',
+    appName: 'AI-Based Academic Progress and Achievement Tracking System (ATS)',
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    data: dataSummary,
+    endpoints: [
+      '/api/auth',
+      '/api/students',
+      '/api/performance',
+      '/api/attendance',
+      '/api/achievements',
+      '/api/recommendations',
+      '/api/notifications',
+      '/api/dashboard',
+      '/api/chatbot',
+      '/api/ai',
+      '/api/departments',
+      '/api/subjects'
+    ]
+  });
+});
+
+// Friendly 404 Route for unhandled APIs
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint '${req.originalUrl}' not found on this ATS server.`
+  });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('[ATS Server Error]', err);
+  res.status(500).json({
+    success: false,
+    message: 'An unexpected internal server error occurred. Please try again later.'
+  });
+});
+
+// Initialize database and start HTTP server
+async function startServer() {
+  try {
+    await db.initDB();
+  } catch (dbErr) {
+    console.warn('[Server Startup Warning] DB Init notice:', dbErr.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log('================================================================');
+    console.log(`🚀 ATS Server is running on: http://localhost:${PORT}`);
+    console.log(`📱 Portal UI: http://localhost:${PORT}/index.html`);
+    console.log(`🔐 Login Page: http://localhost:${PORT}/login.html`);
+    console.log(`📊 Student Dashboard: http://localhost:${PORT}/dashboard.html`);
+    console.log(`🛠️ Admin Dashboard: http://localhost:${PORT}/admin-dashboard.html`);
+    console.log('================================================================');
+  });
+}
+
+startServer();
+
+module.exports = app;

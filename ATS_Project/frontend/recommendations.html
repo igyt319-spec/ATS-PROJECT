@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Recommendations | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="performance.html" class="nav-item">
+        <span class="icon">🎯</span> Performance
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="icon">📅</span> Attendance
+      </a>
+      <a href="achievements.html" class="nav-item">
+        <span class="icon">🏆</span> Achievements
+      </a>
+      <a href="recommendations.html" class="nav-item active">
+        <span class="icon">💡</span> AI Recommendations
+      </a>
+      <a href="chatbot.html" class="nav-item">
+        <span class="icon">🤖</span> AI Assistant
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="icon">🔔</span> Notifications
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">Personalized AI Academic Guidance</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Deterministic Heuristic Diagnostics & Intervention Plans</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Student</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- AI Action Header -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 22px 28px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(56, 189, 248, 0.1)); border-color: rgba(99, 102, 241, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span class="kpi-pill pill-blue">Intelligent Agent v2.4</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">Zero Fabricated Black-Box Claims</span>
+            </div>
+            <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff;">Automated Academic Monitoring & Recommendations</h2>
+            <p style="color: var(--text-muted); font-size: 0.86rem; margin-top: 4px; max-width: 700px;">
+              Generated dynamically by evaluating internal assessment scores, university attendance compliance, and co-curricular gaps.
+            </p>
+          </div>
+          <button class="btn btn-primary" onclick="triggerAgentScan()" id="btn-agent-scan">
+            <span>🔄</span> Run AI Heuristic Scan
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Analysis Summary Overview Card -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 20px;" id="ai-summary-card">
+        <h3 style="font-size: 1rem; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <span>🧠</span> Real-Time Academic Diagnostic Report
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.88rem;">
+          <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="color: var(--text-dim); font-size: 0.76rem;">Performance Level:</div>
+            <strong style="color: #38bdf8;" id="ai-perf-level">Proficient / Good</strong>
+          </div>
+          <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="color: var(--text-dim); font-size: 0.76rem;">Academic Risk:</div>
+            <strong style="color: #34d399;" id="ai-acad-risk">LOW</strong>
+          </div>
+          <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="color: var(--text-dim); font-size: 0.76rem;">Attendance Risk:</div>
+            <strong style="color: #fbbf24;" id="ai-att-risk">MEDIUM</strong>
+          </div>
+          <div style="padding: 12px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="color: var(--text-dim); font-size: 0.76rem;">Composite ATS Score:</div>
+            <strong style="color: #fff;" id="ai-comp-score">84 / 100</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendations Stream (Requirement 14) -->
+      <div id="recommendations-container" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="recommendations.js"></script>
+</body>
+</html>

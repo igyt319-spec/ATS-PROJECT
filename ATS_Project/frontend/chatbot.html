@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Academic Assistant | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="performance.html" class="nav-item">
+        <span class="icon">🎯</span> Performance
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="icon">📅</span> Attendance
+      </a>
+      <a href="achievements.html" class="nav-item">
+        <span class="icon">🏆</span> Achievements
+      </a>
+      <a href="recommendations.html" class="nav-item">
+        <span class="icon">💡</span> AI Recommendations
+      </a>
+      <a href="chatbot.html" class="nav-item active">
+        <span class="icon">🤖</span> AI Assistant
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="icon">🔔</span> Notifications
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">AI Academic Assistant 🤖</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Real-time contextual conversational intelligence powered by ATS data</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Student</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container" style="padding-bottom: 12px;">
+
+      <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #6366f1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              🤖
+            </div>
+            <div>
+              <h3 style="font-size: 0.98rem; font-weight: 700; color: #fff;">ATS Academic Mentor Bot</h3>
+              <span style="font-size: 0.72rem; color: #34d399; display: flex; align-items: center; gap: 5px;">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                Connected to Student Academic Database
+              </span>
+            </div>
+          </div>
+
+          <button class="btn btn-secondary btn-sm" onclick="clearChat()">
+            🗑️ Clear History
+          </button>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div class="chat-messages" id="chat-messages-box">
+          <!-- Messages will load dynamically -->
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" style="display: none; padding: 0 24px 10px; color: var(--text-dim); font-size: 0.8rem; font-style: italic;">
+          AI Assistant is analyzing your academic records... ⏳
+        </div>
+
+        <!-- Suggested Prompt Chips (Requirement 16) -->
+        <div class="chat-chips">
+          <button class="chip-btn" onclick="sendPrompt('What are my weak subjects?')">
+            ❓ What are my weak subjects?
+          </button>
+          <button class="chip-btn" onclick="sendPrompt('Is my attendance safe?')">
+            📅 Is my attendance safe?
+          </button>
+          <button class="chip-btn" onclick="sendPrompt('How can I improve my GPA?')">
+            📈 How can I improve my GPA?
+          </button>
+          <button class="chip-btn" onclick="sendPrompt('Which subject should I focus on?')">
+            🎯 Which subject should I focus on?
+          </button>
+          <button class="chip-btn" onclick="sendPrompt('What achievements do I have?')">
+            🏆 What achievements do I have?
+          </button>
+          <button class="chip-btn" onclick="sendPrompt('Give me a study plan.')">
+            📅 Give me a study plan.
+          </button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form class="chat-input-area" id="chat-input-form">
+          <input type="text" id="chat-user-input" class="form-control" placeholder="Ask anything about your marks, attendance, study strategy..." required autocomplete="off">
+          <button type="submit" class="btn btn-primary" id="btn-chat-send" style="padding: 0 22px;">
+            Send ➔
+          </button>
+        </form>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="chatbot.js"></script>
+</body>
+</html>

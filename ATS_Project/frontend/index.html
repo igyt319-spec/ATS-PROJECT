@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Academic Progress & Achievement Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header style="height: 75px; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 40px; position: sticky; top: 0; z-index: 100;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div class="logo-badge">ATS</div>
+      <div>
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff;">Academic Tracking System</h2>
+        <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">AI-POWERED PLATFORM</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <a href="#features" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Features</a>
+      <a href="#architecture" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">Architecture</a>
+      <a href="login.html" class="btn btn-primary" style="padding: 9px 20px;">Access Portal 🚀</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section style="padding: 80px 20px 60px; text-align: center; max-width: 1000px; margin: 0 auto; position: relative;">
+    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); color: var(--accent-cyan); padding: 6px 16px; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 700; margin-bottom: 24px;">
+      ✨ College Semester Mini Project 2026 • Demo Ready
+    </div>
+    <h1 style="font-size: 3rem; font-weight: 900; line-height: 1.15; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+      Intelligent Academic Progress & Achievement Tracking System
+    </h1>
+    <p style="font-size: 1.12rem; color: var(--text-muted); max-width: 780px; margin: 0 auto 36px; line-height: 1.6;">
+      Empowering students and faculty with real-time academic analytics, automated risk mitigation, co-curricular achievement portfolios, explainable scoring, and an interactive AI academic chatbot.
+    </p>
+    <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+      <a href="login.html" class="btn btn-primary" style="padding: 14px 28px; font-size: 1rem;">
+        Launch Student / Admin Portal →
+      </a>
+      <a href="#features" class="btn btn-secondary" style="padding: 14px 28px; font-size: 1rem;">
+        Explore Core Modules
+      </a>
+    </div>
+  </section>
+
+  <!-- Synthetic illustration only; these values are not live dashboard data. -->
+  <section style="max-width: 1200px; margin: 0 auto 60px; padding: 0 20px;">
+    <p style="text-align:center;color:var(--accent-cyan);font-size:.85rem;font-weight:700;margin-bottom:12px;">SYNTHETIC DEMO SNAPSHOT — illustrative only, not BIT student records or live database values</p>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-title">Student Profile</span>
+          <div class="kpi-icon">🎓</div>
+        </div>
+        <div class="kpi-value">Demo Student</div>
+        <div class="kpi-subtitle">Synthetic Register No: <span style="color: var(--accent-cyan);">BITD0001</span></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-title">Current GPA</span>
+          <div class="kpi-icon">📈</div>
+        </div>
+        <div class="kpi-value">8.60</div>
+        <div class="kpi-subtitle">Illustrative value only</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-title">Overall Attendance</span>
+          <div class="kpi-icon">📅</div>
+        </div>
+        <div class="kpi-value">87%</div>
+        <div class="kpi-subtitle"><span class="kpi-pill pill-green">Safe</span> Institution Minimum: 75%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-title">Academic Score</span>
+          <div class="kpi-icon">⚡</div>
+        </div>
+        <div class="kpi-value">84/100</div>
+        <div class="kpi-subtitle"><span class="kpi-pill pill-blue">Explainable</span> 70% Marks + 20% Att + 10% Ach</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-title">Composite Risk</span>
+          <div class="kpi-icon">🛡️</div>
+        </div>
+        <div class="kpi-value" style="color: #34d399;">LOW</div>
+        <div class="kpi-subtitle">AI Monitored Heuristics</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Features Section -->
+  <section id="features" style="max-width: 1200px; margin: 0 auto 80px; padding: 0 20px;">
+    <div style="text-align: center; margin-bottom: 40px;">
+      <h2 style="font-size: 2rem; font-weight: 800;">14 Comprehensive System Modules</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">Engineered specifically for academic excellence and college viva demonstrations.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>🤖</span> AI Academic Assistant
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          An intelligent chatbot that analyzes student marks, weak subjects, and attendance to provide personalized study timetables and GPA improvement plans.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>📊</span> Dynamic Chart.js Analytics
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          Real-time visualizations including Subject Performance Bar Charts, Semester SGPA Trajectory, Attendance Trend with 75% Risk threshold, and Achievement Distribution.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>🔍</span> Intelligent Monitoring Agent
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          Autonomous heuristic monitor that scans student profiles for declining marks, attendance deficits, and co-curricular gaps with prioritized HIGH/MEDIUM/LOW alerts.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>🏆</span> Achievement Portfolio
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          Structured tracking for Hackathons, Paper Presentations, Industry Certifications, Technical Workshops, and Sports with verification badges.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>🏛️</span> Faculty & Admin Portal
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          Complete student management suite with live search, department filters, CRUD operations on marks & attendance, and institutional risk matrix tables.
+        </p>
+      </div>
+
+      <div class="glass-card">
+        <h3 style="display: flex; align-items: center; gap: 10px; font-size: 1.1rem; color: #fff; margin-bottom: 10px;">
+          <span>🔐</span> Multi-Role Secure Auth
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+          Role-protected routes, JWT token session management, bcrypt password hashing, and zero frontend credentials exposure.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Stack & Architecture -->
+  <section id="architecture" style="max-width: 1200px; margin: 0 auto 80px; padding: 0 20px;">
+    <div class="glass-card" style="padding: 36px; text-align: center;">
+      <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 12px;">Full-Stack Architecture Overview</h2>
+      <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto 30px; font-size: 0.92rem;">
+        Engineered with separation of concerns between presentation, business logic, data persistence, and AI analytics.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 30px;">
+        <span class="demo-chip" style="font-size: 0.82rem; padding: 7px 16px;">Node.js & Express.js</span>
+        <span class="demo-chip" style="font-size: 0.82rem; padding: 7px 16px;">MySQL 8.x Database</span>
+        <span class="demo-chip" style="font-size: 0.82rem; padding: 7px 16px;">Python 3.12 AI Engine</span>
+        <span class="demo-chip" style="font-size: 0.82rem; padding: 7px 16px;">Vanilla JS & Chart.js</span>
+        <span class="demo-chip" style="font-size: 0.82rem; padding: 7px 16px;">Glassmorphism UI</span>
+      </div>
+
+      <div style="background: rgba(10, 14, 23, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px; font-family: monospace; font-size: 0.85rem; color: #94a3b8; text-align: left; overflow-x: auto;">
+Student Browser &lt;--&gt; Express REST API &lt;--&gt; MySQL Pool (ats_database)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;^<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Python AI Engine &amp; Monitoring Agent
+      </div>
+
+      <div style="margin-top: 30px;">
+        <a href="login.html" class="btn btn-primary" style="padding: 12px 28px;">
+          Proceed to Login Page →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="border-top: 1px solid var(--border-color); padding: 30px 20px; text-align: center; color: var(--text-dim); font-size: 0.82rem;">
+    AI-Based Academic Progress and Achievement Tracking System (ATS) • Final College Semester Mini Project Demo
+  </footer>
+
+</body>
+</html>

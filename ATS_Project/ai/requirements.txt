@@ -1,0 +1,5 @@
+# Academic Tracking System - AI & Analytics Requirements
+# Standard library is primarily used for zero-dependency portability (json, sys, math, os)
+# Optional data science dependencies:
+numpy>=1.24.0
+scipy>=1.10.0

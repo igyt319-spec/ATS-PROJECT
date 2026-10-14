@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications & Alerts | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="performance.html" class="nav-item">
+        <span class="icon">🎯</span> Performance
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="icon">📅</span> Attendance
+      </a>
+      <a href="achievements.html" class="nav-item">
+        <span class="icon">🏆</span> Achievements
+      </a>
+      <a href="recommendations.html" class="nav-item">
+        <span class="icon">💡</span> AI Recommendations
+      </a>
+      <a href="chatbot.html" class="nav-item">
+        <span class="icon">🤖</span> AI Assistant
+      </a>
+      <a href="notifications.html" class="nav-item active">
+        <span class="icon">🔔</span> Notifications
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">Notifications & System Alerts</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Live Dispatches from Academic Agent & Faculty</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Student</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- Action Strip -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 700; color: #fff;">Notification Inbox</h2>
+          <p style="color: var(--text-muted); font-size: 0.82rem;" id="notif-count-text">Loading notifications...</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="markAllRead()">
+          ✓ Mark All as Read
+        </button>
+      </div>
+
+      <!-- Notifications List -->
+      <div id="notifications-list" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Dynamically populated -->
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="notifications.js"></script>
+</body>
+</html>

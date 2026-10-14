@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Achievements | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="performance.html" class="nav-item">
+        <span class="icon">🎯</span> Performance
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <span class="icon">📅</span> Attendance
+      </a>
+      <a href="achievements.html" class="nav-item active">
+        <span class="icon">🏆</span> Achievements
+      </a>
+      <a href="recommendations.html" class="nav-item">
+        <span class="icon">💡</span> AI Recommendations
+      </a>
+      <a href="chatbot.html" class="nav-item">
+        <span class="icon">🤖</span> AI Assistant
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="icon">🔔</span> Notifications
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">Co-Curricular & Technical Achievements</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Verified Student Portfolio & Extracurricular Milestones</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Student</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- Action & Category Filter Bar -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <!-- Category Pills -->
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="category-filter-pills">
+            <button class="demo-chip" style="background: rgba(56, 189, 248, 0.3);" onclick="filterAchievements('All')">All Categories</button>
+            <button class="demo-chip" onclick="filterAchievements('Hackathon')">🚀 Hackathons</button>
+            <button class="demo-chip" onclick="filterAchievements('Paper Presentation')">📄 Paper Presentations</button>
+            <button class="demo-chip" onclick="filterAchievements('Certification')">📜 Certifications</button>
+            <button class="demo-chip" onclick="filterAchievements('Workshop')">🛠️ Workshops</button>
+            <button class="demo-chip" onclick="filterAchievements('Sports')">🏅 Sports</button>
+            <button class="demo-chip" onclick="filterAchievements('Technical Competition')">💻 Competitions</button>
+          </div>
+
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-ach-modal')">
+            ➕ Log New Achievement
+          </button>
+        </div>
+      </div>
+
+      <!-- Achievements Grid / Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px;" id="achievements-card-grid">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: Log Achievement (Requirement 11) -->
+<div class="modal-backdrop" id="add-ach-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Log New Student Achievement</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="ach-form">
+      <div class="form-group">
+        <label class="form-label">Achievement Title *</label>
+        <input type="text" id="modal-ach-title" class="form-control" placeholder="e.g. AWS Certified Solutions Architect" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select id="modal-ach-category" class="form-control" required>
+            <option value="Hackathon">Hackathon</option>
+            <option value="Paper Presentation">Paper Presentation</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Certification">Certification</option>
+            <option value="Sports">Sports</option>
+            <option value="Technical Competition">Technical Competition</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date Awarded *</label>
+          <input type="date" id="modal-ach-date" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description / Summary</label>
+        <textarea id="modal-ach-desc" class="form-control" rows="3" placeholder="Brief details about the competition, event, or credential..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Verification / Certificate URL</label>
+        <input type="url" id="modal-ach-url" class="form-control" placeholder="https://example.com/certificate/12345">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Achievement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="achievements.js"></script>
+</body>
+</html>

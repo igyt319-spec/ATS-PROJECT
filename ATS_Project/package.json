@@ -1,0 +1,20 @@
+{
+  "name": "academic-tracking-system",
+  "version": "1.0.0",
+  "description": "AI-Based Academic Progress and Achievement Tracking System (ATS)",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "test": "node test/test_suite.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.12.0"
+  },
+  "author": "ATS Mini Project Team",
+  "license": "ISC"
+}

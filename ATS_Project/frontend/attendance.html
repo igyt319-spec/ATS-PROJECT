@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Tracking | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="performance.html" class="nav-item">
+        <span class="icon">🎯</span> Performance
+      </a>
+      <a href="attendance.html" class="nav-item active">
+        <span class="icon">📅</span> Attendance
+      </a>
+      <a href="achievements.html" class="nav-item">
+        <span class="icon">🏆</span> Achievements
+      </a>
+      <a href="recommendations.html" class="nav-item">
+        <span class="icon">💡</span> AI Recommendations
+      </a>
+      <a href="chatbot.html" class="nav-item">
+        <span class="icon">🤖</span> AI Assistant
+      </a>
+      <a href="notifications.html" class="nav-item">
+        <span class="icon">🔔</span> Notifications
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">Attendance Monitoring & Compliance</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Regulation Check (Min. Mandatory 75% for Exam Hall Ticket)</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Student</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- Dynamic Critical Alert Banner if Attendance < 75% -->
+      <div id="attendance-critical-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 18px 24px; margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 1.8rem;">⚠️</span>
+          <div>
+            <h3 style="color: #f87171; font-size: 1.05rem; font-weight: 700;">Critical Attendance Shortage Warning!</h3>
+            <p style="color: #fca5a5; font-size: 0.86rem; margin-top: 2px;" id="alert-banner-text">
+              Your attendance in one or more subjects is below the mandatory 75% threshold. Examination detention risk active.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Overall Attendance</span>
+            <div class="kpi-icon">📅</div>
+          </div>
+          <div class="kpi-value" id="att-overall-pct">87.0%</div>
+          <div class="kpi-subtitle">
+            <span class="kpi-pill pill-green" id="att-overall-status">GOOD</span>
+            <span>Target: &gt;= 85%</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Lectures</span>
+            <div class="kpi-icon">🏫</div>
+          </div>
+          <div class="kpi-value" id="att-total-classes">250</div>
+          <div class="kpi-subtitle">Delivered Across 5 Subjects</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Classes Attended</span>
+            <div class="kpi-icon" style="color: #34d399;">✓</div>
+          </div>
+          <div class="kpi-value" id="att-attended-classes">215</div>
+          <div class="kpi-subtitle">Confirmed Classroom Presence</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-title">Shortage Risk</span>
+            <div class="kpi-icon" id="att-risk-icon">🛡️</div>
+          </div>
+          <div class="kpi-value" id="att-subjects-at-risk" style="color: #34d399;">0</div>
+          <div class="kpi-subtitle">Subjects in Detention Zone</div>
+        </div>
+      </div>
+
+      <!-- Action Strip for Admin/Faculty -->
+      <div id="admin-att-action-strip" style="display: none; margin-bottom: 20px; justify-content: flex-end;">
+        <button class="btn btn-primary btn-sm" onclick="openModal('add-att-modal')">
+          ➕ Log Subject Attendance
+        </button>
+      </div>
+
+      <!-- Subject-Wise Attendance Table (Requirement 10) -->
+      <div class="glass-card" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Subject-Wise Attendance Breakdown</h3>
+            <p>Monitored against University 75% Examination Eligibility Norm</p>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <span class="kpi-pill pill-green">&gt;= 85% GOOD</span>
+            <span class="kpi-pill pill-yellow">75-84% MONITOR</span>
+            <span class="kpi-pill pill-red">&lt; 75% RISK</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ats-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th>Total Classes</th>
+                <th>Attended</th>
+                <th>Missed</th>
+                <th style="min-width: 180px;">Visual Progress</th>
+                <th>Percentage</th>
+                <th>Status</th>
+                <th>Classes Needed for 85%</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Monthly Trend Line Chart -->
+      <div class="glass-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Monthly Attendance Trajectory</h3>
+            <p>Tracking compliance progression against the 75% detention threshold</p>
+          </div>
+        </div>
+        <div class="chart-wrapper" style="height: 300px;">
+          <canvas id="monthlyAttendanceChart"></canvas>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Modal: Log Attendance (Faculty/Admin) -->
+<div class="modal-backdrop" id="add-att-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Log Attendance Record</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="att-form">
+      <div class="form-group">
+        <label class="form-label">Select Subject</label>
+        <select id="modal-att-subject" class="form-control" required>
+          <option value="1">Mathematics (EC501)</option>
+          <option value="2">Python (EC502)</option>
+          <option value="3">Database Management (EC503)</option>
+          <option value="4">Communication (EC504)</option>
+          <option value="5">Electronics (EC505)</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Total Conducted</label>
+          <input type="number" min="1" max="100" id="modal-att-total" class="form-control" value="50" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Attended Classes</label>
+          <input type="number" min="0" max="100" id="modal-att-attended" class="form-control" value="45" required>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Database</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="attendance.js"></script>
+</body>
+</html>

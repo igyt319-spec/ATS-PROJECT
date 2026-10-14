@@ -1,0 +1,12 @@
+{
+  "name": "academic-progress-and-ats",
+  "version": "1.0.0",
+  "description": "AI-Based Academic Progress and Achievement Tracking System (ATS)",
+  "scripts": {
+    "start": "node ATS_Project/backend/server.js",
+    "dev": "node ATS_Project/backend/server.js",
+    "test": "node ATS_Project/test/test_suite.js"
+  },
+  "author": "ATS Mini Project Team",
+  "license": "ISC"
+}

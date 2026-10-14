@@ -1,3 +1,15 @@
+const dns = require('dns');
+try {
+  dns.setDefaultResultOrder('ipv4first');
+  const origLookup = dns.lookup;
+  dns.lookup = function(hostname, options, callback) {
+    if (typeof options === 'function') { callback = options; options = {}; }
+    options = Object.assign({}, typeof options === 'object' ? options : { hints: options });
+    if (!options.family) { options.family = 4; }
+    return origLookup.call(this, hostname, options, callback);
+  };
+} catch (e) {}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -17,18 +29,26 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const catalogRoutes = require('./routes/catalogRoutes');
+const academicResultsRoutes = require('./routes/academicResultsRoutes');
+const activityRoutes = require('./routes/activityRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const feeRoutes = require('./routes/feeRoutes');
+const mentorRoutes = require('./routes/mentorRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Serve Frontend Static Files
+// Serve Frontend Static Files & Uploads
 const frontendPath = path.join(__dirname, '../frontend');
+const uploadsPath = path.join(__dirname, '../uploads');
 app.use(express.static(frontendPath));
+app.use('/uploads', express.static(uploadsPath));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -41,6 +61,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/results', academicResultsRoutes);
+app.use('/api/activities', activityRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/fees', feeRoutes);
+app.use('/api/mentors', mentorRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api', catalogRoutes);
 
 // Health check endpoint

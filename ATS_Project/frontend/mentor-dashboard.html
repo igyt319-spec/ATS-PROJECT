@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Mentor Console | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👨‍🏫</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">MENTOR CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="mentor-dashboard.html" class="nav-item active">
+        <span class="icon">👥</span> My Mentees
+      </a>
+      <a href="#section-leaves" class="nav-item" onclick="scrollToSection('section-leaves')">
+        <span class="icon">📝</span> Leave Approvals
+      </a>
+      <a href="#section-activities" class="nav-item" onclick="scrollToSection('section-activities')">
+        <span class="icon">🏆</span> Activity Verification
+      </a>
+      <a href="#section-results" class="nav-item" onclick="scrollToSection('section-results')">
+        <span class="icon">📊</span> Mentee Results
+      </a>
+      <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
+        <span class="icon">💳</span> Fee Tracking
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> My Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title">Faculty Mentorship & Advisory Console</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Authorized Mentee Group Academic Progress & Approvals</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">Faculty Mentor</div>
+            <div class="role-badge" id="topbar-user-role">Faculty Mentor</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- Mentor KPI Cards -->
+      <div class="kpi-grid" style="margin-bottom: 24px;">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Assigned Mentees</span>
+            <span class="kpi-icon">👥</span>
+          </div>
+          <div class="kpi-value" id="kpi-mentee-count">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--accent-cyan); font-weight: 600;">Active Advisory Cohort</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Pending Leave Requests</span>
+            <span class="kpi-icon">📝</span>
+          </div>
+          <div class="kpi-value" id="kpi-pending-leaves" style="color: #fbbf24;">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--text-dim);">Awaiting your review</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Pending Activities</span>
+            <span class="kpi-icon">🏆</span>
+          </div>
+          <div class="kpi-value" id="kpi-pending-activities" style="color: var(--accent-purple);">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--text-dim);">Awaiting certificate check</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Fee Alert Count</span>
+            <span class="kpi-icon">💳</span>
+          </div>
+          <div class="kpi-value" id="kpi-fee-alerts" style="color: #f87171;">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--text-dim);">Mentees with dues</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mentees Directory -->
+      <div class="glass-card" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Assigned Mentees Roster</h3>
+            <p>Students assigned under your official mentorship</p>
+          </div>
+          <input type="text" id="mentee-search" class="form-control" placeholder="Search by name or register no..." style="max-width: 260px;" oninput="filterMentees()">
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Scholar</th>
+                <th>Register No</th>
+                <th>Department & Year</th>
+                <th>Contact</th>
+                <th>Pending Leaves</th>
+                <th>Pending Activities</th>
+                <th>Outstanding Fee</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="mentees-table-body">
+              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading assigned mentees... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Leave Requests Section -->
+      <div class="glass-card" id="section-leaves" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Mentee Leave Requests</h3>
+            <p>Authorize or decline leave applications submitted by your assigned mentees</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Leave Type</th>
+                <th>Duration</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Review Remarks</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="leaves-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading leave requests... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Student Activities Section -->
+      <div class="glass-card" id="section-activities" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Mentee Activity & Achievement Submissions</h3>
+            <p>Review proof documents and verify hackathons, NPTEL courses, paper presentations, etc.</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Category</th>
+                <th>Title & Provider</th>
+                <th>Event Date</th>
+                <th>Participation</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="activities-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading mentee activity submissions... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mentee Academic Results -->
+      <div class="glass-card" id="section-results" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Mentee Examination & Practical Results</h3>
+            <p>Multi-tier results: Internal exams, lab practicals, and semester examinations</p>
+          </div>
+          <div class="tab-pills" id="results-filter-pills">
+            <button class="tab-pill active" onclick="filterResultsType('all')">All Results</button>
+            <button class="tab-pill" onclick="filterResultsType('internal')">Internal Exams</button>
+            <button class="tab-pill" onclick="filterResultsType('lab')">Lab Practicals</button>
+            <button class="tab-pill" onclick="filterResultsType('semester')">Semester Results</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Subject</th>
+                <th>Assessment</th>
+                <th>Marks Obtained</th>
+                <th>Max Marks</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th>Published</th>
+              </tr>
+            </thead>
+            <tbody id="results-table-body">
+              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading mentee academic results... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mentee Fee Tracking -->
+      <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Mentee Fee Status Tracking</h3>
+            <p>Institutional advisory view of mentee fee obligations and pending balances</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Fee Category</th>
+                <th>Academic Period</th>
+                <th>Total Due</th>
+                <th>Amount Paid</th>
+                <th>Balance Due</th>
+                <th>Status</th>
+                <th>Due Date</th>
+              </tr>
+            </thead>
+            <tbody id="fees-table-body">
+              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading mentee fee records... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Leave Decision Modal -->
+<div class="modal-backdrop" id="leave-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Review Leave Application</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div id="leave-modal-info" style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);"></div>
+    <form id="leave-decision-form">
+      <input type="hidden" id="leave-decision-id">
+      <div class="form-group">
+        <label class="form-label">Decision</label>
+        <select id="leave-decision-status" class="form-control" required>
+          <option value="Approved">Approve Application</option>
+          <option value="Rejected">Reject Application</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mentor Remarks / Advice</label>
+        <textarea id="leave-decision-remarks" class="form-control" rows="3" placeholder="Enter remarks for the mentee..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-leave">Confirm Decision</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Activity Verification Modal -->
+<div class="modal-backdrop" id="activity-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Verify Student Activity</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div id="activity-modal-info" style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);"></div>
+    <form id="activity-decision-form">
+      <input type="hidden" id="activity-decision-id">
+      <div class="form-group">
+        <label class="form-label">Verification Status</label>
+        <select id="activity-decision-status" class="form-control" required>
+          <option value="Verified">Verified (Approve & Credit)</option>
+          <option value="Rejected">Rejected (Invalid/Insufficient Proof)</option>
+          <option value="Pending">Keep Pending</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mentor Remarks / Assessment</label>
+        <textarea id="activity-decision-remarks" class="form-control" rows="3" placeholder="Enter verification notes..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-activity">Update Status</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="mentor-dashboard.js"></script>
+</body>
+</html>

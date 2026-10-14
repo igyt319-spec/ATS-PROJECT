@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOD Department Console | Academic Tracking System (ATS)</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">ATS</div>
+      <div class="brand-text">
+        <h2>Academic ATS</h2>
+        <span id="sidebar-role-badge">HOD CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="hod-dashboard.html" class="nav-item active">
+        <span class="icon">🏛️</span> Department Overview
+      </a>
+      <a href="#section-allocations" class="nav-item" onclick="scrollToSection('section-allocations')">
+        <span class="icon">🧭</span> Mentor Allocations
+      </a>
+      <a href="#section-results" class="nav-item" onclick="scrollToSection('section-results')">
+        <span class="icon">📊</span> Department Results
+      </a>
+      <a href="#section-leaves" class="nav-item" onclick="scrollToSection('section-leaves')">
+        <span class="icon">📝</span> Department Leaves
+      </a>
+      <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
+        <span class="icon">💳</span> Fee Overviews
+      </a>
+      <a href="profile.html" class="nav-item">
+        <span class="icon">👤</span> HOD Profile
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div>
+          <h1 class="page-title" id="page-dept-title">Department Executive Console</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);" id="page-dept-subtitle">Head of Department Academic Supervision & Governance</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="date-pill" id="topbar-current-date">Today</span>
+        <a href="profile.html" class="user-profile-badge">
+          <img src="" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <div class="user-info-text">
+            <div class="name" id="topbar-user-name">Department HOD</div>
+            <div class="role-badge" id="topbar-user-role">Head of Department</div>
+          </div>
+        </a>
+      </div>
+    </header>
+
+    <main class="page-container">
+
+      <!-- HOD Department Stats KPI -->
+      <div class="kpi-grid" style="margin-bottom: 24px;">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Department Scholars</span>
+            <span class="kpi-icon">🎓</span>
+          </div>
+          <div class="kpi-value" id="kpi-dept-students">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--accent-cyan);">Active Enrolled</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Designated Mentors</span>
+            <span class="kpi-icon">👨‍🏫</span>
+          </div>
+          <div class="kpi-value" id="kpi-dept-mentors">0</div>
+          <div class="kpi-footer">
+            <span style="color: #34d399;">Authorized Faculty</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Pending Leave Requests</span>
+            <span class="kpi-icon">📝</span>
+          </div>
+          <div class="kpi-value" id="kpi-dept-leaves" style="color: #fbbf24;">0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--text-dim);">Across Department</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-title">Outstanding Department Dues</span>
+            <span class="kpi-icon">💳</span>
+          </div>
+          <div class="kpi-value" id="kpi-dept-fees" style="color: #f87171;">₹0</div>
+          <div class="kpi-footer">
+            <span style="color: var(--text-dim);">Total Student Balances</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mentor Allocation Management Card -->
+      <div class="glass-card" id="section-allocations" style="margin-bottom: 28px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 16px;">
+          <div class="card-title-group">
+            <h3>Mentor Allocation & Student Advisory Roster</h3>
+            <p>Ensure every student has an active primary mentor in your department</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn btn-primary" onclick="triggerAutoAssign()" id="btn-auto-assign">
+              ⚡ Deterministic Auto-Assign
+            </button>
+          </div>
+        </div>
+
+        <!-- Mentors Overview Sub-Bar -->
+        <div style="display: flex; gap: 16px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px;" id="mentors-cards-bar">
+          <!-- Mentor cards rendered dynamically -->
+        </div>
+
+        <!-- Students Allocation Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Scholar</th>
+                <th>Register No</th>
+                <th>Year & Class</th>
+                <th>Assigned Mentor</th>
+                <th>Allocation Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="allocations-table-body">
+              <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading mentor allocation records... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Department Academic Results -->
+      <div class="glass-card" id="section-results" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Department Academic Results & Marks</h3>
+            <p>Complete department view of internal marks, practicals, and semester examinations</p>
+          </div>
+          <div class="tab-pills" id="results-filter-pills">
+            <button class="tab-pill active" onclick="filterDepartmentResults('all')">All Results</button>
+            <button class="tab-pill" onclick="filterDepartmentResults('internal')">Internal Exams</button>
+            <button class="tab-pill" onclick="filterDepartmentResults('lab')">Lab Practicals</button>
+            <button class="tab-pill" onclick="filterDepartmentResults('semester')">Semester Results</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Subject</th>
+                <th>Assessment</th>
+                <th>Marks</th>
+                <th>Max</th>
+                <th>Grade</th>
+                <th>Status</th>
+                <th>Published</th>
+              </tr>
+            </thead>
+            <tbody id="dept-results-table-body">
+              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading department academic results... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Department Leave Oversight -->
+      <div class="glass-card" id="section-leaves" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Department Leave Requests Oversight</h3>
+            <p>Monitor leaves requested by department students and mentoring remarks</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Leave Type</th>
+                <th>Dates</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Reviewed By</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="dept-leaves-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading department leave records... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Department Fee Summary -->
+      <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>Department Student Fee Obligations</h3>
+            <p>Department-level fee collections, partial payments, and pending student balances</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Fee Category</th>
+                <th>Academic Period</th>
+                <th>Total Due</th>
+                <th>Paid Amount</th>
+                <th>Remaining Balance</th>
+                <th>Status</th>
+                <th>Due Date</th>
+              </tr>
+            </thead>
+            <tbody id="dept-fees-table-body">
+              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading department fee summaries... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Manual Mentor Reassignment Modal -->
+<div class="modal-backdrop" id="reassign-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Assign / Reassign Student Mentor</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div id="reassign-student-info" style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-dim);"></div>
+    <form id="reassign-form">
+      <input type="hidden" id="reassign-student-id">
+      <div class="form-group">
+        <label class="form-label">Select Department Mentor</label>
+        <select id="reassign-mentor-select" class="form-control" required>
+          <option value="">-- Choose active mentor --</option>
+        </select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-reassign">Save Assignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="api.js"></script>
+<script src="hod-dashboard.js"></script>
+</body>
+</html>

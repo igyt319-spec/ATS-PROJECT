@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const db = require('../../database/db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   let token = null;
 
@@ -21,9 +22,45 @@ function verifyToken(req, res, next) {
   }
 
   try {
-    if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('JWT_SECRET is not configured');
+    if (!JWT_SECRET || JWT_SECRET.length < 16) throw new Error('JWT_SECRET is not configured');
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
+
+    // Enrich user context if missing faculty or department attributes
+    if (decoded.role === 'faculty' && (!decoded.facultyId || decoded.departmentId === undefined)) {
+      try {
+        const [fac] = await db.query(
+          'SELECT id, department_id, is_hod, can_mentor FROM faculty WHERE user_id = ?',
+          [decoded.id]
+        );
+        if (fac.length > 0) {
+          req.user.facultyId = fac[0].id;
+          req.user.departmentId = fac[0].department_id;
+          req.user.isHOD = Boolean(fac[0].is_hod);
+          req.user.canMentor = Boolean(fac[0].can_mentor);
+          if (fac[0].is_hod) req.user.facultyRole = 'hod';
+          else if (fac[0].can_mentor) req.user.facultyRole = 'mentor';
+        }
+      } catch (dbErr) {
+        console.error('[authMiddleware enrich error]', dbErr.message);
+      }
+    }
+
+    if (decoded.role === 'student' && !decoded.studentId) {
+      try {
+        const [st] = await db.query(
+          'SELECT id, department_id FROM students WHERE user_id = ?',
+          [decoded.id]
+        );
+        if (st.length > 0) {
+          req.user.studentId = st[0].id;
+          req.user.departmentId = st[0].department_id;
+        }
+      } catch (dbErr) {
+        console.error('[authMiddleware enrich student error]', dbErr.message);
+      }
+    }
+
     next();
   } catch (err) {
     return res.status(403).json({
@@ -33,6 +70,21 @@ function verifyToken(req, res, next) {
   }
 }
 
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
+    if (roles.includes(req.user.role)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: `Access denied. Requires one of roles: ${roles.join(', ')}.`
+    });
+  };
+}
+
 function isStudent(req, res, next) {
   if (req.user && req.user.role === 'student') {
     return next();
@@ -40,6 +92,16 @@ function isStudent(req, res, next) {
   return res.status(403).json({
     success: false,
     message: 'Access restricted to students.'
+  });
+}
+
+function isStrictAdmin(req, res, next) {
+  if (req.user && req.user.role === 'admin') {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: 'Access restricted to system administrators.'
   });
 }
 
@@ -53,16 +115,108 @@ function isAdmin(req, res, next) {
   });
 }
 
+function isHOD(req, res, next) {
+  if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
+  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'faculty' && (req.user.facultyRole === 'hod' || req.user.isHOD)) {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: 'Access restricted to Head of Department (HOD) or Admin.'
+  });
+}
+
+function isMentor(req, res, next) {
+  if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
+  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'faculty' && (req.user.facultyRole === 'mentor' || req.user.canMentor || req.user.facultyRole === 'hod')) {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: 'Access restricted to Faculty Mentors or Admin.'
+  });
+}
+
 function ownsStudent(req, res, next) {
-  if (req.user && (req.user.role === 'admin' || req.user.role === 'faculty')) return next();
+  if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
+  if (req.user.role === 'admin') return next();
   const requestedId = Number(req.params.studentId || req.params.id || req.body.student_id);
-  if (req.user && req.user.role === 'student' && requestedId === Number(req.user.studentId)) return next();
-  return res.status(403).json({ success: false, message: 'You can only access your own academic records.' });
+  if (req.user.role === 'student') {
+    if (requestedId && requestedId === Number(req.user.studentId)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: You can only access your own student records.'
+    });
+  }
+  return next();
+}
+
+async function ownsStudentOrAssigned(req, res, next) {
+  if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
+  if (req.user.role === 'admin') return next();
+
+  const requestedId = Number(req.params.studentId || req.params.id || req.body.student_id);
+  if (!requestedId) {
+    return res.status(400).json({ success: false, message: 'Valid student ID is required.' });
+  }
+
+  if (req.user.role === 'student') {
+    if (requestedId === Number(req.user.studentId)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: You can only access your own student records.'
+    });
+  }
+
+  if (req.user.role === 'faculty') {
+    // Check if faculty is HOD of the student's department
+    if (req.user.facultyRole === 'hod' || req.user.isHOD) {
+      try {
+        const [studentRows] = await db.query('SELECT department_id FROM students WHERE id = ?', [requestedId]);
+        if (studentRows.length > 0 && studentRows[0].department_id === req.user.departmentId) {
+          return next();
+        }
+      } catch (err) {
+        console.error('[ownsStudentOrAssigned HOD check error]', err);
+      }
+    }
+
+    // Check if faculty is assigned mentor for this student
+    try {
+      const [assignment] = await db.query(
+        "SELECT id FROM student_mentors WHERE student_id = ? AND faculty_id = ? AND status = 'active'",
+        [requestedId, req.user.facultyId]
+      );
+      if (assignment.length > 0) {
+        return next();
+      }
+    } catch (err) {
+      console.error('[ownsStudentOrAssigned mentor check error]', err);
+    }
+
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: Student is not in your assigned mentee group or department.'
+    });
+  }
+
+  return res.status(403).json({ success: false, message: 'Unauthorized access.' });
 }
 
 module.exports = {
   verifyToken,
+  requireRole,
   isStudent,
+  isStrictAdmin,
   isAdmin,
-  ownsStudent
+  isHOD,
+  isMentor,
+  ownsStudent,
+  ownsStudentOrAssigned
 };

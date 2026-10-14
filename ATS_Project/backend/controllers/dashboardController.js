@@ -170,6 +170,44 @@ async function getStudentDashboard(req, res) {
       ]
     };
 
+    // Also fetch assigned mentor
+    const [mentorRows] = await db.query(
+      `SELECT f.name, f.email, f.designation, f.avatar 
+       FROM student_mentors sm 
+       JOIN faculty f ON f.id = sm.faculty_id 
+       WHERE sm.student_id = ? AND sm.status = 'active' LIMIT 1`,
+      [studentId]
+    );
+
+    // Also fetch fee summary
+    const [feeSummary] = await db.query(
+      `SELECT COALESCE(SUM(total_amount), 0) AS total_fees,
+              COALESCE(SUM(paid_amount), 0) AS paid_fees,
+              COALESCE(SUM(balance_amount), 0) AS balance_fees
+       FROM student_fees WHERE student_id = ?`,
+      [studentId]
+    );
+
+    // Also fetch published academic results
+    const [academicResults] = await db.query(
+      `SELECT ar.*, s.subject_name, s.subject_code 
+       FROM academic_results ar 
+       LEFT JOIN subjects s ON s.id = ar.subject_id 
+       WHERE ar.student_id = ? AND ar.is_published = 1 
+       ORDER BY ar.academic_year DESC, ar.assessment_type ASC`,
+      [studentId]
+    );
+
+    // Also fetch student activities and leave requests
+    const [activities] = await db.query(
+      'SELECT * FROM student_activities WHERE student_id = ? ORDER BY created_at DESC LIMIT 5',
+      [studentId]
+    );
+    const [leaves] = await db.query(
+      'SELECT * FROM leave_requests WHERE student_id = ? ORDER BY created_at DESC LIMIT 5',
+      [studentId]
+    );
+
     return res.status(200).json({
       success: true,
       student: {
@@ -182,6 +220,7 @@ async function getStudentDashboard(req, res) {
         semester: student.semester,
         avatar: student.avatar
       },
+      assignedMentor: mentorRows.length > 0 ? mentorRows[0] : null,
       kpi: {
         gpa: Number(gpa.toFixed(2)),
         cgpa: Number(cgpa.toFixed(2)),
@@ -191,6 +230,10 @@ async function getStudentDashboard(req, res) {
         academicScoreDetails: academicScoreObj,
         riskLevel: riskLevel
       },
+      feeSummary: feeSummary.length > 0 ? feeSummary[0] : { total_fees: 0, paid_fees: 0, balance_fees: 0 },
+      academicResults,
+      activities,
+      leaves,
       charts: {
         subjectPerformance: subjectPerformanceChart,
         academicTrend: academicTrendChart,
@@ -209,11 +252,23 @@ async function getStudentDashboard(req, res) {
 // GET /api/dashboard/admin/summary
 async function getAdminSummary(req, res) {
   try {
+    let deptFilter = '';
+    const queryParams = [];
+
+    // Department scoping for HOD
+    if (req.user && req.user.role === 'faculty') {
+      const deptId = req.user.departmentId;
+      if (deptId) {
+        deptFilter = 'AND st.department_id = ?';
+        queryParams.push(deptId);
+      }
+    }
+
     const [students] = await db.query(`SELECT st.id,st.register_number,st.name,d.name AS department,st.year,st.semester,
       COALESCE((SELECT SUM(m.grade_point*su.credits)/NULLIF(SUM(su.credits),0) FROM marks m JOIN subjects su ON su.id=m.subject_id WHERE m.student_id=st.id AND m.semester_id=st.current_semester_id),0) AS gpa,
       COALESCE((SELECT 100*SUM(a.classes_attended)/NULLIF(SUM(a.classes_conducted),0) FROM attendance a WHERE a.student_id=st.id AND a.semester_id=st.current_semester_id),0) AS attendance,
       (SELECT COUNT(*) FROM marks m WHERE m.student_id=st.id AND m.semester_id=st.current_semester_id AND m.total_marks<60) AS weak_count
-      FROM students st LEFT JOIN departments d ON d.id=st.department_id WHERE st.status='active' ORDER BY st.id`);
+      FROM students st LEFT JOIN departments d ON d.id=st.department_id WHERE st.status='active' ${deptFilter} ORDER BY st.id`, queryParams);
     const [achievements] = await db.query('SELECT * FROM achievements');
     const [departments] = await db.query('SELECT COUNT(*) AS total FROM departments');
     const [recentAchievements] = await db.query('SELECT a.id,a.title,a.category,a.achievement_date,a.status,s.name AS student_name,s.register_number FROM achievements a JOIN students s ON s.id=a.student_id ORDER BY a.achievement_date DESC LIMIT 8');

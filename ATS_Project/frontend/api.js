@@ -5,7 +5,43 @@
 
 const API_BASE_URL = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
   ? `${window.location.origin}/api`
-  : 'http://localhost:3000/api';
+  : 'http://localhost:5000/api';
+
+// Generate dynamic initials SVG avatar as resilient fallback
+function getInitialsAvatar(name = 'User', size = 120) {
+  const cleanName = (name || 'User').trim();
+  const parts = cleanName.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.)\s+/i, '').split(/[\s.]+/).filter(Boolean);
+  let initials = 'U';
+  if (parts.length >= 2) {
+    initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  } else if (parts.length === 1 && parts[0].length >= 2) {
+    initials = parts[0].substring(0, 2).toUpperCase();
+  } else if (parts.length === 1) {
+    initials = parts[0][0].toUpperCase();
+  }
+
+  // Consistent pleasant gradient based on name hash
+  let hash = 0;
+  for (let i = 0; i < cleanName.length; i++) {
+    hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hues = [210, 260, 160, 25, 330, 190, 280];
+  const primaryHue = hues[Math.abs(hash) % hues.length];
+  const secondaryHue = (primaryHue + 40) % 360;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <defs>
+      <linearGradient id="grad-${Math.abs(hash)}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="hsl(${primaryHue}, 75%, 45%)" />
+        <stop offset="100%" stop-color="hsl(${secondaryHue}, 80%, 30%)" />
+      </linearGradient>
+    </defs>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="url(#grad-${Math.abs(hash)})" />
+    <text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="${Math.floor(size * 0.42)}" font-weight="700" fill="#ffffff" dominant-baseline="middle" text-anchor="middle" letter-spacing="1">${initials}</text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 // Toast Notification Manager
 function showToast(message, type = 'info') {
@@ -60,7 +96,7 @@ function logout() {
   window.location.href = 'login.html';
 }
 
-// Protected Route Guard
+// Protected Route Guard with strict RBAC
 function checkAuth(requiredRole = null) {
   const token = getToken();
   const user = getCurrentUser();
@@ -70,14 +106,29 @@ function checkAuth(requiredRole = null) {
     return null;
   }
 
-  const roleAllowed = !requiredRole || user.role === requiredRole || (requiredRole === 'admin' && user.role === 'faculty');
-  if (!roleAllowed) {
-    if (user.role === 'admin' || user.role === 'faculty') {
-      window.location.href = 'admin-dashboard.html';
-    } else {
-      window.location.href = 'dashboard.html';
+  if (requiredRole) {
+    let allowed = false;
+    if (requiredRole === 'admin') {
+      allowed = user.role === 'admin';
+    } else if (requiredRole === 'hod') {
+      allowed = user.role === 'admin' || (user.role === 'faculty' && user.facultyRole === 'hod');
+    } else if (requiredRole === 'mentor') {
+      allowed = user.role === 'admin' || (user.role === 'faculty' && (user.facultyRole === 'mentor' || user.facultyRole === 'hod'));
+    } else if (requiredRole === 'faculty') {
+      allowed = user.role === 'admin' || user.role === 'faculty';
+    } else if (requiredRole === 'student') {
+      allowed = user.role === 'student';
     }
-    return null;
+
+    if (!allowed) {
+      if (user.role === 'admin') window.location.href = 'admin-dashboard.html';
+      else if (user.role === 'faculty') {
+        window.location.href = user.facultyRole === 'hod' ? 'hod-dashboard.html' : 'mentor-dashboard.html';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+      return null;
+    }
   }
 
   return user;
@@ -104,8 +155,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     const data = await res.json();
 
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        // Session expired
+      if (res.status === 401) {
         if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html')) {
           clearSession();
           window.location.href = 'login.html';
@@ -137,7 +187,7 @@ function closeModal(modalId) {
   }
 }
 
-// Initialize Topbar Info & Event Listeners
+// Initialize Topbar Info & Navigation
 function initLayout() {
   const user = getCurrentUser();
   if (user) {
@@ -146,17 +196,41 @@ function initLayout() {
     const avatarEl = document.getElementById('topbar-user-avatar');
 
     if (nameEl) nameEl.textContent = user.name || 'User';
-    if (roleEl) roleEl.textContent = user.role === 'admin' ? 'Administrator' : user.role === 'faculty' ? 'Faculty' : (user.register_number || 'Student');
-    if (avatarEl && user.avatar) avatarEl.src = user.avatar;
 
-    // If admin is browsing pages, ensure sidebar Dashboard links to admin-dashboard.html
-    if (user.role === 'admin' || user.role === 'faculty') {
-      const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
-      dashLinks.forEach(link => {
-        link.href = 'admin-dashboard.html';
-      });
-      const brandRole = document.getElementById('sidebar-role-badge');
+    let displayRole = 'Student';
+    if (user.role === 'admin') displayRole = 'Administrator';
+    else if (user.role === 'faculty') {
+      displayRole = user.facultyRole === 'hod' ? `HOD (${user.department || 'Dept'})` : 'Faculty Mentor';
+    } else {
+      displayRole = user.register_number || 'Student';
+    }
+    if (roleEl) roleEl.textContent = displayRole;
+
+    // Set individual avatar with fallback to generated initials badge
+    const fallbackAvatar = getInitialsAvatar(user.name);
+    if (avatarEl) {
+      avatarEl.src = user.avatar || fallbackAvatar;
+      avatarEl.onerror = () => {
+        avatarEl.src = fallbackAvatar;
+      };
+    }
+
+    // Role-specific sidebar adjustments
+    const brandRole = document.getElementById('sidebar-role-badge');
+    if (user.role === 'admin') {
       if (brandRole) brandRole.textContent = 'ADMIN CONSOLE';
+      const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
+      dashLinks.forEach(link => { link.href = 'admin-dashboard.html'; });
+    } else if (user.role === 'faculty') {
+      if (user.facultyRole === 'hod') {
+        if (brandRole) brandRole.textContent = 'HOD CONSOLE';
+        const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
+        dashLinks.forEach(link => { link.href = 'hod-dashboard.html'; });
+      } else {
+        if (brandRole) brandRole.textContent = 'MENTOR CONSOLE';
+        const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
+        dashLinks.forEach(link => { link.href = 'mentor-dashboard.html'; });
+      }
     }
   }
 
@@ -186,8 +260,8 @@ function initLayout() {
   });
 
   // Fetch unread notifications count if student
-  if (user && user.role === 'student') {
-    fetchUnreadNotificationsCount(user.studentId || 1);
+  if (user && user.role === 'student' && user.studentId) {
+    fetchUnreadNotificationsCount(user.studentId);
   }
 }
 

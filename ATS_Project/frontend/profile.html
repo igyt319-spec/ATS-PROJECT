@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Profile | Academic Tracking System (ATS)</title>
+  <title>User Profile | Academic Tracking System (ATS)</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👤</text></svg>">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
       <div class="logo-badge">ATS</div>
       <div class="brand-text">
         <h2>Academic ATS</h2>
-        <span id="sidebar-role-badge">STUDENT PORTAL</span>
+        <span id="sidebar-role-badge">USER PROFILE</span>
       </div>
     </div>
 
@@ -58,17 +58,17 @@
       <div class="topbar-left">
         <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
         <div>
-          <h1 class="page-title">Undergraduate Scholar Profile</h1>
-          <span style="font-size: 0.76rem; color: var(--text-dim);">Official Institutional Academic Identity & Metadata</span>
+          <h1 class="page-title">Identity & Account Profile</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Official Institutional Identity & Credentials</span>
         </div>
       </div>
       <div class="topbar-right">
         <span class="date-pill" id="topbar-current-date">Today</span>
         <a href="profile.html" class="user-profile-badge">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <img src="" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
           <div class="user-info-text">
-            <div class="name" id="topbar-user-name">Student</div>
-            <div class="role-badge" id="topbar-user-role">Student</div>
+            <div class="name" id="topbar-user-name">User</div>
+            <div class="role-badge" id="topbar-user-role">Role</div>
           </div>
         </a>
       </div>
@@ -79,21 +79,25 @@
       <!-- Profile Header Card -->
       <div class="glass-card" style="margin-bottom: 28px; padding: 32px;">
         <div style="display: flex; gap: 28px; align-items: center; flex-wrap: wrap;">
-          <div style="position: relative;">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" id="profile-img" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-cyan); box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);">
-            <span style="position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; background: #10b981; border: 3px solid var(--bg-secondary); border-radius: 50%;"></span>
+          <div style="position: relative; text-align: center;">
+            <img src="" alt="Avatar" id="profile-img" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-cyan); box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);">
+            <div style="margin-top: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="openModal('avatar-upload-modal')" style="font-size: 0.75rem; padding: 4px 10px;">
+                📸 Change Photo
+              </button>
+            </div>
           </div>
 
           <div style="flex: 1; min-width: 250px;">
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-              <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;" id="profile-display-name">Student</h2>
+              <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff;" id="profile-display-name">User Name</h2>
               <span class="kpi-pill pill-blue" id="profile-display-regno">—</span>
             </div>
             <p style="color: var(--accent-cyan); font-size: 0.92rem; font-weight: 600; margin-bottom: 4px;" id="profile-display-dept">
-              Electronics and Communication Engineering
+              Department
             </p>
             <p style="color: var(--text-muted); font-size: 0.85rem;" id="profile-display-meta">
-              Academic profile loads from your saved records
+              Verified institutional credentials from MySQL database
             </p>
           </div>
 
@@ -106,52 +110,51 @@
       <!-- Profile Details & Editable Form -->
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
         
-        <!-- Editable Profile Fields (Requirement 8) -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
               <h3>Academic Credentials & Contact Information</h3>
-              <p>Editable student metadata saved to MySQL database</p>
+              <p id="profile-form-subtitle">Editable metadata saved to MySQL database (least-privilege enforced)</p>
             </div>
           </div>
 
           <form id="profile-edit-form">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
               <div class="form-group">
-                <label class="form-label">Full Name</label>
+                <label class="form-label">Full Name <span class="read-only-badge" style="font-size: 0.7rem; color: var(--text-dim);">(Official)</span></label>
                 <input type="text" id="prof-name" class="form-control" value="" disabled required>
               </div>
               <div class="form-group">
-                <label class="form-label">Register Number (Read-only)</label>
+                <label class="form-label">Register Number / ID <span class="read-only-badge" style="font-size: 0.7rem; color: var(--text-dim);">(Read-only)</span></label>
                 <input type="text" id="prof-regno" class="form-control" value="" disabled>
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
               <div class="form-group">
-                <label class="form-label">Institutional Email</label>
-                <input type="email" id="prof-email" class="form-control" value="student@ats.com" disabled required>
+                <label class="form-label">Institutional Email <span class="read-only-badge" style="font-size: 0.7rem; color: var(--text-dim);">(Official)</span></label>
+                <input type="email" id="prof-email" class="form-control" value="" disabled required>
               </div>
               <div class="form-group">
-                <label class="form-label">Contact Phone</label>
-                <input type="text" id="prof-phone" class="form-control" value="+91 9876543210" disabled>
+                <label class="form-label">Contact Phone <span style="font-size: 0.72rem; color: #34d399;">(Editable)</span></label>
+                <input type="text" id="prof-phone" class="form-control" value="" disabled placeholder="+91 9876543210">
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
               <div class="form-group">
-                <label class="form-label">Department</label>
-                <input type="text" id="prof-dept" class="form-control" value="Electronics and Communication Engineering" disabled required>
+                <label class="form-label">Department <span class="read-only-badge" style="font-size: 0.7rem; color: var(--text-dim);">(Official Scope)</span></label>
+                <input type="text" id="prof-dept" class="form-control" value="" disabled required>
               </div>
               <div class="form-group">
-                <label class="form-label">Academic Year</label>
-                <input type="text" id="prof-year" class="form-control" value="III Year" disabled required>
+                <label class="form-label">Academic Year / Role</label>
+                <input type="text" id="prof-year" class="form-control" value="" disabled required>
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Academic Bio / Research Interests</label>
-              <textarea id="prof-bio" class="form-control" rows="3" disabled>Enthusiastic 3rd year ECE undergraduate with a keen focus on embedded AI systems, IoT firmware, and relational database architectures.</textarea>
+              <label class="form-label">Academic Bio / Research Interests <span style="font-size: 0.72rem; color: #34d399;">(Editable)</span></label>
+              <textarea id="prof-bio" class="form-control" rows="3" disabled placeholder="Undergraduate academic bio, research focus, or career interests..."></textarea>
             </div>
 
             <div id="save-btn-group" style="display: none; justify-content: flex-end; gap: 10px; margin-top: 20px;">
@@ -166,7 +169,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>Academic Highlights</h3>
-              <p>Verified ATS Standing</p>
+              <p>Verified Database Standing</p>
             </div>
           </div>
 
@@ -176,7 +179,7 @@
               <strong style="color: #38bdf8;" id="prof-stat-cgpa">—</strong>
             </div>
             <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Current Semester GPA:</span>
+              <span style="color: var(--text-dim);">Semester SGPA:</span>
               <strong style="color: #34d399;" id="prof-stat-gpa">—</strong>
             </div>
             <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
@@ -184,11 +187,11 @@
               <strong style="color: #fbbf24;" id="prof-stat-att">—</strong>
             </div>
             <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Achievements:</span>
+              <span style="color: var(--text-dim);">Verified Activities:</span>
               <strong style="color: var(--accent-purple);" id="prof-stat-ach">—</strong>
             </div>
             <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">ATS Composite Score:</span>
+              <span style="color: var(--text-dim);">Academic Score:</span>
               <strong style="color: #fff;" id="prof-stat-score">—</strong>
             </div>
             <div style="display: flex; justify-content: space-between;">
@@ -201,6 +204,34 @@
       </div>
 
     </main>
+  </div>
+</div>
+
+<!-- Modal: Change Profile Photo Modal -->
+<div class="modal-backdrop" id="avatar-upload-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Update Profile Photo</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="avatar-form">
+      <div class="form-group">
+        <label class="form-label">Upload Image File (JPEG, PNG, WebP — Max 2MB)</label>
+        <input type="file" id="avatar-file-input" class="form-control" accept="image/jpeg,image/png,image/webp">
+      </div>
+      <div style="text-align: center; margin: 10px 0; color: var(--text-dim); font-size: 0.8rem;">— OR ENTER PUBLIC IMAGE URL —</div>
+      <div class="form-group">
+        <label class="form-label">Image Web URL</label>
+        <input type="url" id="avatar-url-input" class="form-control" placeholder="https://example.com/photo.jpg">
+      </div>
+      <div id="avatar-preview-container" style="text-align: center; margin: 14px 0; display: none;">
+        <img id="avatar-preview-img" src="" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-avatar">Update Photo</button>
+      </div>
+    </form>
   </div>
 </div>
 

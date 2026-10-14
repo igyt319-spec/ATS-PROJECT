@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Dashboard | Academic Tracking System (ATS)</title>
+  <title>Student Portal | Academic Tracking System (ATS)</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -18,7 +17,7 @@
       <div class="logo-badge">ATS</div>
       <div class="brand-text">
         <h2>Academic ATS</h2>
-        <span>STUDENT PORTAL</span>
+        <span id="sidebar-role-badge">STUDENT PORTAL</span>
       </div>
     </div>
 
@@ -27,14 +26,23 @@
       <a href="dashboard.html" class="nav-item active">
         <span class="icon">📊</span> Dashboard
       </a>
+      <a href="#section-results" class="nav-item" onclick="scrollToSection('section-results')">
+        <span class="icon">📑</span> Academic Results
+      </a>
+      <a href="#section-activities" class="nav-item" onclick="scrollToSection('section-activities')">
+        <span class="icon">🏆</span> Activities
+      </a>
+      <a href="#section-leave" class="nav-item" onclick="scrollToSection('section-leave')">
+        <span class="icon">📝</span> Leave Requests
+      </a>
+      <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
+        <span class="icon">💳</span> Fees & Demo Pay
+      </a>
       <a href="performance.html" class="nav-item">
         <span class="icon">🎯</span> Performance
       </a>
       <a href="attendance.html" class="nav-item">
         <span class="icon">📅</span> Attendance
-      </a>
-      <a href="achievements.html" class="nav-item">
-        <span class="icon">🏆</span> Achievements
       </a>
 
       <div class="nav-section-title" style="margin-top: 14px;">Intelligent Tools</div>
@@ -64,13 +72,12 @@
 
   <!-- Main Content Wrapper -->
   <div class="main-wrapper">
-    <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-left">
         <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
         <div>
-          <h1 class="page-title">Academic Dashboard</h1>
-          <span style="font-size: 0.76rem; color: var(--text-dim);" id="header-student-subtitle">Loading academic records...</span>
+          <h1 class="page-title">Undergraduate Scholar Dashboard</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);" id="header-student-subtitle">Loading academic profile...</span>
         </div>
       </div>
 
@@ -83,7 +90,7 @@
         </a>
 
         <a href="profile.html" class="user-profile-badge">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
+          <img src="" alt="Avatar" class="user-avatar" id="topbar-user-avatar">
           <div class="user-info-text">
             <div class="name" id="topbar-user-name">Student</div>
             <div class="role-badge" id="topbar-user-role">Student</div>
@@ -92,7 +99,6 @@
       </div>
     </header>
 
-    <!-- Page Body Container -->
     <main class="page-container">
       
       <!-- Welcome Banner -->
@@ -101,20 +107,38 @@
           <div>
             <h2 style="font-size: 1.4rem; font-weight: 800;">Welcome back, <span id="banner-student-name">Student</span>! 👋</h2>
             <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
-              Your academic records are currently monitored by the ATS Intelligent Agent. Your attendance and performance indicators are tracked in real-time.
+              Your academic indicators, internal assessments, lab practicals, and mentor advisory are actively monitored.
             </p>
-            <p style="color:var(--accent-cyan);font-size:.78rem;margin-top:8px;">Synthetic demo records · not BIT student data</p>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <a href="chatbot.html" class="btn btn-primary btn-sm">💬 Ask AI Assistant</a>
-            <a href="recommendations.html" class="btn btn-secondary btn-sm">⚡ View Study Plan</a>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('activity-submit-modal')">➕ Submit Activity</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('leave-apply-modal')">📝 Apply Leave</button>
           </div>
         </div>
       </div>
 
-      <!-- 5 KPI Summary Cards (Requirement 6) -->
+      <!-- Assigned Mentor Card (Section 4.A Requirement) -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 18px 24px;" id="mentor-display-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <img src="" alt="Mentor Avatar" id="mentor-avatar-img" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);">
+            <div>
+              <span class="kpi-pill pill-blue" style="font-size: 0.72rem; margin-bottom: 4px; display: inline-block;">YOUR ASSIGNED FACULTY MENTOR</span>
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff;" id="mentor-display-name">Dr. Faculty Mentor</h3>
+              <p style="font-size: 0.82rem; color: var(--text-dim);" id="mentor-display-dept">Department Faculty Advisor</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div style="text-align: right; font-size: 0.82rem; color: var(--text-dim);">
+              <div>Official Contact:</div>
+              <strong style="color: var(--accent-cyan);" id="mentor-display-email">mentor@ats.com</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 KPI Summary Cards -->
       <div class="kpi-grid">
-        <!-- 1. GPA / CGPA -->
         <div class="kpi-card">
           <div class="kpi-top">
             <span class="kpi-title">GPA / CGPA</span>
@@ -123,11 +147,10 @@
           <div class="kpi-value" id="kpi-gpa">—</div>
           <div class="kpi-subtitle">
             CGPA: <strong style="color: #fff;" id="kpi-cgpa">—</strong>
-            <span class="kpi-pill pill-green">Semester GPA</span>
+            <span class="kpi-pill pill-green">Cumulative</span>
           </div>
         </div>
 
-        <!-- 2. Attendance -->
         <div class="kpi-card">
           <div class="kpi-top">
             <span class="kpi-title">Overall Attendance</span>
@@ -140,20 +163,18 @@
           </div>
         </div>
 
-        <!-- 3. Achievements -->
         <div class="kpi-card">
           <div class="kpi-top">
-            <span class="kpi-title">Achievements</span>
+            <span class="kpi-title">Verified Activities</span>
             <div class="kpi-icon">🏆</div>
           </div>
-          <div class="kpi-value" id="kpi-achievements">8</div>
+          <div class="kpi-value" id="kpi-achievements">0</div>
           <div class="kpi-subtitle">
-            <span class="kpi-pill pill-blue">Verified</span>
+            <span class="kpi-pill pill-blue">Co-Curricular</span>
             <span>Hackathons & Certs</span>
           </div>
         </div>
 
-        <!-- 4. Academic Score (with Explainable formula modal) -->
         <div class="kpi-card" style="cursor: pointer;" onclick="openModal('score-formula-modal')" title="Click to view explanation">
           <div class="kpi-top">
             <span class="kpi-title">Academic Score</span>
@@ -161,14 +182,13 @@
           </div>
           <div class="kpi-value" id="kpi-score">—<span style="font-size: 1.1rem; color: var(--text-dim);">/100</span></div>
           <div class="kpi-subtitle">
-            <span class="kpi-pill pill-blue">Click for Formula ℹ️</span>
+            <span class="kpi-pill pill-blue">Multi-Criteria Score</span>
           </div>
         </div>
 
-        <!-- 5. Risk Level -->
         <div class="kpi-card">
           <div class="kpi-top">
-            <span class="kpi-title">Risk Level</span>
+            <span class="kpi-title">Risk Standing</span>
             <div class="kpi-icon" id="kpi-risk-icon">🛡️</div>
           </div>
           <div class="kpi-value" id="kpi-risk" style="color: #34d399;">LOW</div>
@@ -178,9 +198,170 @@
         </div>
       </div>
 
-      <!-- Charts Grid (Requirement 7) -->
+      <!-- 3-Tier Academic Results (Section 7) -->
+      <div class="glass-card" id="section-results" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>📑 Verified Academic Results</h3>
+            <p>Official published marks for internal tests, lab practicals, and semester examinations</p>
+          </div>
+          <div class="tab-pills" id="student-results-pills">
+            <button class="tab-pill active" onclick="filterStudentResults('all')">All Published</button>
+            <button class="tab-pill" onclick="filterStudentResults('internal')">Internal Exams</button>
+            <button class="tab-pill" onclick="filterStudentResults('lab')">Lab Practicals</button>
+            <button class="tab-pill" onclick="filterStudentResults('semester')">Semester Results</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Course / Subject</th>
+                <th>Assessment Name</th>
+                <th>Marks Obtained</th>
+                <th>Maximum Marks</th>
+                <th>Grade</th>
+                <th>Result Status</th>
+                <th>Academic Period</th>
+              </tr>
+            </thead>
+            <tbody id="student-results-table-body">
+              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading verified academic results... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Student Activities & Achievements (Section 6) -->
+      <div class="glass-card" id="section-activities" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>🏆 Student Activities & Achievement Portfolio</h3>
+            <p>Submissions across Hackathons, NPTEL courses, IEEE, paper presentations, competitions, and vendor training</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('activity-submit-modal')">
+            ➕ Add Submission
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Activity Title</th>
+                <th>Host / Provider</th>
+                <th>Event Date</th>
+                <th>Level</th>
+                <th>Status</th>
+                <th>Mentor Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="student-activities-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading your activity submissions... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Leave Requests Module (Section 8) -->
+      <div class="glass-card" id="section-leave" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>📝 Leave Management & Approval History</h3>
+            <p>Apply for medical or on-duty leave and track advisory decisions</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('leave-apply-modal')">
+            Apply For Leave
+          </button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Leave Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Reviewed By</th>
+                <th>Advisory Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="student-leave-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading leave history... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Fee Management & Demo Payment Gateway (Section 9) -->
+      <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>💳 Academic Fee Obligations & Demo Payment Gateway</h3>
+            <p>Semester tuition, hostel, exam fees, and simulated payment gateway</p>
+          </div>
+          <div id="fee-balance-badge" style="font-size: 0.95rem; font-weight: 700; color: #f87171;">
+            Balance: ₹0
+          </div>
+        </div>
+
+        <div class="demo-payment-banner">
+          <span>⚠️</span>
+          <div>
+            <strong>DEMO PAYMENT SYSTEM:</strong> This is a simulation environment for testing and academic demonstration. No real financial credentials or transactions are used.
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fee Category</th>
+                <th>Academic Year</th>
+                <th>Semester</th>
+                <th>Total Fee</th>
+                <th>Paid Amount</th>
+                <th>Outstanding Balance</th>
+                <th>Status</th>
+                <th>Due Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="student-fees-table-body">
+              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading fee breakdown... ⏳</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Payment History Sub-Section -->
+        <h4 style="margin: 24px 0 12px; font-size: 0.96rem; color: #fff;">Simulated Payment History & Official Receipts</h4>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transaction Ref</th>
+                <th>Fee Category</th>
+                <th>Payment Method</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Payment Date</th>
+                <th>Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="student-payments-table-body">
+              <tr><td colspan="7" style="text-align: center; padding: 18px; color: var(--text-dim);">No transactions recorded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
       <div class="charts-grid">
-        <!-- Chart 1: Subject Performance Bar Chart -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
@@ -194,12 +375,11 @@
           </div>
         </div>
 
-        <!-- Chart 2: Academic Performance Trend Line Chart -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
               <h3>Academic Performance Trend</h3>
-              <p>Semester-wise SGPA trajectory across Semesters 1 to 5</p>
+              <p>Semester-wise SGPA trajectory</p>
             </div>
           </div>
           <div class="chart-wrapper">
@@ -207,12 +387,11 @@
           </div>
         </div>
 
-        <!-- Chart 3: Attendance Trend Chart -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
               <h3>Monthly Attendance Trend</h3>
-              <p>Compliance curve monitored against the ATS configured 75% risk threshold</p>
+              <p>Monitored against the 75% risk threshold</p>
             </div>
             <a href="attendance.html" class="btn btn-secondary btn-sm">Details →</a>
           </div>
@@ -221,12 +400,11 @@
           </div>
         </div>
 
-        <!-- Chart 4: Achievement Distribution Chart -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
               <h3>Achievement Distribution</h3>
-              <p>Portfolio breakdown across technical and co-curricular domains</p>
+              <p>Portfolio breakdown across domains</p>
             </div>
             <a href="achievements.html" class="btn btn-secondary btn-sm">Portfolio →</a>
           </div>
@@ -236,9 +414,8 @@
         </div>
       </div>
 
-      <!-- Bottom Row: Recent AI Insights & Quick Actions -->
+      <!-- Bottom Row: Recent AI Insights -->
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-        <!-- AI Recommendations Stream -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
@@ -247,12 +424,9 @@
             </div>
             <a href="recommendations.html" class="btn btn-secondary btn-sm">View All</a>
           </div>
-          <div id="dashboard-recommendations-list" style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- Dynamically populated -->
-          </div>
+          <div id="dashboard-recommendations-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
 
-        <!-- System & Database Status Card -->
         <div class="glass-card">
           <div class="card-header">
             <div class="card-title-group">
@@ -263,15 +437,11 @@
           <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.84rem;">
             <div style="padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-color);">
               <div style="color: var(--text-dim); margin-bottom: 2px;">Database Connection:</div>
-              <div style="color: #34d399; font-weight: 600;" id="status-db-text">ats_database (Active)</div>
+              <div style="color: #34d399; font-weight: 600;">MySQL on Aiven Cloud (Active)</div>
             </div>
             <div style="padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-color);">
-              <div style="color: var(--text-dim); margin-bottom: 2px;">AI Analytics Engine:</div>
-              <div style="color: var(--accent-cyan); font-weight: 600;">Python 3.12 Heuristic Engine</div>
-            </div>
-            <div style="padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-color);">
-              <div style="color: var(--text-dim); margin-bottom: 2px;">Continuous Monitoring:</div>
-              <div style="color: #fbbf24; font-weight: 600;">Autonomous Agent Active</div>
+              <div style="color: var(--text-dim); margin-bottom: 2px;">Security & RBAC:</div>
+              <div style="color: var(--accent-cyan); font-weight: 600;">Server-Side Token Auth Active</div>
             </div>
             <a href="chatbot.html" class="btn btn-primary btn-sm" style="margin-top: 6px;">
               🤖 Launch Assistant
@@ -284,7 +454,247 @@
   </div>
 </div>
 
-<!-- Explainable Academic Score Modal (Requirement 13) -->
+<!-- Modal 1: Submit Activity Modal (Section 6) -->
+<div class="modal-backdrop" id="activity-submit-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Submit Student Activity / Achievement</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="activity-submit-form">
+      <div class="form-group">
+        <label class="form-label">Activity Category (6 Official Categories)</label>
+        <select id="act-category" class="form-control" required>
+          <option value="Hackathons">Hackathons</option>
+          <option value="Technical competitions">Technical competitions</option>
+          <option value="Paper presentations">Paper presentations</option>
+          <option value="NPTEL courses and certifications">NPTEL courses and certifications</option>
+          <option value="IEEE membership">IEEE membership</option>
+          <option value="External vendor training">External vendor training</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Activity / Event Title</label>
+        <input type="text" id="act-title" class="form-control" placeholder="e.g. Smart India Hackathon 2026" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Organizing Institution / Provider</label>
+        <input type="text" id="act-provider" class="form-control" placeholder="e.g. Ministry of Education / IIT Madras" required>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Event Date</label>
+          <input type="date" id="act-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Participation Level / Result</label>
+          <select id="act-level" class="form-control">
+            <option value="Winner / 1st Prize">Winner / 1st Prize</option>
+            <option value="Runner Up">Runner Up</option>
+            <option value="Finalist">Finalist</option>
+            <option value="Participant / Completed">Participant / Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Brief Description</label>
+        <textarea id="act-desc" class="form-control" rows="2" placeholder="Brief highlights of your project or learning..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-activity">Submit for Review</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 2: Leave Application Modal (Section 8) -->
+<div class="modal-backdrop" id="leave-apply-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Apply for Student Leave</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="leave-apply-form">
+      <div class="form-group">
+        <label class="form-label">Leave Type</label>
+        <select id="leave-type-select" class="form-control" required>
+          <option value="Medical Leave">Medical Leave</option>
+          <option value="On Duty (OD)">On Duty (OD) — Competition/Hackathon</option>
+          <option value="Personal Leave">Personal / Family Leave</option>
+          <option value="Academic Conference">Academic Conference</option>
+        </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input type="date" id="leave-start-date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input type="date" id="leave-end-date" class="form-control" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Detailed Reason</label>
+        <textarea id="leave-reason" class="form-control" rows="3" placeholder="Provide legitimate academic or personal reason for faculty advisor review..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-leave">Submit to Mentor</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 3: Demo Payment Gateway Modal (Section 9) -->
+<div class="modal-backdrop" id="demo-payment-modal">
+  <div class="modal-card" style="max-width: 580px;">
+    <div class="modal-header">
+      <h3 class="modal-title">ATS Demo Payment Gateway</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+
+    <div class="demo-payment-banner">
+      <span>🛡️</span>
+      <div>
+        <strong>DEMO PAYMENT SIMULATION — NO REAL MONEY TRANSFERRED</strong><br>
+        Simulated transactions for academic demonstration. Do not enter real banking PINs.
+      </div>
+    </div>
+
+    <div style="background: var(--bg-surface); padding: 14px 18px; border-radius: var(--radius-sm); margin-bottom: 18px; border: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span style="color: var(--text-dim);">Fee Obligation:</span>
+        <strong style="color: #fff;" id="demo-pay-category">Tuition Fee</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span style="color: var(--text-dim);">Outstanding Balance:</span>
+        <strong style="color: #38bdf8;" id="demo-pay-max-balance">₹0</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 6px;">
+        <span style="color: var(--text-main); font-weight: 700;">Payable Amount (₹):</span>
+        <strong style="color: #34d399; font-size: 1.15rem;" id="demo-pay-display-amt">₹0</strong>
+      </div>
+    </div>
+
+    <form id="demo-payment-form">
+      <input type="hidden" id="demo-pay-fee-id">
+      
+      <div class="form-group">
+        <label class="form-label">Payment Amount to Transfer (₹)</label>
+        <input type="number" id="demo-pay-amount" class="form-control" step="0.01" min="1" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Select Simulated Payment Method</label>
+        <div class="payment-methods-grid">
+          <div class="payment-method-card active" onclick="selectPayMethod(this, 'UPI Simulation')">
+            <div class="payment-method-icon">📱</div>
+            <div class="payment-method-label">UPI Simulation</div>
+          </div>
+          <div class="payment-method-card" onclick="selectPayMethod(this, 'Card Simulation')">
+            <div class="payment-method-icon">💳</div>
+            <div class="payment-method-label">Card Simulation</div>
+          </div>
+          <div class="payment-method-card" onclick="selectPayMethod(this, 'Net-Banking Simulation')">
+            <div class="payment-method-icon">🏦</div>
+            <div class="payment-method-label">Net-Banking</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test failure simulator toggle -->
+      <div style="margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="demo-pay-simulate-fail" style="width: 16px; height: 16px; cursor: pointer;">
+        <label for="demo-pay-simulate-fail" style="font-size: 0.8rem; color: var(--text-dim); cursor: pointer;">
+          Simulate Payment Gateway Failure (to test error resilience)
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-confirm-demo-pay">
+          Pay ₹<span id="demo-pay-btn-text">0</span> (Demo)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 4: Official Payment Receipt Modal (Section 9) -->
+<div class="modal-backdrop" id="receipt-modal">
+  <div class="modal-card" style="max-width: 650px; background: transparent; box-shadow: none; border: none; padding: 0;">
+    
+    <div class="receipt-sheet" id="printable-receipt-sheet">
+      <div class="receipt-header">
+        <div>
+          <h2 style="font-size: 1.3rem; margin-bottom: 4px; color: #0284c7;">ACADEMIC TRACKING SYSTEM</h2>
+          <div style="font-size: 0.82rem; color: #64748b;">Official Fee Payment Receipt</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.75rem; color: #64748b;">Transaction Reference</div>
+          <strong style="font-family: monospace; font-size: 0.95rem; color: #0f172a;" id="rcpt-txn-ref">—</strong>
+        </div>
+      </div>
+
+      <div class="receipt-demo-watermark">
+        DEMO PAYMENT — NO REAL MONEY WAS TRANSFERRED
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; font-size: 0.88rem;">
+        <div>
+          <span style="color: #64748b;">Scholar Name:</span><br>
+          <strong id="rcpt-student-name">—</strong>
+        </div>
+        <div>
+          <span style="color: #64748b;">Register Number:</span><br>
+          <strong id="rcpt-regno">—</strong>
+        </div>
+        <div>
+          <span style="color: #64748b;">Department:</span><br>
+          <strong id="rcpt-dept">—</strong>
+        </div>
+        <div>
+          <span style="color: #64748b;">Fee Category:</span><br>
+          <strong id="rcpt-category">—</strong>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; padding: 12px 0; margin-bottom: 16px;">
+        <div class="receipt-row">
+          <span>Total Fee Obligation:</span>
+          <strong id="rcpt-total-fee">₹0</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Amount Paid In This Transaction:</span>
+          <strong style="color: #10b981;" id="rcpt-paid-amt">₹0</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Payment Method:</span>
+          <strong id="rcpt-pay-method">—</strong>
+        </div>
+        <div class="receipt-row">
+          <span>Remaining Balance:</span>
+          <strong id="rcpt-balance">₹0</strong>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #64748b;">
+        <div>Payment Date: <strong id="rcpt-date">—</strong></div>
+        <div>Status: <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 700;">SUCCESS</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;" class="no-print">
+      <button type="button" class="btn btn-secondary" data-modal-close>Close</button>
+      <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal 5: Score Formula Modal -->
 <div class="modal-backdrop" id="score-formula-modal">
   <div class="modal-card">
     <div class="modal-header">
@@ -293,7 +703,7 @@
     </div>
     <div style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
       <p style="margin-bottom: 12px;">
-        To ensure transparency and eliminate opaque AI claims, the <strong>Academic Performance Score</strong> is computed through a deterministic, explainable multi-criteria weighting model:
+        The <strong>Academic Performance Score</strong> is computed through a deterministic, explainable multi-criteria weighting model:
       </p>
       
       <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
@@ -319,10 +729,6 @@
           </li>
         </ul>
       </div>
-
-      <p style="font-size: 0.8rem; color: var(--text-dim);">
-        * Institutional Policy: Thresholds and factor weights are configurable by the faculty administration in accordance with university Continuous Internal Assessment guidelines.
-      </p>
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-primary btn-sm" data-modal-close>Understood</button>

@@ -102,7 +102,7 @@ async function getStudentById(req, res) {
 // POST /api/students
 async function createStudent(req, res) {
   try {
-    const { register_number, name, email, phone, department, year, semester, gpa, cgpa, attendance_percentage, academic_score, risk_level, bio } = req.body;
+    const { register_number, name, email, phone, department, year, semester, bio, avatar } = req.body;
 
     if (!register_number || !name || !email || !department) {
       return res.status(400).json({
@@ -114,16 +114,18 @@ async function createStudent(req, res) {
     // Insert user first
     const temporaryPassword = crypto.randomBytes(8).toString('base64url');
     const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    const photoToSave = avatar || null;
+
     const [userRes] = await db.query(
-      'INSERT INTO users (name, email, register_number, password, role) VALUES (?, ?, ?, ?, ?)',
-      [name, email, register_number, passwordHash, 'student']
+      'INSERT INTO users (name, email, register_number, password, role, avatar) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, email, register_number, passwordHash, 'student', photoToSave]
     );
 
-    const userId = userRes.insertId || 10;
+    const userId = userRes.insertId;
 
     const [result] = await db.query(
-      `INSERT INTO students (user_id, register_number, name, email, phone, department_id, program_id, current_semester_id, year, semester, academic_year, bio)
-       SELECT ?, ?, ?, ?, ?, d.id, (SELECT MIN(p.id) FROM programs p WHERE p.department_id=d.id), sem.id, ?, ?, ay.label, ?
+      `INSERT INTO students (user_id, register_number, name, email, phone, department_id, program_id, current_semester_id, year, semester, academic_year, bio, avatar)
+       SELECT ?, ?, ?, ?, ?, d.id, (SELECT MIN(p.id) FROM programs p WHERE p.department_id=d.id), sem.id, ?, ?, ay.label, ?, ?
        FROM departments d JOIN academic_years ay ON ay.label='2026-2027' JOIN semesters sem ON sem.academic_year_id=ay.id AND sem.semester_number=1 WHERE d.name=?`,
       [
         userId,
@@ -133,7 +135,8 @@ async function createStudent(req, res) {
         phone || null,
         year || 'III Year',
         semester || 'Semester 1',
-        bio || 'Newly enrolled student.',
+        bio || 'Newly enrolled undergraduate student.',
+        photoToSave,
         department
       ]
     );
@@ -154,19 +157,72 @@ async function createStudent(req, res) {
 async function updateStudent(req, res) {
   try {
     const id = parseInt(req.params.id, 10);
-    const { name, email, phone, department, year, bio, gpa, attendance_percentage, risk_level } = req.body;
+
+    // If student user: least-privilege enforcement
+    if (req.user && req.user.role === 'student') {
+      const { phone, bio, avatar } = req.body;
+      const updates = [];
+      const params = [];
+
+      if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
+      if (bio !== undefined) { updates.push('bio = ?'); params.push(bio); }
+      if (avatar !== undefined) { updates.push('avatar = ?'); params.push(avatar); }
+
+      if (updates.length > 0) {
+        params.push(id);
+        await db.query(`UPDATE students SET ${updates.join(', ')} WHERE id = ?`, params);
+
+        if (avatar !== undefined) {
+          const [st] = await db.query('SELECT user_id FROM students WHERE id = ?', [id]);
+          if (st.length > 0) {
+            await db.query('UPDATE users SET avatar = ? WHERE id = ?', [avatar, st[0].user_id]);
+          }
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Student profile updated successfully (permitted fields: phone, bio, avatar).'
+      });
+    }
+
+    // If faculty/HOD: ensure department scope
+    if (req.user && req.user.role === 'faculty') {
+      const [st] = await db.query('SELECT department_id FROM students WHERE id = ?', [id]);
+      if (st.length === 0) return res.status(404).json({ success: false, message: 'Student not found.' });
+      if (req.user.departmentId && st[0].department_id !== req.user.departmentId) {
+        return res.status(403).json({ success: false, message: 'Access denied: Student is outside your department.' });
+      }
+    }
+
+    // Admin full update
+    const { name, email, phone, department, year, bio, avatar } = req.body;
 
     await db.query(
-      `UPDATE students st JOIN departments d ON d.name=?
-       SET st.name=?,st.email=?,st.phone=?,st.department_id=d.id,st.program_id=(SELECT MIN(p.id) FROM programs p WHERE p.department_id=d.id),st.year=? WHERE st.id=?`,
-      [department, name, email, phone || null, year, id]
+      `UPDATE students st 
+       LEFT JOIN departments d ON d.name = ?
+       SET st.name = COALESCE(?, st.name),
+           st.email = COALESCE(?, st.email),
+           st.phone = ?,
+           st.department_id = COALESCE(d.id, st.department_id),
+           st.year = COALESCE(?, st.year),
+           st.bio = COALESCE(?, st.bio),
+           st.avatar = COALESCE(?, st.avatar)
+       WHERE st.id = ?`,
+      [department, name, email, phone || null, year, bio, avatar, id]
     );
-    const [student] = await db.query('SELECT user_id FROM students WHERE id=?', [id]);
-    if (student.length) await db.query('UPDATE users SET name=?,email=? WHERE id=?', [name,email,student[0].user_id]);
+
+    const [student] = await db.query('SELECT user_id FROM students WHERE id = ?', [id]);
+    if (student.length && (name || email || avatar)) {
+      await db.query(
+        'UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), avatar = COALESCE(?, avatar) WHERE id = ?',
+        [name, email, avatar, student[0].user_id]
+      );
+    }
 
     return res.status(200).json({
       success: true,
-      message: 'Student details updated successfully.'
+      message: 'Student details updated successfully by administrator.'
     });
   } catch (error) {
     console.error('[Student Update Error]', error);

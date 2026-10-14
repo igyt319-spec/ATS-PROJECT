@@ -12,39 +12,14 @@ function selectRole(role) {
     tabStudent.classList.add('active');
     tabAdmin.classList.remove('active');
     label.textContent = 'Register Number / Email';
-    input.placeholder = 'e.g. ATS001 or student@ats.com';
+    input.placeholder = 'e.g. BITD0001 or student@ats.com';
   } else {
     tabAdmin.classList.add('active');
     tabStudent.classList.remove('active');
     label.textContent = 'Faculty / Admin Email';
-    input.placeholder = 'e.g. admin@ats.com';
+    input.placeholder = 'e.g. faculty.cse@example.test or admin@ats.com';
   }
   hideError();
-}
-
-function fillDemoCredentials(role) {
-  selectRole(role === 'admin' ? 'admin' : 'student');
-  const identifierInput = document.getElementById('login-identifier');
-  const passwordInput = document.getElementById('login-password');
-
-  if (role === 'student' || role === 'ats001') {
-    selectRole('student');
-    identifierInput.value = 'ATS001';
-    passwordInput.value = 'student123';
-  } else if (role === 'bitd0001') {
-    selectRole('student');
-    identifierInput.value = 'BITD0001';
-    passwordInput.value = 'student123';
-  } else if (role === 'faculty') {
-    selectRole('admin');
-    identifierInput.value = 'FAC-CSE';
-    passwordInput.value = 'faculty123';
-  } else {
-    selectRole('admin');
-    identifierInput.value = 'admin@ats.com';
-    passwordInput.value = 'admin123';
-  }
-  showToast(`Auto-filled ${role.toUpperCase()} credentials. Click Sign In!`, 'info');
 }
 
 function showError(msg) {
@@ -58,20 +33,22 @@ function hideError() {
   el.style.display = 'none';
 }
 
+function getRoleRedirect(user) {
+  if (!user) return 'login.html';
+  if (user.role === 'admin') return 'admin-dashboard.html';
+  if (user.role === 'faculty') {
+    if (user.facultyRole === 'hod') return 'hod-dashboard.html';
+    return 'mentor-dashboard.html';
+  }
+  return 'dashboard.html';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // If already logged in, redirect appropriately
+  // If already logged in, redirect appropriately based on role
   const existingUser = getCurrentUser();
   if (existingUser && getToken()) {
-    if (existingUser.role === 'admin') {
-      window.location.href = 'admin-dashboard.html';
-      return;
-    } else if (existingUser.role === 'student') {
-      window.location.href = 'dashboard.html';
-      return;
-    } else {
-      window.location.href = 'admin-dashboard.html';
-      return;
-    }
+    window.location.href = getRoleRedirect(existingUser);
+    return;
   }
 
   // Toggle Password Visibility
@@ -133,18 +110,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Success
       setSession(data.token, data.user);
-      showToast(`Welcome, ${data.user.name}! Redirecting to dashboard...`, 'success');
+      showToast(`Welcome, ${data.user.name}! Redirecting...`, 'success');
 
-      // Success visual animation
+      // Success visual feedback
       btnSubmit.style.background = 'linear-gradient(135deg, #10b981, #059669)';
       btnSpinner.textContent = 'Access Granted ✓';
 
+      const targetUrl = getRoleRedirect(data.user);
+
       setTimeout(() => {
-        if (data.user.role === 'admin' || data.user.role === 'faculty') {
-          window.location.href = 'admin-dashboard.html';
-        } else {
-          window.location.href = 'dashboard.html';
-        }
+        window.location.href = targetUrl;
       }, 700);
 
     } catch (err) {
@@ -160,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Forgot Password Demo Form
+  // Forgot Password Form
   const forgotForm = document.getElementById('forgot-form');
   if (forgotForm) {
     forgotForm.addEventListener('submit', async (e) => {

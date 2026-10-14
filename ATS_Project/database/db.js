@@ -1,3 +1,14 @@
+const dns = require('dns');
+try {
+  dns.setDefaultResultOrder('ipv4first');
+  const origLookup = dns.lookup;
+  dns.lookup = function(hostname, options, callback) {
+    if (typeof options === 'function') { callback = options; options = {}; }
+    options = Object.assign({}, typeof options === 'object' ? options : { hints: options });
+    if (!options.family) { options.family = 4; }
+    return origLookup.call(this, hostname, options, callback);
+  };
+} catch (e) {}
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
@@ -28,7 +39,9 @@ const connection = mysql.createPool({
   ...(ssl ? { ssl } : {}),
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 });
 
 module.exports = connection;

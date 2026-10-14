@@ -226,6 +226,11 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Profile Photo (URL or Base64)</label>
+        <input type="text" id="add-avatar" class="form-control" placeholder="https://... or data:image/... (optional)">
+      </div>
+
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
         <button type="submit" class="btn btn-primary">Save to Database</button>
@@ -278,6 +283,10 @@
             <option value="IV Year">IV Year</option>
           </select>
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Profile Photo (URL or Base64)</label>
+        <input type="text" id="edit-avatar" class="form-control" placeholder="https://... or data:image/...">
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
@@ -343,7 +352,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       year: document.getElementById('add-year').value,
       gpa: parseFloat(document.getElementById('add-gpa').value),
       attendance_percentage: parseFloat(document.getElementById('add-att').value),
-      risk_level: document.getElementById('add-risk').value
+      risk_level: document.getElementById('add-risk').value,
+      avatar: document.getElementById('add-avatar').value.trim() || null
     };
 
     try {
@@ -368,7 +378,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       email: document.getElementById('edit-email').value.trim(),
       phone: document.getElementById('edit-phone').value.trim(),
       department: document.getElementById('edit-dept').value,
-      year: document.getElementById('edit-year').value
+      year: document.getElementById('edit-year').value,
+      avatar: document.getElementById('edit-avatar').value.trim() || null
     };
 
     try {
@@ -445,12 +456,18 @@ function renderTable(students) {
 
   tbody.innerHTML = students.map(s => {
     const riskPill = s.risk_level === 'HIGH' ? 'pill-red' : s.risk_level === 'MEDIUM' ? 'pill-yellow' : 'pill-green';
+    const avatarSrc = s.avatar || getInitialsAvatar(s.name);
     return `
       <tr>
         <td><strong style="color: var(--accent-cyan); font-family: monospace;">${s.register_number}</strong></td>
         <td>
-          <div style="font-weight: 600; color: #fff;">${s.name}</div>
-          <div style="font-size: 0.76rem; color: var(--text-dim);">${s.email}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="${avatarSrc}" alt="${s.name}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);" onerror="this.src='${getInitialsAvatar(s.name)}'">
+            <div>
+              <div style="font-weight: 600; color: #fff;">${s.name}</div>
+              <div style="font-size: 0.76rem; color: var(--text-dim);">${s.email}</div>
+            </div>
+          </div>
         </td>
         <td>${s.department}</td>
         <td>${s.year}</td>
@@ -481,6 +498,7 @@ function openEditModal(id) {
   document.getElementById('edit-phone').value = student.phone || '';
   document.getElementById('edit-dept').value = student.department;
   document.getElementById('edit-year').value = student.year;
+  document.getElementById('edit-avatar').value = student.avatar || '';
 
   openModal('edit-student-modal');
 }
@@ -505,9 +523,10 @@ async function viewStudentDetails(id) {
       ? s.achievements.map(ac => `<li>🏆 <strong>${ac.title}</strong> (${ac.category})</li>`).join('')
       : '<li>No achievements recorded</li>';
 
+    const avatarSrc = s.avatar || getInitialsAvatar(s.name);
     document.getElementById('view-student-content').innerHTML = `
       <div style="display: flex; gap: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
-        <img src="${s.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);">
+        <img src="${avatarSrc}" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-cyan);" onerror="this.src='${getInitialsAvatar(s.name)}'">
         <div>
           <h4 style="font-size: 1.1rem; color: #fff;">${s.name}</h4>
           <p style="color: var(--text-muted); font-size: 0.84rem;">${s.department} • ${s.year}</p>

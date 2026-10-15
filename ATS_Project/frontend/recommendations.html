@@ -42,6 +42,7 @@
       </a>
       <a href="notifications.html" class="nav-item">
         <span class="icon">🔔</span> Notifications
+        <span class="badge" id="sidebar-notif-badge" style="display: none;">0</span>
       </a>
       <a href="profile.html" class="nav-item">
         <span class="icon">👤</span> Profile
@@ -120,6 +121,70 @@
             <strong style="color: #fff;" id="ai-comp-score">84 / 100</strong>
           </div>
         </div>
+      </div>
+
+      <!-- Explainable MCDA Multi-Criteria Decision Analysis Breakdown (Phase 9 Requirement) -->
+      <div class="glass-card" style="margin-bottom: 24px; padding: 22px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 1.02rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>⚖️</span> Explainable MCDA Heuristic Score Formulation
+            </h3>
+            <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 2px;">
+              Deterministic Formula: <strong>Academic Score = (70% × Marks) + (20% × Attendance) + (10% × Achievements)</strong>
+            </p>
+          </div>
+          <span class="kpi-pill pill-blue">Zero Black-Box Claims</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <!-- Component 1: Subject Marks 70% -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 6px;">
+              <span style="color: #38bdf8; font-weight: 600;">1. Academic Assessments (70%)</span>
+              <strong style="color: #fff;" id="mcda-marks-val">0.0 / 70 pts</strong>
+            </div>
+            <div class="progress-bar-bg" style="height: 7px; margin-bottom: 6px;">
+              <div class="progress-bar-fill" id="mcda-marks-bar" style="width: 0%; background: #38bdf8;"></div>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-dim);" id="mcda-marks-detail">Raw Subject Mean: 0.0/100</div>
+          </div>
+
+          <!-- Component 2: Attendance 20% -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 6px;">
+              <span style="color: #10b981; font-weight: 600;">2. Attendance Compliance (20%)</span>
+              <strong style="color: #fff;" id="mcda-att-val">0.0 / 20 pts</strong>
+            </div>
+            <div class="progress-bar-bg" style="height: 7px; margin-bottom: 6px;">
+              <div class="progress-bar-fill" id="mcda-att-bar" style="width: 0%; background: #10b981;"></div>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-dim);" id="mcda-att-detail">Classroom Compliance: 0.0%</div>
+          </div>
+
+          <!-- Component 3: Achievements 10% -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 6px;">
+              <span style="color: #fbbf24; font-weight: 600;">3. Co-Curricular Portfolio (10%)</span>
+              <strong style="color: #fff;" id="mcda-ach-val">0.0 / 10 pts</strong>
+            </div>
+            <div class="progress-bar-bg" style="height: 7px; margin-bottom: 6px;">
+              <div class="progress-bar-fill" id="mcda-ach-bar" style="width: 0%; background: #fbbf24;"></div>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-dim);" id="mcda-ach-detail">Verified Extracurriculars: 0 entries</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority Filter Pills & Recommendations Stream -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; gap: 8px;" id="rec-filter-pills">
+          <button class="demo-chip active" style="background: rgba(56, 189, 248, 0.35); border-color: var(--accent-cyan);" onclick="filterRecs('ALL')">All Actions</button>
+          <button class="demo-chip" onclick="filterRecs('HIGH')">🚨 High Priority</button>
+          <button class="demo-chip" onclick="filterRecs('MEDIUM')">⚠️ Medium</button>
+          <button class="demo-chip" onclick="filterRecs('LOW')">💡 Low</button>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-dim);" id="rec-filter-count">Showing all recommendations</span>
       </div>
 
       <!-- Recommendations Stream (Requirement 14) -->

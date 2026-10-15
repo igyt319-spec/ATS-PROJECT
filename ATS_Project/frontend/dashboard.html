@@ -38,7 +38,7 @@
         <span class="icon">📝</span> Leave Requests
       </a>
       <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
-        <span class="icon">💳</span> Fees & Demo Pay
+        <span class="icon">💳</span> Payment Update & Status
       </a>
       <a href="performance.html" class="nav-item">
         <span class="icon">🎯</span> Performance
@@ -113,8 +113,9 @@
             </p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openMyMiniDashboard()" id="btn-student-mini-dashboard" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-weight:700; display:flex; align-items:center; gap:6px;">📊 Mini-Dashboard</button>
             <button class="btn btn-secondary btn-sm" onclick="openModal('activity-submit-modal')">➕ Submit Activity</button>
-            <button class="btn btn-primary btn-sm" onclick="openModal('leave-apply-modal')">📝 Apply Leave</button>
+            <button class="btn btn-secondary btn-sm" onclick="openModal('leave-apply-modal')">📝 Apply Leave</button>
           </div>
         </div>
       </div>
@@ -188,7 +189,7 @@
           </div>
         </div>
 
-        <div class="kpi-card">
+        <div class="kpi-card" style="cursor: pointer;" onclick="openModal('risk-criteria-modal')" title="Click to view transparent risk criteria">
           <div class="kpi-top">
             <span class="kpi-title">Risk Standing</span>
             <div class="kpi-icon" id="kpi-risk-icon">🛡️</div>
@@ -196,6 +197,7 @@
           <div class="kpi-value" id="kpi-risk" style="color: #34d399;">LOW</div>
           <div class="kpi-subtitle">
             <span class="kpi-pill pill-green" id="kpi-risk-pill">Safe Track</span>
+            <span style="font-size: 0.72rem; color: var(--text-dim);" id="kpi-risk-threshold-hint">Att ≥ 75% • CGPA ≥ 6.0</span>
           </div>
         </div>
       </div>
@@ -304,11 +306,35 @@
       <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
         <div class="card-header">
           <div class="card-title-group">
-            <h3>💳 Academic Fee Obligations & Demo Payment Gateway</h3>
-            <p>Semester tuition, hostel, exam fees, and simulated payment gateway</p>
+            <h3>💳 PAYMENT UPDATE & PAYMENT STATUS</h3>
+            <p>Institutional fee assessments, balance settlement, simulated payments, and official transaction history</p>
           </div>
           <div id="fee-balance-badge" style="font-size: 0.95rem; font-weight: 700; color: #f87171;">
             Balance: ₹0
+          </div>
+        </div>
+
+        <!-- Payment Metrics Summary Row -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Total Amount Due</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 4px;" id="fee-summary-total-due">₹0</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Assessed Fee Total</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Amount Paid</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="fee-summary-total-paid">₹0</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Verified Receipts</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Outstanding Balance</div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #f87171; margin-top: 4px;" id="fee-summary-total-balance">₹0</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Immediate Payable</div>
+          </div>
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 18px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Next Due Date</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: #38bdf8; margin-top: 4px;" id="fee-summary-due-date">—</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Deadline for Current Cycle</div>
           </div>
         </div>
 
@@ -740,6 +766,57 @@
     </div>
     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
       <button class="btn btn-primary btn-sm" data-modal-close>Understood</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 6: Transparent Academic Risk Criteria Modal -->
+<div class="modal-backdrop" id="risk-criteria-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">🛡️ Academic Risk Standing Criteria</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+      <p style="margin-bottom: 12px;">
+        Institutional standing is determined through transparent academic compliance thresholds:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <div style="background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 8px; padding: 12px 16px;">
+          <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">🟢 LOW RISK (Safe Track)</div>
+          <div style="font-size: 0.82rem; color: #cbd5e1;">Attendance ≥ 85% and CGPA ≥ 7.00, or Attendance ≥ 75% and CGPA ≥ 6.00 with no active risk interventions.</div>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 12px 16px;">
+          <div style="font-weight: 700; color: #f59e0b; margin-bottom: 4px;">🟡 MODERATE RISK (Monitor Closely)</div>
+          <div style="font-size: 0.82rem; color: #cbd5e1;">Attendance between 75.00% and 84.99% OR CGPA between 6.00 and 6.99. Faculty mentor proactive advising recommended.</div>
+        </div>
+
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px 16px;">
+          <div style="font-weight: 700; color: #ef4444; margin-bottom: 4px;">🔴 HIGH RISK (Critical Action)</div>
+          <div style="font-size: 0.82rem; color: #cbd5e1;">Attendance &lt; 75% (violates university exam eligibility) OR CGPA &lt; 6.00. Immediate mentor conference required.</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 16px;">
+        <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;">Your Verified Standing</div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+          <span>Overall Attendance:</span>
+          <strong id="risk-modal-att-val">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 4px;">
+          <span>Cumulative GPA (CGPA):</span>
+          <strong id="risk-modal-cgpa-val">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 4px; border-top: 1px solid var(--border-color); padding-top: 6px;">
+          <span>Classified Status:</span>
+          <strong id="risk-modal-status-val" style="color: #34d399;">LOW RISK</strong>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+      <button class="btn btn-primary btn-sm" data-modal-close>Close</button>
     </div>
   </div>
 </div>

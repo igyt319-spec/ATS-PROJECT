@@ -40,7 +40,7 @@ async function loadChatHistory() {
     } else {
       // Welcome bubble
       box.innerHTML = '';
-      appendMessageBubble('bot', `Hello! I am your AI Academic Assistant 🤖. I have real-time access to your Semester 5 marks, subject attendance records, and verified achievements.\n\nClick any of the suggested prompt chips below or type a custom question to get started!`);
+      appendMessageBubble('bot', `Hello! I am your AI Academic Assistant 🤖. I have real-time access to your semester marks, subject attendance compliance, institutional fee status, faculty mentor details, and verified achievements.\n\nClick any of the suggested prompt chips below or type a custom question to get started!`);
       scrollToBottom();
     }
   } catch (err) {

@@ -57,10 +57,16 @@ async function populateAttendanceSubjects() {
   } catch (error) { console.error('[Subject Catalog Error]', error); }
 }
 
+let allAttendanceRecords = [];
+let overallAttendanceMetrics = {};
+
 async function loadAttendanceData(sId) {
   try {
     const res = await apiCall(`/attendance/${sId}`);
     if (!res.success) throw new Error(res.message);
+
+    overallAttendanceMetrics = res;
+    allAttendanceRecords = res.data || [];
 
     const { overallPercentage, overallStatus, totalClasses, attendedClasses, hasRiskAlert, atRiskSubjects, monthlyTrend, data } = res;
 
@@ -95,8 +101,12 @@ async function loadAttendanceData(sId) {
       alertBanner.style.display = 'none';
     }
 
-    // Render Table & Chart
+    // Populate Calculator Subject Dropdown
+    populateCalculatorDropdown(allAttendanceRecords);
+
+    // Render Table, Recovery Calculator & Chart
     renderAttendanceTable(data);
+    updateRecoveryCalculator();
     renderMonthlyChart(monthlyTrend);
 
   } catch (err) {
@@ -105,10 +115,151 @@ async function loadAttendanceData(sId) {
   }
 }
 
+function populateCalculatorDropdown(records) {
+  const select = document.getElementById('calc-subject-select');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '<option value="OVERALL">Overall Aggregate Attendance</option>' +
+    (records || []).map(r => `<option value="${r.subject_id}">${r.subject_name || 'Subject'}</option>`).join('');
+  if (currentVal) select.value = currentVal;
+}
+
+function updateRecoveryCalculator() {
+  const select = document.getElementById('calc-subject-select');
+  const scope = select ? select.value : 'OVERALL';
+
+  let total = 0;
+  let attended = 0;
+  let pct = 0;
+  let status = 'GOOD';
+  let needed75 = 0;
+  let needed85 = 0;
+  let bunkBuffer = 0;
+
+  if (scope === 'OVERALL') {
+    total = overallAttendanceMetrics.totalClasses || 0;
+    attended = overallAttendanceMetrics.attendedClasses || 0;
+    pct = overallAttendanceMetrics.overallPercentage || 0;
+    status = overallAttendanceMetrics.overallStatus || 'GOOD';
+    needed75 = overallAttendanceMetrics.overallClassesNeededFor75 || 0;
+    needed85 = overallAttendanceMetrics.overallClassesNeededFor85 || 0;
+    bunkBuffer = overallAttendanceMetrics.overallBunkBuffer75 || 0;
+  } else {
+    const rec = allAttendanceRecords.find(r => String(r.subject_id) === String(scope));
+    if (rec) {
+      total = rec.total_classes;
+      attended = rec.attended_classes;
+      pct = rec.percentage;
+      status = rec.status;
+      needed75 = rec.classesNeededFor75 || 0;
+      needed85 = rec.classesNeededFor85 || 0;
+      bunkBuffer = rec.bunkBuffer75 || 0;
+    }
+  }
+
+  // Update Calculator Tiles
+  const pctEl = document.getElementById('calc-current-pct');
+  const statusEl = document.getElementById('calc-current-status');
+  if (pctEl) pctEl.textContent = `${pct.toFixed(1)}%`;
+  if (statusEl) {
+    statusEl.textContent = status;
+    statusEl.className = status === 'GOOD' ? 'kpi-pill pill-green' : status === 'MONITOR' ? 'kpi-pill pill-yellow' : 'kpi-pill pill-red';
+  }
+
+  const n75El = document.getElementById('calc-needed-75');
+  const d75El = document.getElementById('calc-detail-75');
+  if (n75El && d75El) {
+    if (needed75 > 0) {
+      n75El.textContent = `🚨 +${needed75} consecutive`;
+      n75El.style.color = '#ef4444';
+      d75El.textContent = `Shortage active: must attend next ${needed75} classes`;
+    } else {
+      n75El.textContent = 'Eligible ✓';
+      n75El.style.color = '#34d399';
+      d75El.textContent = 'Condonation & detention threshold cleared';
+    }
+  }
+
+  const n85El = document.getElementById('calc-needed-85');
+  const d85El = document.getElementById('calc-detail-85');
+  if (n85El && d85El) {
+    if (needed85 > 0) {
+      n85El.textContent = `+${needed85} lectures`;
+      n85El.style.color = '#38bdf8';
+      d85El.textContent = `Required to enter Good Standing (85%)`;
+    } else {
+      n85El.textContent = 'Target Met ✓';
+      n85El.style.color = '#34d399';
+      d85El.textContent = 'Maximum continuous assessment points secured';
+    }
+  }
+
+  const bufEl = document.getElementById('calc-bunk-buffer');
+  const dBufEl = document.getElementById('calc-detail-buffer');
+  if (bufEl && dBufEl) {
+    if (pct < 75) {
+      bufEl.textContent = '0 lectures';
+      bufEl.style.color = '#ef4444';
+      dBufEl.textContent = 'Zero permissible absence margin (detention risk)';
+    } else {
+      bufEl.textContent = `${bunkBuffer} lecture${bunkBuffer === 1 ? '' : 's'}`;
+      bufEl.style.color = '#fbbf24';
+      dBufEl.textContent = `Can be missed without dropping below 75%`;
+    }
+  }
+
+  runWhatIfSimulation();
+}
+
+function runWhatIfSimulation() {
+  const select = document.getElementById('calc-subject-select');
+  const scope = select ? select.value : 'OVERALL';
+
+  let currentTotal = 0;
+  let currentAttended = 0;
+
+  if (scope === 'OVERALL') {
+    currentTotal = overallAttendanceMetrics.totalClasses || 0;
+    currentAttended = overallAttendanceMetrics.attendedClasses || 0;
+  } else {
+    const rec = allAttendanceRecords.find(r => String(r.subject_id) === String(scope));
+    if (rec) {
+      currentTotal = rec.total_classes;
+      currentAttended = rec.attended_classes;
+    }
+  }
+
+  const upcoming = parseInt(document.getElementById('sim-upcoming')?.value || 10, 10);
+  const willAttend = parseInt(document.getElementById('sim-attend')?.value || 9, 10);
+
+  const safeAttend = Math.min(upcoming, Math.max(0, willAttend));
+  const newTotal = currentTotal + upcoming;
+  const newAttended = currentAttended + safeAttend;
+
+  const projectedPct = newTotal > 0 ? parseFloat(((newAttended / newTotal) * 100).toFixed(1)) : 0;
+
+  const resPctEl = document.getElementById('sim-result-pct');
+  const resStatusEl = document.getElementById('sim-result-status');
+
+  if (resPctEl) resPctEl.textContent = `${projectedPct.toFixed(1)}%`;
+  if (resStatusEl) {
+    if (projectedPct >= 85) {
+      resStatusEl.textContent = 'EXCELLENT';
+      resStatusEl.className = 'kpi-pill pill-green';
+    } else if (projectedPct >= 75) {
+      resStatusEl.textContent = 'SAFE (ELIGIBLE)';
+      resStatusEl.className = 'kpi-pill pill-green';
+    } else {
+      resStatusEl.textContent = 'DETENTION RISK';
+      resStatusEl.className = 'kpi-pill pill-red';
+    }
+  }
+}
+
 function renderAttendanceTable(records) {
   const tbody = document.getElementById('attendance-table-body');
   if (!records || records.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 24px;">No attendance logged for this student.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 24px;">No attendance logged for this student.</td></tr>`;
     return;
   }
 
@@ -117,7 +268,11 @@ function renderAttendanceTable(records) {
     const statusPill = r.status === 'GOOD' ? 'pill-green' : r.status === 'MONITOR' ? 'pill-yellow' : 'pill-red';
     const barColor = r.status === 'GOOD' ? '#10b981' : r.status === 'MONITOR' ? '#f59e0b' : '#ef4444';
     
-    const neededText = r.classesNeededFor85 > 0 
+    const needed75Text = r.classesNeededFor75 > 0
+      ? `<span style="color: #ef4444; font-weight: 700;">🚨 +${r.classesNeededFor75} lectures</span>`
+      : `<span style="color: #34d399; font-weight: 600;">✓ Safe (Bunk: ${r.bunkBuffer75} classes)</span>`;
+
+    const needed85Text = r.classesNeededFor85 > 0 
       ? `<span style="color: #fbbf24; font-weight: 600;">+${r.classesNeededFor85} lectures</span>`
       : `<span style="color: #34d399; font-weight: 500;">✓ Target Met</span>`;
 
@@ -135,7 +290,8 @@ function renderAttendanceTable(records) {
         </td>
         <td><strong>${r.percentage}%</strong></td>
         <td><span class="kpi-pill ${statusPill}">${r.status}</span></td>
-        <td>${neededText}</td>
+        <td>${needed75Text}</td>
+        <td>${needed85Text}</td>
       </tr>
     `;
   }).join('');

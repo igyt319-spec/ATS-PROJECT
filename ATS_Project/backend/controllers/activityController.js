@@ -283,6 +283,59 @@ async function verifyActivity(req, res) {
       [status, remarks || null, req.user.id, id]
     );
 
+    // If verified, synchronize to achievements table and dispatch notification
+    if (status === 'Verified') {
+      try {
+        const [existingAch] = await db.query(
+          'SELECT id FROM achievements WHERE student_id = ? AND title = ?',
+          [activity.student_id, activity.title]
+        );
+        function mapToAchCat(c) {
+          if (!c) return 'Technical Competition';
+          const s = String(c).toLowerCase().trim();
+          if (s.includes('hackathon')) return 'Hackathon';
+          if (s.includes('paper')) return 'Paper Presentation';
+          if (s.includes('competition') || s.includes('contest') || s.includes('hack')) return 'Technical Competition';
+          if (s.includes('workshop') || s.includes('seminar') || s.includes('webinar')) return 'Workshop';
+          if (s.includes('sport') || s.includes('athletic')) return 'Sports';
+          if (s.includes('nptel') || s.includes('cert') || s.includes('course') || s.includes('ieee') || s.includes('training')) return 'Certification';
+          return 'Technical Competition';
+        }
+
+        if (existingAch.length === 0) {
+          await db.query(
+            `INSERT INTO achievements (student_id, title, category, achievement_date, description, certificate_url, status)
+             VALUES (?, ?, ?, COALESCE(?, CURDATE()), ?, ?, 'Verified')`,
+            [
+              activity.student_id,
+              activity.title,
+              mapToAchCat(activity.category),
+              activity.event_date,
+              activity.description || 'Verified student co-curricular contribution',
+              activity.certificate_url || '',
+            ]
+          );
+        }
+        await db.query(
+          `INSERT INTO notifications (student_id, type, title, message)
+           VALUES (?, 'achievement', 'Activity Verified', ?)`,
+          [activity.student_id, `Your activity "${activity.title}" (${activity.category}) has been verified by your mentor.`]
+        );
+      } catch (syncErr) {
+        console.error('[Activity-Achievement Sync Notice]', syncErr.message);
+      }
+    } else if (status === 'Rejected') {
+      try {
+        await db.query(
+          `INSERT INTO notifications (student_id, type, title, message)
+           VALUES (?, 'achievement', 'Activity Review Update', ?)`,
+          [activity.student_id, `Your activity submission "${activity.title}" was reviewed: ${remarks || 'Revision requested by mentor'}.`]
+        );
+      } catch (notifErr) {
+        console.error('[Activity Rejection Notif Error]', notifErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       message: `Activity marked as ${status} successfully.`

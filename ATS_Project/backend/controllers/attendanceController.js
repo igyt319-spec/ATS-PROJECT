@@ -38,17 +38,31 @@ async function getAttendanceByStudent(req, res) {
       totalClassesSum += total;
       attendedClassesSum += attended;
 
-      // Calculate classes needed to achieve 85% if below 85%
+      // Calculate recovery metrics
+      let classesNeededFor75 = 0;
       let classesNeededFor85 = 0;
-      if (pct < 85 && total > 0) {
-        // (attended + x) / (total + x) >= 0.85 => x >= (0.85*total - attended) / 0.15
-        classesNeededFor85 = Math.ceil(Math.max(0, (0.85 * total - attended) / 0.15));
+      let bunkBuffer75 = 0;
+
+      if (total > 0) {
+        if (pct < 75) {
+          // (attended + x) / (total + x) >= 0.75 => x >= (0.75*total - attended) / 0.25
+          classesNeededFor75 = Math.ceil(Math.max(0, (0.75 * total - attended) / 0.25));
+        }
+        if (pct < 85) {
+          // (attended + x) / (total + x) >= 0.85 => x >= (0.85*total - attended) / 0.15
+          classesNeededFor85 = Math.ceil(Math.max(0, (0.85 * total - attended) / 0.15));
+        }
+        if (pct >= 75) {
+          // attended / (total + m) >= 0.75 => m <= (attended - 0.75*total) / 0.75
+          bunkBuffer75 = Math.floor(Math.max(0, (attended - 0.75 * total) / 0.75));
+        }
       }
 
       if (status === 'RISK') {
         atRiskSubjects.push({
           subject_name: r.subject_name || 'Subject',
-          percentage: pct
+          percentage: pct,
+          classesNeededFor75
         });
       }
 
@@ -58,7 +72,9 @@ async function getAttendanceByStudent(req, res) {
         attended_classes: attended,
         percentage: pct,
         status,
-        classesNeededFor85
+        classesNeededFor75,
+        classesNeededFor85,
+        bunkBuffer75
       };
     });
 
@@ -67,6 +83,16 @@ async function getAttendanceByStudent(req, res) {
       : 0;
 
     const overallStatus = statusFromRules(overallPercentage, thresholds);
+
+    const overallClassesNeededFor75 = overallPercentage < 75 && totalClassesSum > 0
+      ? Math.ceil(Math.max(0, (0.75 * totalClassesSum - attendedClassesSum) / 0.25))
+      : 0;
+    const overallClassesNeededFor85 = overallPercentage < 85 && totalClassesSum > 0
+      ? Math.ceil(Math.max(0, (0.85 * totalClassesSum - attendedClassesSum) / 0.15))
+      : 0;
+    const overallBunkBuffer75 = overallPercentage >= 75 && totalClassesSum > 0
+      ? Math.floor(Math.max(0, (attendedClassesSum - 0.75 * totalClassesSum) / 0.75))
+      : 0;
 
     const [history] = await db.query('SELECT se.semester_number, SUM(a.classes_attended) attended, SUM(a.classes_conducted) conducted FROM attendance a JOIN semesters se ON se.id=a.semester_id WHERE a.student_id=? GROUP BY se.semester_number ORDER BY se.semester_number', [studentId]);
     const monthlyTrend = history.map(r => ({ month: `Semester ${r.semester_number}`, percentage: Number(r.conducted) ? Number((100*r.attended/r.conducted).toFixed(2)) : 0 }));
@@ -77,6 +103,9 @@ async function getAttendanceByStudent(req, res) {
       overallStatus,
       totalClasses: totalClassesSum,
       attendedClasses: attendedClassesSum,
+      overallClassesNeededFor75,
+      overallClassesNeededFor85,
+      overallBunkBuffer75,
       hasRiskAlert: atRiskSubjects.length > 0 || overallStatus === 'RISK',
       atRiskSubjects,
       monthlyTrend,

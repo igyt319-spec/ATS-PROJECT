@@ -37,6 +37,18 @@ async function getAllAchievements(req, res) {
   }
 }
 
+function mapToAchievementCategory(cat) {
+  if (!cat) return 'Technical Competition';
+  const c = String(cat).toLowerCase().trim();
+  if (c.includes('hackathon')) return 'Hackathon';
+  if (c.includes('paper')) return 'Paper Presentation';
+  if (c.includes('competition') || c.includes('contest') || c.includes('hack')) return 'Technical Competition';
+  if (c.includes('workshop') || c.includes('seminar') || c.includes('webinar')) return 'Workshop';
+  if (c.includes('sport') || c.includes('athletic')) return 'Sports';
+  if (c.includes('nptel') || c.includes('cert') || c.includes('course') || c.includes('ieee') || c.includes('training')) return 'Certification';
+  return 'Technical Competition';
+}
+
 // POST /api/achievements
 async function addAchievement(req, res) {
   try {
@@ -49,13 +61,15 @@ async function addAchievement(req, res) {
       });
     }
 
+    const normalizedCategory = mapToAchievementCategory(category);
+
     const [result] = await db.query(
       `INSERT INTO achievements (student_id, title, category, achievement_date, description, certificate_url, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         student_id || 1,
         title,
-        category,
+        normalizedCategory,
         achievement_date,
         description || '',
         certificate_url || '',

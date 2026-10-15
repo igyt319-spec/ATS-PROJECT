@@ -64,6 +64,69 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Exam / Lab Upload Form Submit (Phase 5)
+  const examLabForm = document.getElementById('exam-lab-upload-form');
+  if (examLabForm) {
+    examLabForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const studentId = parseInt(document.getElementById('exam-lab-student-id').value, 10);
+      const assessmentType = document.getElementById('exam-lab-type').value;
+      const academicYear = document.getElementById('exam-lab-academic-year').value.trim() || '2026-2027';
+      const assessmentName = document.getElementById('exam-lab-name').value.trim();
+      const subjectText = document.getElementById('exam-lab-subject').value.trim();
+      const marksObtained = parseFloat(document.getElementById('exam-lab-marks').value);
+      const maxMarks = parseFloat(document.getElementById('exam-lab-max-marks').value);
+      const isPublished = document.getElementById('exam-lab-publish').checked ? 1 : 0;
+      const btn = document.getElementById('btn-submit-exam-lab');
+
+      // Validation
+      if (isNaN(marksObtained) || marksObtained < 0) {
+        showToast('Marks obtained must be a non-negative number.', 'error');
+        return;
+      }
+      if (isNaN(maxMarks) || maxMarks <= 0) {
+        showToast('Maximum marks must be greater than zero.', 'error');
+        return;
+      }
+      if (marksObtained > maxMarks) {
+        showToast(`Marks obtained (${marksObtained}) cannot exceed Maximum marks (${maxMarks}).`, 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Recording & Publishing... ⏳';
+
+      try {
+        const payload = {
+          student_id: studentId,
+          assessment_type: assessmentType,
+          assessment_name: assessmentName,
+          subject_name: subjectText,
+          marks_obtained: marksObtained,
+          max_marks: maxMarks,
+          academic_year: academicYear,
+          is_published: isPublished
+        };
+
+        const res = await apiCall('/results', 'POST', payload);
+        showToast(res.message || 'Academic assessment record created successfully!', 'success');
+        closeModal('exam-lab-upload-modal');
+        examLabForm.reset();
+
+        // Refresh mentee list and results table
+        await Promise.all([
+          loadMentees(),
+          loadResults()
+        ]);
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Record & Publish';
+      }
+    });
+  }
 });
 
 async function loadAllMentorData() {
@@ -101,7 +164,7 @@ function renderMenteesTable(list) {
   if (!list || list.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 48px 24px; color: var(--text-dim);">
+        <td colspan="9" style="text-align: center; padding: 48px 24px; color: var(--text-dim);">
           <div style="font-size: 2.6rem; margin-bottom: 10px;">👥</div>
           <div style="color: #fff; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">No Mentees Assigned</div>
           <div style="font-size: 0.82rem; max-width: 380px; margin: 0 auto; color: var(--text-dim);">
@@ -120,6 +183,31 @@ function renderMenteesTable(list) {
       ? `<span class="kpi-pill pill-red">₹${feeDue.toLocaleString('en-IN')}</span>` 
       : `<span class="kpi-pill pill-green">Clear</span>`;
 
+    // Attendance formatting & pill
+    const attVal = Number(m.attendance_percentage || 0);
+    const attPill = attVal >= 85 
+      ? `<span class="kpi-pill pill-green">${attVal.toFixed(0)}%</span>` 
+      : (attVal >= 75 ? `<span class="kpi-pill pill-yellow">${attVal.toFixed(0)}%</span>` : `<span class="kpi-pill pill-red">${attVal.toFixed(0)}%</span>`);
+
+    // Risk standing pill
+    const risk = (m.risk_level || 'LOW').toUpperCase();
+    const riskPill = risk === 'HIGH'
+      ? `<span class="kpi-pill pill-red">🔴 High Risk</span>`
+      : (risk === 'MEDIUM' ? `<span class="kpi-pill pill-yellow">🟡 Moderate</span>` : `<span class="kpi-pill pill-green">🟢 Low Risk</span>`);
+
+    // Pending assessments & requests summary
+    const pendingLeaves = Number(m.pending_leaves || 0);
+    const pendingActs = Number(m.pending_activities || 0);
+    const pendingResults = Number(m.pending_results || 0);
+    const totalPending = pendingLeaves + pendingActs + pendingResults;
+    const pendingHtml = totalPending > 0
+      ? `<div style="font-size: 0.76rem;">
+           ${pendingLeaves > 0 ? `<span class="kpi-pill pill-yellow" style="margin-right:2px;">${pendingLeaves} Leaves</span>` : ''}
+           ${pendingActs > 0 ? `<span class="kpi-pill pill-purple" style="margin-right:2px;">${pendingActs} Acts</span>` : ''}
+           ${pendingResults > 0 ? `<span class="kpi-pill pill-blue">${pendingResults} Results</span>` : ''}
+         </div>`
+      : `<span style="font-size: 0.78rem; color: #34d399;">Up to date ✓</span>`;
+
     return `
       <tr>
         <td>
@@ -131,25 +219,60 @@ function renderMenteesTable(list) {
             </div>
           </div>
         </td>
-        <td><strong style="color: var(--accent-cyan);">${m.register_number}</strong></td>
-        <td>${m.department_name || 'CSE'}<br><span style="font-size: 0.76rem; color: var(--text-dim);">${m.year || 'III Year'}</span></td>
-        <td>${m.phone || '—'}</td>
-        <td>
-          ${Number(m.pending_leaves) > 0 ? `<span class="kpi-pill pill-yellow">${m.pending_leaves} Pending</span>` : `<span style="color: var(--text-dim);">0</span>`}
-        </td>
-        <td>
-          ${Number(m.pending_activities) > 0 ? `<span class="kpi-pill pill-purple">${m.pending_activities} Pending</span>` : `<span style="color: var(--text-dim);">0</span>`}
-        </td>
+        <td><strong style="color: var(--accent-cyan); font-family: monospace;">${m.register_number}</strong></td>
+        <td>${m.department_name || 'Dept'}<br><span style="font-size: 0.76rem; color: var(--text-dim);">${m.year || 'III Year'}</span></td>
+        <td><strong style="color: #fff;">${Number(m.cgpa || 0).toFixed(2)}</strong></td>
+        <td>${attPill}</td>
+        <td>${riskPill}</td>
+        <td>${pendingHtml}</td>
         <td>${feeBadge}</td>
         <td>
-          <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight:700;" onclick="openStudentMiniDashboard(${m.student_id})">
-            📊 View Dashboard
-          </button>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btn-mentee-mini-${m.student_id}" style="padding: 5px 10px; font-size: 0.76rem; font-weight:700;" onclick="openStudentMiniDashboard(${m.student_id})">
+              📊 Mini-Dashboard
+            </button>
+            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.76rem; font-weight:600;" onclick="openExamLabModal(${m.student_id}, '${escapeHtml(m.student_name)}', '${m.register_number}')">
+              📝 Record Marks
+            </button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
+
+window.openExamLabModal = function(studentId, studentName, regNo) {
+  document.getElementById('exam-lab-student-id').value = studentId;
+  document.getElementById('exam-lab-modal-student-info').innerHTML = `
+    <strong>Mentee:</strong> ${studentName} &bull; <span style="font-family: monospace;">${regNo}</span>
+  `;
+  document.getElementById('exam-lab-marks').value = '';
+  document.getElementById('exam-lab-max-marks').value = '100';
+  document.getElementById('exam-lab-name').value = 'Continuous Internal Assessment 1';
+  document.getElementById('exam-lab-subject').value = '';
+  document.getElementById('exam-lab-publish').checked = true;
+  openModal('exam-lab-upload-modal');
+};
+
+window.handleAssessmentTypeChange = function() {
+  const type = document.getElementById('exam-lab-type').value;
+  const nameInput = document.getElementById('exam-lab-name');
+  const maxInput = document.getElementById('exam-lab-max-marks');
+
+  if (type === 'lab') {
+    nameInput.placeholder = 'e.g. Model Laboratory Practical Assessment';
+    nameInput.value = 'Model Laboratory Practical Assessment';
+    maxInput.value = '50';
+  } else if (type === 'internal') {
+    nameInput.placeholder = 'e.g. Continuous Internal Assessment 1';
+    nameInput.value = 'Continuous Internal Assessment 1';
+    maxInput.value = '100';
+  } else {
+    nameInput.placeholder = 'e.g. End Semester Examination';
+    nameInput.value = 'End Semester Examination';
+    maxInput.value = '100';
+  }
+};
 
 function filterMentees() {
   const query = (document.getElementById('mentee-search').value || '').toLowerCase().trim();

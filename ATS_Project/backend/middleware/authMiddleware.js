@@ -292,6 +292,16 @@ async function ownsStudentOrAssigned(req, res, next) {
   }
 
   if (req.user.role === 'student') {
+    if (!req.user.studentId) {
+      try {
+        const [stRows] = await db.query('SELECT id FROM students WHERE user_id = ? OR email = ?', [req.user.id, req.user.email]);
+        if (stRows && stRows.length > 0) {
+          req.user.studentId = stRows[0].id;
+        }
+      } catch (err) {
+        console.error('[ownsStudentOrAssigned studentId resolution error]', err);
+      }
+    }
     if (requestedId === Number(req.user.studentId)) {
       return next();
     }

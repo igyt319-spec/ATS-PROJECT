@@ -148,7 +148,19 @@ function runFallbackAnalysis(student, marks, attendance, achievements) {
     falling_subjects: fallingSubjects,
     semester_trend: semesterTrend,
     recommendations,
-    explanation: 'Calculated using 70% weighted subject performance, 20% attendance compliance, and 10% co-curricular achievement factor.'
+    explanation: 'Calculated using 70% weighted subject performance, 20% attendance compliance, and 10% co-curricular achievement factor.',
+    mcda_components: {
+      marks_weight: 0.70,
+      marks_score: parseFloat(avgMarks.toFixed(1)),
+      marks_weighted: parseFloat((0.70 * avgMarks).toFixed(1)),
+      attendance_weight: 0.20,
+      attendance_score: parseFloat(attPct.toFixed(1)),
+      attendance_weighted: parseFloat((0.20 * attPct).toFixed(1)),
+      achievements_weight: 0.10,
+      achievements_score: parseFloat(achievementNorm.toFixed(1)),
+      achievements_weighted: parseFloat((0.10 * achievementNorm).toFixed(1)),
+      composite_score: compositeScore
+    }
   };
 }
 
@@ -188,6 +200,29 @@ async function getAnalysis(req, res) {
 
     try {
       const pyResult = await executePythonScript(pythonScript, payload);
+      // Ensure mcda_components are present in python output or supplemented
+      if (!pyResult.mcda_components) {
+        const avgM = pyResult.statistical_metrics?.mean != null 
+          ? Number(pyResult.statistical_metrics.mean) 
+          : (marks.length > 0 ? marks.reduce((sum, m) => sum + parseFloat(m.total_marks || 0), 0) / marks.length : 0);
+        let totCls = 0, attCls = 0;
+        attendance.forEach(a => { totCls += Number(a.classes_conducted ?? a.total_classes) || 0; attCls += Number(a.classes_attended ?? a.attended_classes) || 0; });
+        const attP = totCls > 0 ? (attCls / totCls) * 100 : (Number(pyResult.overall_attendance) || 0);
+        const achN = Math.min(100, (achievements.length / 8) * 100);
+        const compScore = pyResult.composite_academic_score != null ? pyResult.composite_academic_score : Math.round((0.70 * avgM) + (0.20 * attP) + (0.10 * achN));
+        pyResult.mcda_components = {
+          marks_weight: 0.70,
+          marks_score: parseFloat(avgM.toFixed(1)),
+          marks_weighted: parseFloat((0.70 * avgM).toFixed(1)),
+          attendance_weight: 0.20,
+          attendance_score: parseFloat(attP.toFixed(1)),
+          attendance_weighted: parseFloat((0.20 * attP).toFixed(1)),
+          achievements_weight: 0.10,
+          achievements_score: parseFloat(achN.toFixed(1)),
+          achievements_weighted: parseFloat((0.10 * achN).toFixed(1)),
+          composite_score: compScore
+        };
+      }
       return res.status(200).json({
         success: true,
         source: 'Python AI Analytics Engine',
@@ -253,9 +288,36 @@ async function runAgent(req, res) {
       };
     }
 
+    report.alerts_generated = (report.alerts || []).length;
+
+    // Persist alerts to risk_alerts, recommendations, and notifications
     for (const alert of (report.alerts || [])) {
       await db.query('INSERT INTO risk_alerts(student_id,alert_type,severity,message) VALUES(?,?,?,?)',
         [studentId, alert.type || 'ACADEMIC_REVIEW', alert.priority || 'LOW', alert.alert || alert.title || 'Academic review recommended.']);
+
+      if (alert.recommendation) {
+        // Sync to recommendations table if not already active
+        const [existing] = await db.query(
+          "SELECT id FROM recommendations WHERE student_id = ? AND title = ? AND status = 'Active'",
+          [studentId, alert.title]
+        );
+        if (existing.length === 0) {
+          await db.query(
+            `INSERT INTO recommendations (student_id, priority, title, reason, recommendation, category, status)
+             VALUES (?, ?, ?, ?, ?, ?, 'Active')`,
+            [studentId, alert.priority || 'MEDIUM', alert.title, alert.explainable_reason || alert.alert, alert.recommendation, alert.type || 'Academic Heuristic']
+          );
+        }
+      }
+
+      // Dispatch high-priority notification to student
+      if (alert.priority === 'HIGH') {
+        await db.query(
+          `INSERT INTO notifications (student_id, type, title, message)
+           VALUES (?, 'recommendation', ?, ?)`,
+          [studentId, `AI Action Required: ${alert.title}`, alert.recommendation || alert.alert]
+        );
+      }
     }
 
     return res.status(200).json({

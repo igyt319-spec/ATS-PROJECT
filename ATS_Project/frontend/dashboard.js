@@ -4,6 +4,17 @@ let allStudentResults = [];
 let currentResultsFilter = 'all';
 let currentSelectedPaymentMethod = 'UPI Simulation';
 
+window.openMyMiniDashboard = function() {
+  const user = getCurrentUser();
+  if (user && user.studentId) {
+    if (typeof window.openStudentMiniDashboard === 'function') {
+      window.openStudentMiniDashboard(user.studentId);
+    }
+  } else {
+    showToast('Student profile identity could not be verified from current session.', 'error');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth('student');
   if (!user) return;
@@ -212,6 +223,22 @@ async function loadDashboardData(studentId) {
       riskPill.textContent = 'Safe Track';
     }
 
+    const riskHintEl = document.getElementById('kpi-risk-threshold-hint');
+    if (riskHintEl) {
+      riskHintEl.textContent = `Att: ${Number(kpi.attendance).toFixed(0)}% • CGPA: ${Number(kpi.cgpa).toFixed(2)}`;
+    }
+
+    // Populate Risk Criteria Modal details
+    const modalAttEl = document.getElementById('risk-modal-att-val');
+    const modalCgpaEl = document.getElementById('risk-modal-cgpa-val');
+    const modalStatusEl = document.getElementById('risk-modal-status-val');
+    if (modalAttEl) modalAttEl.textContent = `${Number(kpi.attendance).toFixed(1)}% (Threshold: 75%)`;
+    if (modalCgpaEl) modalCgpaEl.textContent = `${Number(kpi.cgpa).toFixed(2)} / 10.00`;
+    if (modalStatusEl) {
+      modalStatusEl.textContent = `${kpi.riskLevel} RISK`;
+      modalStatusEl.style.color = kpi.riskLevel === 'HIGH' ? '#ef4444' : (kpi.riskLevel === 'MEDIUM' ? '#f59e0b' : '#34d399');
+    }
+
     // Render Academic Results (3-tier)
     allStudentResults = academicResults || [];
     renderStudentResultsTable();
@@ -365,6 +392,20 @@ async function loadStudentFees(studentId) {
     const { fees, payments, summary } = res.data;
 
     document.getElementById('fee-balance-badge').textContent = `Outstanding: ₹${Number(summary.totalBalance).toLocaleString('en-IN')}`;
+
+    // Populate Payment Overview Tiles (Phase 4 Requirement)
+    const dueEl = document.getElementById('fee-summary-total-due');
+    const paidEl = document.getElementById('fee-summary-total-paid');
+    const balEl = document.getElementById('fee-summary-total-balance');
+    const dateEl = document.getElementById('fee-summary-due-date');
+
+    if (dueEl) dueEl.textContent = `₹${Number(summary.totalDue || 0).toLocaleString('en-IN')}`;
+    if (paidEl) paidEl.textContent = `₹${Number(summary.totalPaid || 0).toLocaleString('en-IN')}`;
+    if (balEl) balEl.textContent = `₹${Number(summary.totalBalance || 0).toLocaleString('en-IN')}`;
+    if (dateEl) {
+      const pendingFees = (fees || []).filter(f => Number(f.balance_amount || 0) > 0 && f.due_date);
+      dateEl.textContent = pendingFees.length > 0 ? formatDate(pendingFees[0].due_date) : 'All Cleared ✓';
+    }
 
     const tbody = document.getElementById('student-fees-table-body');
     if (!fees || fees.length === 0) {

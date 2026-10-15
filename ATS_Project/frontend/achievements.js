@@ -66,13 +66,33 @@ async function loadAchievements() {
   }
 }
 
+function matchesCategory(itemCategory, targetCategory) {
+  if (targetCategory === 'All') return true;
+  const ic = (itemCategory || '').toLowerCase();
+  const tc = targetCategory.toLowerCase();
+  if (ic === tc) return true;
+  if (tc.includes('hackathon') && ic.includes('hackathon')) return true;
+  if (tc.includes('competition') && ic.includes('competition')) return true;
+  if (tc.includes('paper') && ic.includes('paper')) return true;
+  if ((tc.includes('nptel') || tc.includes('cert')) && (ic.includes('nptel') || ic.includes('cert'))) return true;
+  if (tc.includes('ieee') && ic.includes('ieee')) return true;
+  if ((tc.includes('vendor') || tc.includes('workshop') || tc.includes('training')) && 
+      (ic.includes('vendor') || ic.includes('workshop') || ic.includes('training'))) return true;
+  if (tc.includes('sports') && ic.includes('sports')) return true;
+  return ic.includes(tc) || tc.includes(ic);
+}
+
 function filterAchievements(cat) {
   activeCategory = cat;
 
   // Update chip styles
   const buttons = document.querySelectorAll('#category-filter-pills .demo-chip');
   buttons.forEach(btn => {
-    if (btn.textContent.includes(cat) || (cat === 'All' && btn.textContent.includes('All'))) {
+    const isTarget = (cat === 'All' && btn.textContent.includes('All')) ||
+                     btn.textContent.toLowerCase().includes(cat.toLowerCase()) ||
+                     (cat.toLowerCase().includes('nptel') && btn.textContent.includes('NPTEL')) ||
+                     (cat.toLowerCase().includes('vendor') && btn.textContent.includes('Vendor'));
+    if (isTarget) {
       btn.style.background = 'rgba(56, 189, 248, 0.35)';
       btn.style.borderColor = 'var(--accent-cyan)';
     } else {
@@ -83,7 +103,7 @@ function filterAchievements(cat) {
 
   const filtered = cat === 'All' 
     ? allAchievements 
-    : allAchievements.filter(a => a.category === cat);
+    : allAchievements.filter(a => matchesCategory(a.category, cat));
 
   renderAchievementsGrid(filtered);
 }
@@ -96,12 +116,18 @@ function renderAchievementsGrid(items) {
   }
 
   const categoryIcons = {
+    'Hackathons': '🚀',
     'Hackathon': '🚀',
+    'Technical competitions': '💻',
+    'Technical Competition': '💻',
+    'Paper presentations': '📄',
     'Paper Presentation': '📄',
-    'Workshop': '🛠️',
+    'NPTEL courses and certifications': '📜',
     'Certification': '📜',
-    'Sports': '🏅',
-    'Technical Competition': '💻'
+    'IEEE membership': '⚡',
+    'External vendor training': '🛠️',
+    'Workshop': '🛠️',
+    'Sports': '🏅'
   };
 
   container.innerHTML = items.map(a => {
@@ -110,16 +136,20 @@ function renderAchievementsGrid(items) {
       month: 'short', day: 'numeric', year: 'numeric'
     });
 
-    const certBtn = a.certificate_url 
-      ? `<a href="${a.certificate_url}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">View Credential 🔗</a>`
-      : `<span style="font-size: 0.75rem; color: var(--text-dim);">Internal Verified</span>`;
+    const isSafeUrl = a.certificate_url && /^https?:\/\//i.test(a.certificate_url);
+    const certBtn = isSafeUrl 
+      ? `<a href="${a.certificate_url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">View Credential 🔗</a>`
+      : `<span style="font-size: 0.75rem; color: #34d399; font-weight: 500;">✓ Verified Credential</span>`;
 
     return `
       <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <span style="font-size: 1.8rem;">${icon}</span>
-            <span class="kpi-pill pill-blue">${a.category}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="kpi-pill pill-blue">${a.category}</span>
+              <span class="kpi-pill pill-green" style="font-size: 0.7rem;">Verified</span>
+            </div>
           </div>
           <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 6px;">${a.title}</h3>
           <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 14px;">

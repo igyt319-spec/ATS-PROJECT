@@ -69,7 +69,10 @@ function showToast(message, type = 'info') {
 
 // Session Management
 function getToken() {
-  return localStorage.getItem('ats_token');
+  let token = localStorage.getItem('ats_token') || localStorage.getItem('token') || sessionStorage.getItem('ats_token');
+  if (!token) return null;
+  token = String(token).replace(/^Bearer\s+/i, '').trim();
+  return token || null;
 }
 
 function getCurrentUser() {
@@ -322,9 +325,18 @@ async function fetchUnreadNotificationsCount(studentId) {
 }
 
 // Global Reusable Mini-Dashboard Controller (Student, Faculty, HOD)
+let activeMiniDashboardRequestId = 0;
+
 window.closeMiniDashboard = function() {
   const modal = document.getElementById('mini-dashboard-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+    modal.style.opacity = '0';
+    modal.style.pointerEvents = 'none';
+    const body = document.getElementById('mini-dashboard-body');
+    if (body) body.innerHTML = '';
+  }
 };
 
 function ensureMiniDashboardModal() {
@@ -333,7 +345,10 @@ function ensureMiniDashboardModal() {
     modal = document.createElement('div');
     modal.id = 'mini-dashboard-modal';
     modal.className = 'modal-backdrop';
-    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:16px;';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'mini-dashboard-modal-title');
+    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:16px; opacity:0; pointer-events:none; transition:opacity 0.25s ease;';
     modal.innerHTML = `
       <div class="modal-card" style="background:var(--bg-card, #1e293b); border:1px solid rgba(255,255,255,0.12); border-radius:18px; max-width:880px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:18px;">
@@ -346,7 +361,7 @@ function ensureMiniDashboardModal() {
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <span id="mini-dashboard-back-container"></span>
-            <button onclick="closeMiniDashboard()" style="background:rgba(255,255,255,0.08); border:none; color:var(--text-muted, #94a3b8); font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+            <button onclick="closeMiniDashboard()" aria-label="Close modal" style="background:rgba(255,255,255,0.08); border:none; color:var(--text-muted, #94a3b8); font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">&times;</button>
           </div>
         </div>
         <div id="mini-dashboard-body">
@@ -359,14 +374,28 @@ function ensureMiniDashboardModal() {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeMiniDashboard();
     });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('open')) {
+        closeMiniDashboard();
+      }
+    });
   }
   return modal;
+}
+
+function showMiniDashboardModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.style.opacity = '1';
+  modal.style.pointerEvents = 'auto';
+  modal.classList.add('open');
 }
 
 // 1. Student Academic Mini-Dashboard
 window.openStudentMiniDashboard = async function(studentId, options = {}) {
   const modal = ensureMiniDashboardModal();
-  modal.style.display = 'flex';
+  showMiniDashboardModal(modal);
 
   document.getElementById('mini-dashboard-modal-title').textContent = 'Student Academic Mini-Dashboard';
   document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED STUDENT ACADEMIC DOSSIER';
@@ -407,8 +436,11 @@ window.openStudentMiniDashboard = async function(studentId, options = {}) {
     return;
   }
 
+  const requestId = ++activeMiniDashboardRequestId;
+
   try {
     const res = await apiCall(`/students/${studentId}/mini-dashboard`);
+    if (requestId !== activeMiniDashboardRequestId) return;
     if (!res || !res.success || !res.data) {
       body.innerHTML = `
         <div style="text-align:center; padding:40px 20px;">
@@ -611,7 +643,7 @@ window.openStudentMiniDashboard = async function(studentId, options = {}) {
 // 2. Faculty Mini-Dashboard (Section 6 & Requirement 5B)
 window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
   const modal = ensureMiniDashboardModal();
-  modal.style.display = 'flex';
+  showMiniDashboardModal(modal);
 
   document.getElementById('mini-dashboard-modal-title').textContent = 'Faculty Member Mini-Dashboard';
   document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED FACULTY PROFILE & MENTOR ROSTER';
@@ -627,8 +659,27 @@ window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
     </div>
   `;
 
+  const token = getToken();
+  if (!token || !token.trim()) {
+    body.innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:2.2rem; margin-bottom:12px;">🔒</div>
+        <div style="color:#f87171; font-weight:700; font-size:1.1rem; margin-bottom:8px;">Authentication Required</div>
+        <p style="color:var(--text-muted, #94a3b8); font-size:0.85rem; max-width:440px; margin:0 auto 18px;">
+          Valid session token required. Please sign in to access faculty dossiers.
+        </p>
+        <button class="btn btn-secondary" onclick="closeMiniDashboard()">Close</button>
+        <button class="btn btn-primary" style="margin-left:8px;" onclick="window.location.href='login.html'">Sign In</button>
+      </div>
+    `;
+    return;
+  }
+
+  const requestId = ++activeMiniDashboardRequestId;
+
   try {
     const res = await apiCall(`/departments/faculty/${facultyId}/mini-dashboard`);
+    if (requestId !== activeMiniDashboardRequestId) return;
     if (!res || !res.success || !res.data) {
       body.innerHTML = `
         <div style="text-align:center; padding:40px 20px;">
@@ -636,7 +687,8 @@ window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
           <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
             Could not load faculty profile: ${res && res.message ? res.message : 'Record not accessible or permission denied'}
           </div>
-          <button class="btn btn-primary" onclick="openFacultyMiniDashboard(${facultyId})">
+          <button class="btn btn-secondary" onclick="closeMiniDashboard()">Close</button>
+          <button class="btn btn-primary" style="margin-left:8px;" onclick="openFacultyMiniDashboard(${facultyId})">
             🔄 Retry Loading
           </button>
         </div>
@@ -787,15 +839,20 @@ window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
     `;
 
   } catch (err) {
+    if (requestId !== activeMiniDashboardRequestId) return;
+    const isForbidden = err.message && (err.message.includes('403') || err.message.toLowerCase().includes('access denied'));
+    const isAuth = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('token') || err.message.toLowerCase().includes('bearer'));
     body.innerHTML = `
       <div style="text-align:center; padding:40px 20px;">
-        <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">❌</div>
-        <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
-          Failed to load faculty mini-dashboard: ${err.message}
+        <div style="font-size:2.2rem; margin-bottom:12px;">${isForbidden ? '🛡️' : (isAuth ? '🔒' : '❌')}</div>
+        <div style="color:#f87171; font-weight:700; font-size:1.1rem; margin-bottom:8px;">
+          ${isForbidden ? 'Access Restricted' : (isAuth ? 'Session Authentication Required' : 'Failed to Load Record')}
         </div>
-        <button class="btn btn-primary" onclick="openFacultyMiniDashboard(${facultyId})">
-          🔄 Retry Loading Record
-        </button>
+        <p style="color:var(--text-muted, #94a3b8); font-size:0.84rem; max-width:440px; margin:0 auto 18px;">
+          ${err.message}
+        </p>
+        <button class="btn btn-secondary" onclick="closeMiniDashboard()">Close</button>
+        ${isAuth ? `<button class="btn btn-primary" style="margin-left:8px;" onclick="window.location.href='login.html'">Sign In</button>` : (!isForbidden ? `<button class="btn btn-primary" style="margin-left:8px;" onclick="openFacultyMiniDashboard(${facultyId})">🔄 Retry</button>` : '')}
       </div>
     `;
   }
@@ -804,7 +861,7 @@ window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
 // 3. HOD Mini-Dashboard (Section 6 & Requirement 5A)
 window.openHODMiniDashboard = function(hodData, options = {}) {
   const modal = ensureMiniDashboardModal();
-  modal.style.display = 'flex';
+  showMiniDashboardModal(modal);
 
   document.getElementById('mini-dashboard-modal-title').textContent = 'Department Leadership (HOD) Profile';
   document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED HEAD OF DEPARTMENT PROFILE';

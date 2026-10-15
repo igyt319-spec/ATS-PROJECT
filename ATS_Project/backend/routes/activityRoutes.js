@@ -8,6 +8,7 @@ router.get('/mentor/mentees', verifyToken, isMentor, activityController.getMento
 router.get('/department', verifyToken, isHOD, activityController.getDepartmentActivities);
 router.get('/institution', verifyToken, isFaculty, activityController.getInstitutionActivities);
 router.post('/', verifyToken, activityController.submitActivity);
+router.post('/student', verifyToken, activityController.submitActivity);
 router.put('/:id/verify', verifyToken, isFaculty, activityController.verifyActivity);
 
 module.exports = router;

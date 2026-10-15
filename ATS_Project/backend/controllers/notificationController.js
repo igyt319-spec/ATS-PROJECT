@@ -45,8 +45,32 @@ async function markAllAsRead(req, res) {
   }
 }
 
+// DELETE /api/notifications/:id
+async function deleteNotification(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await db.query('DELETE FROM notifications WHERE id = ?', [id]);
+    return res.status(200).json({ success: true, message: 'Notification removed successfully.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// DELETE /api/notifications/student/:studentId/clear-read
+async function clearReadNotifications(req, res) {
+  try {
+    const studentId = parseInt(req.params.studentId, 10);
+    await db.query('DELETE FROM notifications WHERE student_id = ? AND is_read = 1', [studentId]);
+    return res.status(200).json({ success: true, message: 'All read notifications cleared.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   getNotificationsByStudent,
   markAsRead,
-  markAllAsRead
+  markAllAsRead,
+  deleteNotification,
+  clearReadNotifications
 };

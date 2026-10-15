@@ -1,5 +1,7 @@
 // Notifications Page Controller
 let studentId = 1;
+let allNotifications = [];
+let activeNotifFilter = 'ALL';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth();
@@ -21,10 +23,12 @@ async function loadNotifications() {
     if (!res.success) throw new Error(res.message);
 
     const { count, unreadCount, data } = res;
+    allNotifications = data || [];
+
     document.getElementById('notif-count-text').textContent = 
       `You have ${unreadCount} unread alert${unreadCount === 1 ? '' : 's'} (${count} total notifications)`;
 
-    renderNotifications(data);
+    filterNotifs(activeNotifFilter);
 
     // Refresh layout badges
     await fetchUnreadNotificationsCount(studentId);
@@ -35,10 +39,38 @@ async function loadNotifications() {
   }
 }
 
+function filterNotifs(type) {
+  activeNotifFilter = type;
+
+  // Update button pill styles
+  const buttons = document.querySelectorAll('#notif-filter-pills .demo-chip');
+  buttons.forEach(btn => {
+    const isTarget = (type === 'ALL' && btn.textContent.includes('All')) ||
+                     (type === 'UNREAD' && btn.textContent.includes('Unread')) ||
+                     btn.textContent.toLowerCase().includes(type.toLowerCase());
+    if (isTarget) {
+      btn.style.background = 'rgba(56, 189, 248, 0.35)';
+      btn.style.borderColor = 'var(--accent-cyan)';
+    } else {
+      btn.style.background = 'rgba(56, 189, 248, 0.1)';
+      btn.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+    }
+  });
+
+  let filtered = allNotifications;
+  if (type === 'UNREAD') {
+    filtered = allNotifications.filter(n => !n.is_read);
+  } else if (type !== 'ALL') {
+    filtered = allNotifications.filter(n => (n.type || '').toLowerCase() === type.toLowerCase());
+  }
+
+  renderNotifications(filtered);
+}
+
 function renderNotifications(items) {
   const container = document.getElementById('notifications-list');
   if (!items || items.length === 0) {
-    container.innerHTML = `<div class="glass-card" style="text-align: center; color: var(--text-dim); padding: 36px;">No notifications in your inbox.</div>`;
+    container.innerHTML = `<div class="glass-card" style="text-align: center; color: var(--text-dim); padding: 36px;">No notifications in this view.</div>`;
     return;
   }
 
@@ -71,6 +103,7 @@ function renderNotifications(items) {
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                 <strong style="color: #fff; font-size: 0.95rem;">${n.title}</strong>
                 ${isUnread ? '<span class="kpi-pill pill-red">New</span>' : ''}
+                <span class="kpi-pill pill-blue" style="font-size: 0.68rem; text-transform: uppercase;">${n.type}</span>
               </div>
               <p style="color: var(--text-muted); font-size: 0.86rem; line-height: 1.5; margin-bottom: 6px;">
                 ${n.message}
@@ -78,8 +111,11 @@ function renderNotifications(items) {
               <span style="font-size: 0.75rem; color: var(--text-dim);">📅 ${dateFormatted}</span>
             </div>
           </div>
-          <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
             ${readAction}
+            <button class="btn btn-secondary btn-sm" onclick="deleteOne(${n.id})" title="Delete notification" style="font-size: 0.75rem; padding: 4px 8px; color: var(--text-dim);">
+              🗑️
+            </button>
           </div>
         </div>
       </div>
@@ -103,6 +139,31 @@ async function markAllRead() {
     const res = await apiCall(`/notifications/student/${studentId}/read-all`, 'PUT');
     if (res.success) {
       showToast('All notifications marked as read.', 'success');
+      await loadNotifications();
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function clearAllRead() {
+  if (confirm('Clear all read notifications from your inbox?')) {
+    try {
+      const res = await apiCall(`/notifications/student/${studentId}/clear-read`, 'DELETE');
+      if (res.success) {
+        showToast('Read notifications cleared.', 'info');
+        await loadNotifications();
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+}
+
+async function deleteOne(id) {
+  try {
+    const res = await apiCall(`/notifications/${id}`, 'DELETE');
+    if (res.success) {
       await loadNotifications();
     }
   } catch (err) {

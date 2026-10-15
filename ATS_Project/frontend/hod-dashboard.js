@@ -169,8 +169,8 @@ function renderFacultyCards(facultyList) {
           <span class="kpi-pill pill-blue" style="font-size: 0.72rem;">
             ${f.mentee_count || 0} Assigned Mentees
           </span>
-          <button class="btn btn-secondary btn-sm" onclick="openFacultyMiniDashboard(${f.id})" style="font-size: 0.74rem; padding: 4px 10px;">
-            👤 View Details
+          <button class="btn btn-secondary btn-sm" id="btn-fac-mini-${f.id}" onclick="openFacultyMiniDashboard(${f.id})" style="font-size: 0.74rem; padding: 4px 10px;">
+            👤 Faculty Mini-Dashboard
           </button>
         </div>
       </div>
@@ -210,8 +210,8 @@ function renderAllocationsTable(students) {
         <td>${s.assigned_at ? formatDate(s.assigned_at) : '—'}</td>
         <td>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.75rem; font-weight:700;" onclick="openStudentMiniDashboard(${s.student_id})">
-              📊 View Dashboard
+            <button class="btn btn-primary" id="btn-hod-student-mini-${s.student_id}" style="padding: 5px 10px; font-size: 0.75rem; font-weight:700;" onclick="openStudentMiniDashboard(${s.student_id})">
+              📊 Mini-Dashboard
             </button>
             <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.75rem;" onclick="openReassignModal(${s.student_id}, '${escapeHtml(s.student_name)}', '${s.register_number}', ${s.mentor_faculty_id || 'null'})">
               ${hasMentor ? '🔄 Reassign' : '➕ Assign'}

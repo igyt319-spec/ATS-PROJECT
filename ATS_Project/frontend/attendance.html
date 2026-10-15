@@ -43,6 +43,7 @@
       </a>
       <a href="notifications.html" class="nav-item">
         <span class="icon">🔔</span> Notifications
+        <span class="badge" id="sidebar-notif-badge" style="display: none;">0</span>
       </a>
       <a href="profile.html" class="nav-item">
         <span class="icon">👤</span> Profile
@@ -163,16 +164,90 @@
                 <th>Total Classes</th>
                 <th>Attended</th>
                 <th>Missed</th>
-                <th style="min-width: 180px;">Visual Progress</th>
+                <th style="min-width: 170px;">Visual Progress</th>
                 <th>Percentage</th>
                 <th>Status</th>
-                <th>Classes Needed for 85%</th>
+                <th>75% Exam Eligibility</th>
+                <th>Classes to 85%</th>
               </tr>
             </thead>
             <tbody id="attendance-table-body">
               <!-- Dynamically populated -->
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Institutional Attendance Shortage & Recovery Calculator Widget (Phase 10 Requirement) -->
+      <div class="glass-card" style="margin-bottom: 28px; padding: 22px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>🧮</span> Interactive Attendance Shortage & Recovery Calculator
+            </h3>
+            <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 2px;">
+              Institutional Regulation: Minimum 75.0% classroom presence mandatory for semester hall ticket issuance.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 0.82rem; color: var(--text-dim);">Target Scope:</label>
+            <select id="calc-subject-select" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.84rem;" onchange="updateRecoveryCalculator()">
+              <option value="OVERALL">Overall Aggregate Attendance</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Metric Output Tiles -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 4px;">Current Standing</div>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+              <strong style="font-size: 1.35rem; color: #fff;" id="calc-current-pct">87.0%</strong>
+              <span class="kpi-pill pill-green" id="calc-current-status">GOOD</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 4px;">Exam Hall Ticket (75% Gate)</div>
+            <strong style="font-size: 1.35rem; color: #34d399;" id="calc-needed-75">Eligible ✓</strong>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" id="calc-detail-75">Condonation threshold cleared</div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 4px;">Target for 85% Safe Zone</div>
+            <strong style="font-size: 1.35rem; color: #38bdf8;" id="calc-needed-85">+0 classes</strong>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" id="calc-detail-85">Maximum continuous CIA points</div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
+            <div style="font-size: 0.76rem; color: var(--text-dim); margin-bottom: 4px;">Permissible Absence Buffer</div>
+            <strong style="font-size: 1.35rem; color: #fbbf24;" id="calc-bunk-buffer">0 lectures</strong>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;" id="calc-detail-buffer">Classes you can safely miss (&ge;75%)</div>
+          </div>
+        </div>
+
+        <!-- What-If Simulator -->
+        <div style="background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 16px;">
+          <div style="font-size: 0.88rem; font-weight: 700; color: #38bdf8; margin-bottom: 10px;">
+            🔮 What-If Attendance Forecaster
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 1fr; gap: 14px; align-items: center;">
+            <div>
+              <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Upcoming Lectures Held:</label>
+              <input type="number" id="sim-upcoming" class="form-control" value="10" min="1" max="100" oninput="runWhatIfSimulation()">
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 4px;">Lectures You Will Attend:</label>
+              <input type="number" id="sim-attend" class="form-control" value="9" min="0" max="100" oninput="runWhatIfSimulation()">
+            </div>
+            <div style="padding-left: 10px;">
+              <div style="font-size: 0.76rem; color: var(--text-dim);">Projected End-of-Term Attendance:</div>
+              <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 2px;">
+                <strong style="font-size: 1.4rem; color: #fff;" id="sim-result-pct">87.5%</strong>
+                <span class="kpi-pill pill-green" id="sim-result-status">SAFE</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

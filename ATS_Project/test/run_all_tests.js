@@ -7,12 +7,15 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const testSuites = [
+  { name: 'Phase 1: Mini-Dashboard Authentication & Navigation', script: 'test_phase1_mini_dashboard.js' },
   { name: 'Phase 2: Authentication & Strict RBAC', script: 'test_phase2_auth.js' },
   { name: 'Phase 3: Faculty Console & Mentee Isolation', script: 'test_phase3_faculty.js' },
   { name: 'Phase 4: Database Safety & Demo Accounts', script: 'test_phase4_demo_seed.js' },
   { name: 'Phase 5: Avatar Upload & Image Storage', script: 'test_phase5_upload.js' },
   { name: 'Phase 5 (Database): DB Configuration & Migration Safety', script: 'test_phase5_db_config.js' },
-  { name: 'Phase 6: Simulated Payment Gateway Engine', script: 'test_phase6_payment.js' }
+  { name: 'Phase 6: Simulated Payment Gateway Engine', script: 'test_phase6_payment.js' },
+  { name: 'Phases 1-7: Comprehensive Multi-Role Regression Suite', script: 'test_phases1_to_7_comprehensive.js' },
+  { name: 'Phases 8-12: Advanced AI Chatbot, MCDA Heuristics, Attendance Recovery, Portfolio & Notifications', script: 'test_phases8_to_12_comprehensive.js' }
 ];
 
 console.log('======================================================================');

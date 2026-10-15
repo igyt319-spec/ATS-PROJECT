@@ -322,7 +322,7 @@
 let allStudents = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = checkAuth('admin');
+  const user = checkAuth('faculty');
   if (!user) return;
   initLayout();
   await populateDepartmentCatalog();
@@ -477,7 +477,7 @@ function renderTable(students) {
         <td>${Number(s.attendance_percentage).toFixed(0)}%</td>
         <td><span class="kpi-pill ${riskPill}">${s.risk_level}</span></td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="btn btn-secondary btn-sm" onclick="viewStudentDetails(${s.id})">Inspect</button>
+          <button class="btn btn-secondary btn-sm" id="btn-inspect-student-${s.id}" onclick="viewStudentDetails(${s.id})">📊 Mini-Dashboard</button>
           <button class="btn btn-secondary btn-sm" onclick="openEditModal(${s.id})">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteStudentPrompt(${s.id}, '${s.name}')">Delete</button>
         </td>

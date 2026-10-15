@@ -336,6 +336,11 @@ async function query(sql, params = []) {
     try {
       return await activePool.query(sql, params);
     } catch (err) {
+      if (err.code === 'ECONNRESET' || err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ETIMEDOUT') {
+        console.warn(`[DB Notice] Retrying query on transient network error (${err.code})...`);
+        await new Promise(r => setTimeout(r, 250));
+        return await activePool.query(sql, params);
+      }
       console.error('[DB Query Error]', err.message, 'SQL:', (typeof sql === 'string' ? sql.slice(0, 100) : ''));
       throw err;
     }

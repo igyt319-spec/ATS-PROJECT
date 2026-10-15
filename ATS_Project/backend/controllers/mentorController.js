@@ -11,9 +11,11 @@ async function getMyMentees(req, res) {
     let query = `
       SELECT sm.id AS assignment_id, sm.assigned_at, sm.status AS assignment_status,
              st.id AS student_id, st.name AS student_name, st.register_number, st.email, st.phone, st.year, st.semester, st.bio, st.avatar,
+             st.gpa, st.cgpa, st.attendance_percentage, st.risk_level,
              d.name AS department_name,
              (SELECT COUNT(*) FROM leave_requests lr WHERE lr.student_id = st.id AND lr.status = 'Pending') AS pending_leaves,
              (SELECT COUNT(*) FROM student_activities sa WHERE sa.student_id = st.id AND sa.status = 'Pending') AS pending_activities,
+             (SELECT COUNT(*) FROM academic_results ar WHERE ar.student_id = st.id AND ar.status = 'Pending') AS pending_results,
              (SELECT COALESCE(SUM(sf.balance_amount), 0) FROM student_fees sf WHERE sf.student_id = st.id) AS outstanding_fee
       FROM student_mentors sm
       JOIN students st ON st.id = sm.student_id

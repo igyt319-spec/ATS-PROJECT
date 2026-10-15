@@ -202,7 +202,19 @@ def analyze_student(student_data):
         "falling_subjects": falling_subjects,
         "semester_trend": semester_trend,
         "recommendations": recommendations,
-        "explanation": "Calculated via 70% weighted subject performance, 20% attendance compliance, and 10% co-curricular achievement factor without unverified black-box ML claims."
+        "explanation": "Calculated via 70% weighted subject performance, 20% attendance compliance, and 10% co-curricular achievement factor without unverified black-box ML claims.",
+        "mcda_components": {
+            "marks_weight": 0.70,
+            "marks_score": round(stats["mean"], 1),
+            "marks_weighted": round(0.70 * stats["mean"], 1),
+            "attendance_weight": 0.20,
+            "attendance_score": round(overall_attendance, 1),
+            "attendance_weighted": round(0.20 * overall_attendance, 1),
+            "achievements_weight": 0.10,
+            "achievements_score": round(achievement_norm, 1),
+            "achievements_weighted": round(0.10 * achievement_norm, 1),
+            "composite_score": composite_score
+        }
     }
 
 def main():

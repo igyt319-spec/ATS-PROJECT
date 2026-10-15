@@ -5,6 +5,12 @@ const { verifyToken, isAdmin, ownsStudent } = require('../middleware/authMiddlew
 
 router.get('/analysis/:studentId', verifyToken, ownsStudent, aiController.getAnalysis);
 router.post('/run-agent', verifyToken, (req, res, next) => {
+  if (req.user.role === 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied: Administrators do not have access to operational student AI diagnostic agent.'
+    });
+  }
   if (req.user.role === 'faculty') return next();
   const targetId = Number(req.body.student_id || req.body.studentId);
   if (req.user.studentId && Number(req.user.studentId) === targetId) return next();

@@ -350,6 +350,112 @@
   </div>
 </div>
 
+<!-- Modal: Read-Only Department Detail (Phase 7 Requirement) -->
+<div class="modal-backdrop" id="admin-dept-modal">
+  <div class="modal-card" style="max-width: 860px; max-height: 85vh; overflow-y: auto;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h3 class="modal-title" id="admin-dept-modal-title">Department Overview</h3>
+        <span class="badge" id="admin-dept-modal-code" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">CODE</span>
+      </div>
+      <button class="modal-close" onclick="closeAdminDeptModal()">&times;</button>
+    </div>
+
+    <div style="padding: 10px 0;">
+      <!-- Administrative Segregation Banner -->
+      <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #bae6fd;">
+        <span>🛡️</span>
+        <div><strong>ADMINISTRATIVE READ-ONLY GOVERNANCE:</strong> Operational marks recording, student assessment changes, and fee collection are reserved for authorized Department Faculty and Mentors.</div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 18px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Total Students</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;" id="admin-dept-stat-students">0</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Total Faculty</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-top: 2px;" id="admin-dept-stat-faculty">0</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Mentored Students</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #34d399; margin-top: 2px;" id="admin-dept-stat-mentored">0</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
+          <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Unassigned</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #f87171; margin-top: 2px;" id="admin-dept-stat-unassigned">0</div>
+        </div>
+      </div>
+
+      <!-- Active HOD Leadership Section -->
+      <div style="background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.2); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;">
+        <div style="font-size: 0.72rem; font-weight: 700; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">👑 Appointed Head of Department (HOD)</div>
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;" id="admin-dept-hod-container">
+          <img src="" alt="HOD Avatar" id="admin-dept-hod-avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #facc15;">
+          <div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #fff;" id="admin-dept-hod-name">Prof. HOD Name</div>
+            <div style="font-size: 0.8rem; color: var(--text-dim);" id="admin-dept-hod-details">Staff ID: HOD-CSE &bull; hod@ats.edu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Faculty Roster -->
+      <div style="margin-bottom: 22px;">
+        <h4 style="font-size: 0.92rem; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+          <span>👨‍🏫 Faculty & Teaching Staff Roster</span>
+          <span style="font-size: 0.76rem; color: var(--text-dim);" id="admin-dept-faculty-count-text">0 Members</span>
+        </h4>
+        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+          <table class="ats-table">
+            <thead>
+              <tr>
+                <th>Faculty Staff</th>
+                <th>Staff Code</th>
+                <th>Designation</th>
+                <th>Email</th>
+                <th>Mentee Load</th>
+              </tr>
+            </thead>
+            <tbody id="admin-dept-faculty-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-dim);">Loading faculty members...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Department Students Roster -->
+      <div>
+        <h4 style="font-size: 0.92rem; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+          <span>🎓 Enrolled Students & Advisory Roster</span>
+          <span style="font-size: 0.76rem; color: var(--text-dim);" id="admin-dept-student-count-text">0 Students</span>
+        </h4>
+        <div class="table-responsive" style="max-height: 240px; overflow-y: auto;">
+          <table class="ats-table">
+            <thead>
+              <tr>
+                <th>Student Scholar</th>
+                <th>Register Number</th>
+                <th>Academic Year</th>
+                <th>CGPA</th>
+                <th>Attendance</th>
+                <th>Assigned Mentor</th>
+              </tr>
+            </thead>
+            <tbody id="admin-dept-students-table-body">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-dim);">Loading students...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+      <button class="btn btn-secondary" onclick="closeAdminDeptModal()">Close Roster</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script src="api.js"></script>

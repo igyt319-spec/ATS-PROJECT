@@ -453,7 +453,11 @@ function renderDepartmentOverview(departments) {
 
   container.innerHTML = departments.map(d => {
     return `
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: transform 0.2s, border-color 0.2s;" 
+           class="dept-overview-card" 
+           onclick="openAdminDeptModal(${d.id})"
+           onmouseenter="this.style.borderColor='rgba(56, 189, 248, 0.4)'; this.style.transform='translateY(-2px)';"
+           onmouseleave="this.style.borderColor='var(--border-color)'; this.style.transform='none';">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-weight: 800; color: #fff; font-size: 1rem;">${d.name}</span>
           <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">${d.code}</span>
@@ -461,14 +465,133 @@ function renderDepartmentOverview(departments) {
         <div style="font-size: 0.78rem; color: var(--text-dim);">
           Department ID: #${d.id} • Active HOD: <strong style="color: #facc15;">${d.active_hod_name || 'Unassigned'}</strong>
         </div>
-        <div style="display: flex; gap: 12px; font-size: 0.78rem; color: #94a3b8; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-          <div>Faculty: <strong style="color:#fff;">${d.faculty_count || 0}</strong></div>
-          <div>Students: <strong style="color:#fff;">${d.student_count || 0}</strong></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+          <div style="display: flex; gap: 12px; font-size: 0.78rem; color: #94a3b8;">
+            <div>Faculty: <strong style="color:#fff;">${d.faculty_count || 0}</strong></div>
+            <div>Students: <strong style="color:#fff;">${d.student_count || 0}</strong></div>
+          </div>
+          <span style="font-size: 0.76rem; color: var(--accent-cyan); font-weight: 700;">View Roster &rarr;</span>
         </div>
       </div>
     `;
   }).join('');
 }
+
+window.openAdminDeptModal = async function(deptId) {
+  const modal = document.getElementById('admin-dept-modal');
+  if (!modal) return;
+
+  // Reset content to loading state
+  document.getElementById('admin-dept-modal-title').textContent = 'Loading Department Details...';
+  document.getElementById('admin-dept-modal-code').textContent = '...';
+  document.getElementById('admin-dept-stat-students').textContent = '—';
+  document.getElementById('admin-dept-stat-faculty').textContent = '—';
+  document.getElementById('admin-dept-stat-mentored').textContent = '—';
+  document.getElementById('admin-dept-stat-unassigned').textContent = '—';
+  document.getElementById('admin-dept-faculty-table-body').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Loading faculty roster... ⏳</td></tr>';
+  document.getElementById('admin-dept-students-table-body').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading student scholars... ⏳</td></tr>';
+
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+
+  try {
+    const res = await apiCall(`/departments/${deptId}`);
+    if (!res || !res.success) throw new Error(res ? res.message : 'Failed to fetch department');
+
+    const { department, faculty, students, summary } = res.data;
+
+    // Header info
+    document.getElementById('admin-dept-modal-title').textContent = department.name;
+    document.getElementById('admin-dept-modal-code').textContent = department.code;
+
+    // Stats
+    document.getElementById('admin-dept-stat-students').textContent = summary.totalStudents;
+    document.getElementById('admin-dept-stat-faculty').textContent = summary.totalFaculty;
+    document.getElementById('admin-dept-stat-mentored').textContent = summary.mentoredCount;
+    document.getElementById('admin-dept-stat-unassigned').textContent = summary.unassignedCount;
+
+    // HOD Details
+    const hodAvatar = document.getElementById('admin-dept-hod-avatar');
+    const hodName = document.getElementById('admin-dept-hod-name');
+    const hodDetails = document.getElementById('admin-dept-hod-details');
+
+    if (department.active_hod_name) {
+      hodName.textContent = department.active_hod_name;
+      hodDetails.textContent = `Staff Code: ${department.active_hod_code || 'HOD'} • Email: ${department.active_hod_email || 'hod@ats.edu'}`;
+      if (hodAvatar) {
+        hodAvatar.src = department.active_hod_avatar || getInitialsAvatar(department.active_hod_name, 48);
+        hodAvatar.onerror = () => { hodAvatar.src = getInitialsAvatar(department.active_hod_name, 48); };
+      }
+    } else {
+      hodName.textContent = 'No Active HOD Assigned';
+      hodDetails.textContent = 'Designation vacant. Use administrative assignment tool to designate leadership.';
+      if (hodAvatar) hodAvatar.src = getInitialsAvatar('Vacant', 48);
+    }
+
+    // Faculty Roster
+    document.getElementById('admin-dept-faculty-count-text').textContent = `${faculty.length} Faculty`;
+    const fTbody = document.getElementById('admin-dept-faculty-table-body');
+    if (faculty.length === 0) {
+      fTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 18px; color: var(--text-dim);">No faculty registered in this department.</td></tr>';
+    } else {
+      fTbody.innerHTML = faculty.map(f => `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="${f.avatar || getInitialsAvatar(f.name, 32)}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;" onerror="this.src='${getInitialsAvatar(f.name, 32)}'">
+              <div>
+                <strong style="color: #fff;">${f.name}</strong>
+                ${f.is_hod ? '<span class="badge" style="background:rgba(250,204,21,0.15); color:#facc15; font-size:0.68rem; margin-left:4px;">HOD</span>' : ''}
+              </div>
+            </div>
+          </td>
+          <td style="font-family:monospace; color:var(--accent-cyan);">${f.faculty_code}</td>
+          <td style="font-size:0.82rem;">${f.designation || 'Faculty'}</td>
+          <td style="font-size:0.82rem; color:var(--text-dim);">${f.email}</td>
+          <td><span class="kpi-pill pill-blue">${f.mentee_count || 0} Mentees</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Students Roster
+    document.getElementById('admin-dept-student-count-text').textContent = `${students.length} Students`;
+    const sTbody = document.getElementById('admin-dept-students-table-body');
+    if (students.length === 0) {
+      sTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 18px; color: var(--text-dim);">No students enrolled in this department.</td></tr>';
+    } else {
+      sTbody.innerHTML = students.map(s => `
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="${s.avatar || getInitialsAvatar(s.name, 32)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" onerror="this.src='${getInitialsAvatar(s.name, 32)}'">
+              <strong style="color: #fff;">${s.name}</strong>
+            </div>
+          </td>
+          <td style="font-family:monospace; color:var(--accent-cyan); font-size:0.82rem;">${s.register_number}</td>
+          <td style="font-size:0.82rem;">${s.year || 'III Year'} &bull; ${s.semester || 'Sem 1'}</td>
+          <td><strong style="color: #fff;">${Number(s.cgpa || 0).toFixed(2)}</strong></td>
+          <td><span class="kpi-pill ${Number(s.attendance_percentage || 0) >= 75 ? 'pill-green' : 'pill-red'}">${Number(s.attendance_percentage || 0).toFixed(0)}%</span></td>
+          <td style="font-size:0.82rem;">
+            ${s.mentor_name ? `<strong style="color:#38bdf8;">${s.mentor_name}</strong>` : '<span class="kpi-pill pill-red">Unassigned</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+  } catch (err) {
+    console.error('[Open Admin Dept Modal Error]', err);
+    showToast('Failed to load department details: ' + err.message, 'error');
+    closeAdminDeptModal();
+  }
+};
+
+window.closeAdminDeptModal = function() {
+  const modal = document.getElementById('admin-dept-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+};
 
 function escapeHtml(text) {
   if (!text) return '';

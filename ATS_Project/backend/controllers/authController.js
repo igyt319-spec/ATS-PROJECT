@@ -788,11 +788,23 @@ async function createUser(req, res) {
 
       if (trimmedRole === 'student') {
         const studentReg = identifier || ('REG-' + newUserId);
-        await db.query(
+        const [stRes] = await db.query(
           `INSERT INTO students (user_id, register_number, name, email, phone, department_id, year, semester, status, bio)
            VALUES (?, ?, ?, ?, ?, ?, 'I Year', 'Semester 1', 'active', 'Newly registered student account.')`,
           [newUserId, studentReg, name.trim(), trimmedEmail, phone || null, targetDeptId]
         );
+
+        // Ensure 100% mentor coverage by assigning a departmental mentor
+        const [facultyMentor] = await db.query(
+          'SELECT id FROM faculty WHERE department_id = ? AND can_mentor = 1 LIMIT 1',
+          [targetDeptId]
+        );
+        if (facultyMentor && facultyMentor.length > 0) {
+          await db.query(
+            "INSERT INTO student_mentors (student_id, faculty_id, status) VALUES (?, ?, 'active')",
+            [stRes.insertId, facultyMentor[0].id]
+          );
+        }
       } else if (trimmedRole === 'faculty') {
         const facultyCode = identifier || ('FAC-' + newUserId);
         await db.query(

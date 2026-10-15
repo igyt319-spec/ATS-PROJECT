@@ -66,21 +66,26 @@ async function getDepartmentById(req, res) {
       ORDER BY f.is_hod DESC, f.name ASC
     `, [id]);
 
-    // Students in department
+    // Students in department with assigned mentor details
     const [studentList] = await db.query(`
-      SELECT st.id, st.name, st.register_number, st.email, st.year, st.semester, st.cgpa, st.attendance_percentage, st.avatar
+      SELECT st.id, st.name, st.register_number, st.email, st.year, st.semester, st.cgpa, st.attendance_percentage, st.avatar,
+             f.name AS mentor_name, f.faculty_code AS mentor_code
       FROM students st
+      LEFT JOIN student_mentors sm ON sm.student_id = st.id AND sm.status = 'active'
+      LEFT JOIN faculty f ON f.id = sm.faculty_id
       WHERE st.department_id = ?
       ORDER BY st.register_number ASC
     `, [id]);
 
-    // Academic summary
+    // Academic summary & mentor coverage
     const avgCgpa = studentList.length > 0 
       ? (studentList.reduce((acc, s) => acc + Number(s.cgpa || 0), 0) / studentList.length).toFixed(2)
       : 0;
     const avgAttendance = studentList.length > 0
       ? (studentList.reduce((acc, s) => acc + Number(s.attendance_percentage || 0), 0) / studentList.length).toFixed(1)
       : 0;
+    const mentoredCount = studentList.filter(s => Boolean(s.mentor_name)).length;
+    const unassignedCount = studentList.length - mentoredCount;
 
     return res.status(200).json({
       success: true,
@@ -91,6 +96,8 @@ async function getDepartmentById(req, res) {
         summary: {
           totalStudents: studentList.length,
           totalFaculty: facultyList.length,
+          mentoredCount,
+          unassignedCount,
           averageCgpa: Number(avgCgpa),
           averageAttendance: Number(avgAttendance)
         }

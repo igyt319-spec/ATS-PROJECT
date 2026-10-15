@@ -287,33 +287,36 @@ async function fetchUnreadNotificationsCount(studentId) {
   }
 }
 
-// Global Student Mini-Dashboard Controller (Section 5)
+// Global Reusable Mini-Dashboard Controller (Student, Faculty, HOD)
 window.closeMiniDashboard = function() {
   const modal = document.getElementById('mini-dashboard-modal');
   if (modal) modal.style.display = 'none';
 };
 
-window.openStudentMiniDashboard = async function(studentId) {
+function ensureMiniDashboardModal() {
   let modal = document.getElementById('mini-dashboard-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'mini-dashboard-modal';
     modal.className = 'modal-backdrop';
-    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:16px;';
+    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.88); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:16px;';
     modal.innerHTML = `
       <div class="modal-card" style="background:var(--bg-card, #1e293b); border:1px solid rgba(255,255,255,0.12); border-radius:18px; max-width:880px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:18px;">
           <div style="display:flex; align-items:center; gap:12px;">
             <img src="assets/ats-logo.svg" alt="ATS" style="width:36px; height:36px; filter:drop-shadow(0 0 8px rgba(56,189,248,0.5));">
             <div>
-              <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:#fff;">Student Academic Mini-Dashboard</h3>
-              <span style="font-size:0.75rem; color:var(--accent-cyan, #38bdf8); font-weight:700; letter-spacing:0.5px;">VERIFIED INSTITUTIONAL RECORD</span>
+              <h3 id="mini-dashboard-modal-title" style="margin:0; font-size:1.25rem; font-weight:800; color:#fff;">Academic Mini-Dashboard</h3>
+              <span id="mini-dashboard-modal-badge" style="font-size:0.75rem; color:var(--accent-cyan, #38bdf8); font-weight:700; letter-spacing:0.5px;">VERIFIED INSTITUTIONAL RECORD</span>
             </div>
           </div>
-          <button onclick="closeMiniDashboard()" style="background:rgba(255,255,255,0.08); border:none; color:var(--text-muted, #94a3b8); font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span id="mini-dashboard-back-container"></span>
+            <button onclick="closeMiniDashboard()" style="background:rgba(255,255,255,0.08); border:none; color:var(--text-muted, #94a3b8); font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+          </div>
         </div>
         <div id="mini-dashboard-body">
-          <div style="text-align:center; padding:50px; color:var(--text-muted, #94a3b8);">Loading Student Academic Profile... ⏳</div>
+          <div style="text-align:center; padding:50px; color:var(--text-muted, #94a3b8);">Loading Profile Details... ⏳</div>
         </div>
       </div>
     `;
@@ -323,19 +326,59 @@ window.openStudentMiniDashboard = async function(studentId) {
       if (e.target === modal) closeMiniDashboard();
     });
   }
+  return modal;
+}
 
+// 1. Student Academic Mini-Dashboard
+window.openStudentMiniDashboard = async function(studentId, options = {}) {
+  const modal = ensureMiniDashboardModal();
   modal.style.display = 'flex';
+
+  document.getElementById('mini-dashboard-modal-title').textContent = 'Student Academic Mini-Dashboard';
+  document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED STUDENT ACADEMIC DOSSIER';
+
+  const backContainer = document.getElementById('mini-dashboard-back-container');
+  if (options && options.backToFacultyId) {
+    backContainer.innerHTML = `
+      <button onclick="openFacultyMiniDashboard(${options.backToFacultyId})" class="btn btn-secondary" style="font-size:0.75rem; padding:4px 10px;">
+        ← Back to Faculty
+      </button>
+    `;
+  } else {
+    backContainer.innerHTML = '';
+  }
+
   const body = document.getElementById('mini-dashboard-body');
-  body.innerHTML = '<div style="text-align:center; padding:50px; color:var(--text-muted, #94a3b8);">Loading Student Academic Profile... ⏳</div>';
+  // Immediate state reset to prevent stale cross-student display
+  body.innerHTML = `
+    <div style="text-align:center; padding:60px 20px;">
+      <div style="font-size:2rem; margin-bottom:12px;">⏳</div>
+      <div style="color:#fff; font-weight:700; font-size:1rem;">Loading Student Record #${studentId}...</div>
+      <div style="color:var(--text-muted, #94a3b8); font-size:0.82rem; margin-top:4px;">Retrieving attendance, academic results, fee status & activities...</div>
+    </div>
+  `;
 
   try {
     const res = await apiCall(`/students/${studentId}/mini-dashboard`);
     if (!res || !res.success || !res.data) {
-      body.innerHTML = `<div style="text-align:center; padding:30px; color:#f87171;">Could not load student profile: ${res.message || 'Record not accessible'}</div>`;
+      body.innerHTML = `
+        <div style="text-align:center; padding:40px 20px;">
+          <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">⚠️</div>
+          <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
+            Could not load student record: ${res && res.message ? res.message : 'Record not accessible or permission denied'}
+          </div>
+          <p style="color:var(--text-muted, #94a3b8); font-size:0.82rem; max-width:440px; margin:0 auto 18px;">
+            Ensure you have authorized mentorship or departmental permissions to view this student.
+          </p>
+          <button class="btn btn-primary" onclick="openStudentMiniDashboard(${studentId}, ${JSON.stringify(options).replace(/"/g, '&quot;')})">
+            🔄 Retry Loading
+          </button>
+        </div>
+      `;
       return;
     }
 
-    const { student, assignedMentor, attendance, results, fees, leaves, activities, alerts } = res.data;
+    const { student, assignedMentor, attendance, results, fees, leaves, activities } = res.data;
     const studentAvatar = student.avatar || getInitialsAvatar(student.name, 90);
     const mentorAvatar = assignedMentor ? (assignedMentor.avatar || getInitialsAvatar(assignedMentor.name, 50)) : '';
 
@@ -345,12 +388,12 @@ window.openStudentMiniDashboard = async function(studentId) {
     body.innerHTML = `
       <!-- Header Profile Banner -->
       <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px; margin-bottom:20px;">
-        <img src="${studentAvatar}" alt="${student.name}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--accent-cyan, #38bdf8); box-shadow:0 0 15px rgba(56,189,248,0.3);">
+        <img src="${studentAvatar}" alt="${student.name}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--accent-cyan, #38bdf8); box-shadow:0 0 15px rgba(56,189,248,0.3);" onerror="this.src='${getInitialsAvatar(student.name, 80)}'">
         <div style="flex:1; min-width:220px;">
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <h2 style="margin:0; font-size:1.35rem; font-weight:800; color:#fff;">${student.name}</h2>
             <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:0.75rem; padding:3px 9px;">${student.register_number}</span>
-            <span class="badge" style="background:rgba(129,140,248,0.15); color:#a5b4fc; font-size:0.75rem; padding:3px 9px;">${student.department}</span>
+            <span class="badge" style="background:rgba(129,140,248,0.15); color:#a5b4fc; font-size:0.75rem; padding:3px 9px;">${student.department_name || student.department || 'Department'}</span>
           </div>
           <div style="font-size:0.85rem; color:var(--text-muted, #94a3b8); margin-top:6px; display:flex; gap:14px; flex-wrap:wrap;">
             <span>📅 ${student.year || 'N/A'} • ${student.semester || 'N/A'}</span>
@@ -379,15 +422,19 @@ window.openStudentMiniDashboard = async function(studentId) {
         </div>
         <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
           <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Fee Status</div>
-          <div style="font-size:1.25rem; font-weight:800; color:#10b981; margin-top:6px;">${fees && fees.length > 0 && Number(fees[0].balance_amount) <= 0 ? 'PAID' : 'PENDING'}</div>
-          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">${fees && fees.length > 0 ? `₹${Number(fees[0].balance_amount || 0).toLocaleString()} Due` : 'No Dues'}</div>
+          <div style="font-size:1.25rem; font-weight:800; color:${fees && fees.length > 0 && Number(fees[0].balance_amount) <= 0 ? '#10b981' : '#f87171'}; margin-top:6px;">
+            ${fees && fees.length > 0 && Number(fees[0].balance_amount) <= 0 ? 'PAID' : 'PENDING'}
+          </div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">
+            ${fees && fees.length > 0 ? `₹${Number(fees[0].balance_amount || 0).toLocaleString()} Due` : 'No Outstanding Dues'}
+          </div>
         </div>
       </div>
 
       <!-- Assigned Faculty Mentor Card -->
       <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.2); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div style="display:flex; align-items:center; gap:12px;">
-          ${mentorAvatar ? `<img src="${mentorAvatar}" alt="Mentor" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid #38bdf8;">` : '<span style="font-size:1.8rem;">👨‍🏫</span>'}
+          ${mentorAvatar ? `<img src="${mentorAvatar}" alt="Mentor" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid #38bdf8;" onerror="this.src='${getInitialsAvatar(assignedMentor ? assignedMentor.name : 'M', 44)}'">` : '<span style="font-size:1.8rem;">👨‍🏫</span>'}
           <div>
             <div style="font-size:0.72rem; color:#38bdf8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Assigned Faculty Mentor</div>
             <div style="font-size:1rem; font-weight:700; color:#fff;">${assignedMentor ? assignedMentor.name : 'No Primary Mentor Assigned Yet'}</div>
@@ -399,7 +446,7 @@ window.openStudentMiniDashboard = async function(studentId) {
 
       <!-- Mini-Dashboard Content Tabs -->
       <div style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:16px;">
-        <button class="tab-btn active" onclick="switchMiniDashTab('academics')" id="md-tab-academics" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:#fff; border-bottom:2px solid #38bdf8; cursor:pointer;">Academic Results (${results.total})</button>
+        <button class="tab-btn active" onclick="switchMiniDashTab('academics')" id="md-tab-academics" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:#fff; border-bottom:2px solid #38bdf8; cursor:pointer;">Academic Results (${results.total || (results.all ? results.all.length : 0)})</button>
         <button class="tab-btn" onclick="switchMiniDashTab('leaves')" id="md-tab-leaves" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:var(--text-muted, #94a3b8); cursor:pointer;">Leave History (${leaves ? leaves.length : 0})</button>
         <button class="tab-btn" onclick="switchMiniDashTab('activities')" id="md-tab-activities" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:var(--text-muted, #94a3b8); cursor:pointer;">Activities (${activities ? activities.length : 0})</button>
       </div>
@@ -431,7 +478,7 @@ window.openStudentMiniDashboard = async function(studentId) {
               </tbody>
             </table>
           </div>
-        ` : '<div style="text-align:center; padding:24px; color:var(--text-muted, #94a3b8);">No published academic marks recorded yet.</div>'}
+        ` : '<div style="text-align:center; padding:24px; color:var(--text-muted, #94a3b8);">No published academic marks recorded yet for this student.</div>'}
       </div>
 
       <!-- Tab: Leave History -->
@@ -494,8 +541,270 @@ window.openStudentMiniDashboard = async function(studentId) {
     `;
 
   } catch (err) {
-    body.innerHTML = `<div style="text-align:center; padding:30px; color:#f87171;">Failed to load mini-dashboard: ${err.message}</div>`;
+    body.innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">❌</div>
+        <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
+          Failed to load mini-dashboard: ${err.message}
+        </div>
+        <button class="btn btn-primary" onclick="openStudentMiniDashboard(${studentId}, ${JSON.stringify(options).replace(/"/g, '&quot;')})">
+          🔄 Retry Loading Record
+        </button>
+      </div>
+    `;
   }
+};
+
+// 2. Faculty Mini-Dashboard (Section 6 & Requirement 5B)
+window.openFacultyMiniDashboard = async function(facultyId, options = {}) {
+  const modal = ensureMiniDashboardModal();
+  modal.style.display = 'flex';
+
+  document.getElementById('mini-dashboard-modal-title').textContent = 'Faculty Member Mini-Dashboard';
+  document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED FACULTY PROFILE & MENTOR ROSTER';
+  document.getElementById('mini-dashboard-back-container').innerHTML = '';
+
+  const body = document.getElementById('mini-dashboard-body');
+  // Immediate state reset
+  body.innerHTML = `
+    <div style="text-align:center; padding:60px 20px;">
+      <div style="font-size:2rem; margin-bottom:12px;">⏳</div>
+      <div style="color:#fff; font-weight:700; font-size:1rem;">Loading Faculty Record #${facultyId}...</div>
+      <div style="color:var(--text-muted, #94a3b8); font-size:0.82rem; margin-top:4px;">Retrieving academic profile, mentee assignments & teaching allocations...</div>
+    </div>
+  `;
+
+  try {
+    const res = await apiCall(`/departments/faculty/${facultyId}/mini-dashboard`);
+    if (!res || !res.success || !res.data) {
+      body.innerHTML = `
+        <div style="text-align:center; padding:40px 20px;">
+          <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">⚠️</div>
+          <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
+            Could not load faculty profile: ${res && res.message ? res.message : 'Record not accessible or permission denied'}
+          </div>
+          <button class="btn btn-primary" onclick="openFacultyMiniDashboard(${facultyId})">
+            🔄 Retry Loading
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const { faculty, mentees, courses } = res.data;
+    const facAvatar = faculty.avatar || getInitialsAvatar(faculty.name, 90);
+
+    body.innerHTML = `
+      <!-- Faculty Header Banner -->
+      <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px; margin-bottom:20px;">
+        <img src="${facAvatar}" alt="${faculty.name}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #38bdf8; box-shadow:0 0 15px rgba(56,189,248,0.3);" onerror="this.src='${getInitialsAvatar(faculty.name, 80)}'">
+        <div style="flex:1; min-width:220px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h2 style="margin:0; font-size:1.35rem; font-weight:800; color:#fff;">${faculty.name}</h2>
+            <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:0.75rem; padding:3px 9px;">${faculty.faculty_code || 'FAC-' + faculty.id}</span>
+            <span class="badge" style="background:${faculty.is_hod ? 'rgba(234,179,8,0.15)' : 'rgba(34,197,94,0.15)'}; color:${faculty.is_hod ? '#facc15' : '#4ade80'}; font-size:0.75rem; padding:3px 9px;">
+              ${faculty.is_hod ? '👑 Department Head (HOD)' : 'Faculty Mentor'}
+            </span>
+          </div>
+          <div style="font-size:0.85rem; color:var(--text-muted, #94a3b8); margin-top:6px; display:flex; gap:14px; flex-wrap:wrap;">
+            <span>🏛️ ${faculty.department || 'Department'} (${faculty.department_code || 'DEPT'})</span>
+            <span>✉️ ${faculty.email || 'N/A'}</span>
+            <span>💼 ${faculty.designation || 'Faculty Member'}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Active Mentees</div>
+          <div style="font-size:1.6rem; font-weight:900; color:#38bdf8; margin-top:4px;">${faculty.mentee_count || (mentees ? mentees.length : 0)}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Assigned Scholars</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Courses Taught</div>
+          <div style="font-size:1.6rem; font-weight:900; color:#a855f7; margin-top:4px;">${courses ? courses.length : 0}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Subject Allocations</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Mentoring Scope</div>
+          <div style="font-size:1.15rem; font-weight:800; color:#10b981; margin-top:6px;">${faculty.can_mentor ? 'AUTHORIZED' : 'OFFLINE'}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">${faculty.is_hod ? 'Department Supervisor' : 'Cohort Advisor'}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Status</div>
+          <div style="font-size:1.15rem; font-weight:800; color:#38bdf8; margin-top:6px;">ACTIVE</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Institutional Record</div>
+        </div>
+      </div>
+
+      <!-- Assigned Mentees Section -->
+      <div style="margin-bottom:24px;">
+        <h4 style="color:#fff; font-size:1rem; font-weight:800; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between;">
+          <span>🎓 Assigned Mentee Roster (${mentees ? mentees.length : 0})</span>
+          <span style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:normal;">Click "View Dashboard" to inspect individual student dossier</span>
+        </h4>
+        ${mentees && mentees.length > 0 ? `
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Register No</th>
+                  <th>Year / Sem</th>
+                  <th>CGPA</th>
+                  <th>Attendance</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mentees.map(m => {
+                  const mAvatar = m.avatar || getInitialsAvatar(m.name, 36);
+                  return `
+                    <tr>
+                      <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <img src="${mAvatar}" alt="${m.name}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.15);" onerror="this.src='${getInitialsAvatar(m.name, 32)}'">
+                          <div>
+                            <strong style="color:#fff;">${m.name}</strong>
+                            <div style="font-size:0.72rem; color:var(--text-muted, #94a3b8);">${m.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span style="font-family:monospace; color:#38bdf8; font-weight:700;">${m.register_number}</span></td>
+                      <td>${m.year || 'III Year'}<br><span style="font-size:0.72rem; color:var(--text-muted, #94a3b8);">${m.semester || 'Sem 5'}</span></td>
+                      <td><strong style="color:#fff;">${Number(m.cgpa || 0).toFixed(2)}</strong></td>
+                      <td>
+                        <span style="font-weight:700; color:${Number(m.attendance_percentage || 0) >= 75 ? '#22c55e' : '#f87171'};">
+                          ${Number(m.attendance_percentage || 0).toFixed(1)}%
+                        </span>
+                      </td>
+                      <td>
+                        <button class="btn btn-primary btn-sm" style="font-size:0.75rem; padding:4px 9px;" onclick="openStudentMiniDashboard(${m.id}, { backToFacultyId: ${faculty.id} })">
+                          📊 View Dashboard
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : `
+          <div style="text-align:center; padding:24px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1); border-radius:10px; color:var(--text-muted, #94a3b8);">
+            No students currently assigned under this faculty member's mentorship.
+          </div>
+        `}
+      </div>
+
+      <!-- Allocated Subjects / Courses -->
+      <div>
+        <h4 style="color:#fff; font-size:1rem; font-weight:800; margin-bottom:12px;">📚 Assigned Courses & Subjects (${courses ? courses.length : 0})</h4>
+        ${courses && courses.length > 0 ? `
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Subject Name</th>
+                  <th>Section</th>
+                  <th>Credits</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${courses.map(c => `
+                  <tr>
+                    <td><strong style="color:#38bdf8;">${c.subject_code}</strong></td>
+                    <td>${c.subject_name}</td>
+                    <td><span class="badge" style="background:rgba(255,255,255,0.08);">${c.section_code || 'A'}</span></td>
+                    <td>${c.credits || 3}</td>
+                    <td><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc;">${c.subject_type || 'Theory'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : `
+          <div style="text-align:center; padding:20px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1); border-radius:10px; color:var(--text-muted, #94a3b8);">
+            No course allocations on record for the current semester.
+          </div>
+        `}
+      </div>
+    `;
+
+  } catch (err) {
+    body.innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">❌</div>
+        <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
+          Failed to load faculty mini-dashboard: ${err.message}
+        </div>
+        <button class="btn btn-primary" onclick="openFacultyMiniDashboard(${facultyId})">
+          🔄 Retry Loading Record
+        </button>
+      </div>
+    `;
+  }
+};
+
+// 3. HOD Mini-Dashboard (Section 6 & Requirement 5A)
+window.openHODMiniDashboard = function(hodData, options = {}) {
+  const modal = ensureMiniDashboardModal();
+  modal.style.display = 'flex';
+
+  document.getElementById('mini-dashboard-modal-title').textContent = 'Department Leadership (HOD) Profile';
+  document.getElementById('mini-dashboard-modal-badge').textContent = 'VERIFIED HEAD OF DEPARTMENT PROFILE';
+  document.getElementById('mini-dashboard-back-container').innerHTML = '';
+
+  const body = document.getElementById('mini-dashboard-body');
+  if (!hodData) {
+    body.innerHTML = `
+      <div style="text-align:center; padding:40px 20px; color:var(--text-muted, #94a3b8);">
+        No HOD data provided or unassigned leadership.
+      </div>
+    `;
+    return;
+  }
+
+  const avatar = hodData.avatar || getInitialsAvatar(hodData.name, 90);
+
+  body.innerHTML = `
+    <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:20px; margin-bottom:20px;">
+      <img src="${avatar}" alt="${hodData.name}" style="width:84px; height:84px; border-radius:50%; object-fit:cover; border:3px solid #facc15; box-shadow:0 0 15px rgba(250,204,21,0.3);" onerror="this.src='${getInitialsAvatar(hodData.name, 84)}'">
+      <div style="flex:1; min-width:220px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <h2 style="margin:0; font-size:1.4rem; font-weight:800; color:#fff;">${hodData.name}</h2>
+          <span class="badge" style="background:rgba(250,204,21,0.15); color:#facc15; border:1px solid rgba(250,204,21,0.3); font-size:0.75rem; padding:3px 9px;">
+            👑 Head of Department
+          </span>
+        </div>
+        <div style="font-size:0.88rem; color:var(--text-muted, #94a3b8); margin-top:8px; display:flex; gap:16px; flex-wrap:wrap;">
+          <span>🏛️ ${hodData.department_name || options.departmentName || 'Department'}</span>
+          <span>✉️ ${hodData.email || 'N/A'}</span>
+          <span>📅 HOD Since: ${hodData.hod_since ? String(hodData.hod_since).slice(0, 10) : 'Active Term'}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Authority Scope</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#38bdf8; margin-top:6px;">Department Leadership</div>
+        <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Academic Supervision</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Mentorship Governance</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#10b981; margin-top:6px;">Faculty Allocation</div>
+        <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Advisory Oversight</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px; text-align:center;">
+        <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Credential Status</div>
+        <div style="font-size:1.15rem; font-weight:800; color:#facc15; margin-top:6px;">Verified HOD</div>
+        <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Active in Database</div>
+      </div>
+    </div>
+  `;
 };
 
 window.switchMiniDashTab = function(tabName) {

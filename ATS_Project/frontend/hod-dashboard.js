@@ -1,8 +1,10 @@
-// Head of Department (HOD) Console Controller
+// Head of Department (HOD) Console Controller - Department-Only Isolation
 let departmentStudents = [];
 let departmentMentors = [];
+let departmentFaculty = [];
 let allDeptResults = [];
 let currentResultFilter = 'all';
+let currentHODData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth('hod');
@@ -15,6 +17,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     titleEl.textContent = `${user.department} — HOD Console`;
   }
 
+  // Load Authentic HOD Leadership Profile for Sector 1
+  await loadHODLeadershipIdentity();
+
+  // Load Department Data
   await loadAllHODData();
 
   // Reassign Form Submit
@@ -52,6 +58,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Sector 1: HOD Leadership Identity
+async function loadHODLeadershipIdentity() {
+  try {
+    const res = await apiCall('/auth/me');
+    if (res.success && res.user) {
+      currentHODData = res.user.faculty || {
+        name: res.user.name,
+        email: res.user.email,
+        designation: 'Head of Department',
+        department: res.user.department
+      };
+
+      const nameEl = document.getElementById('hod-leader-name');
+      const deptEl = document.getElementById('hod-leader-dept');
+      const metaEl = document.getElementById('hod-leader-meta');
+      const avatarEl = document.getElementById('hod-leader-avatar');
+
+      const avatarSrc = res.user.avatar || (res.user.faculty && res.user.faculty.avatar) || getInitialsAvatar(res.user.name, 64);
+
+      if (nameEl) nameEl.textContent = res.user.name;
+      if (deptEl) deptEl.textContent = `${res.user.department || 'Department'} Executive Governance`;
+      if (metaEl) metaEl.textContent = `Official Email: ${res.user.email} • Designation: ${currentHODData.designation || 'Head of Department'}`;
+      if (avatarEl) {
+        avatarEl.src = avatarSrc;
+        avatarEl.onerror = () => { avatarEl.src = getInitialsAvatar(res.user.name, 64); };
+      }
+    }
+  } catch (err) {
+    console.error('[HOD Leadership Profile Error]', err);
+  }
+}
+
+window.openCurrentHODDetails = function() {
+  if (currentHODData) {
+    openHODMiniDashboard(currentHODData, { departmentName: currentHODData.department });
+  } else {
+    showToast('HOD details not loaded yet.', 'info');
+  }
+};
+
 async function loadAllHODData() {
   await Promise.all([
     loadAllocations(),
@@ -66,41 +112,73 @@ async function loadAllocations() {
     const res = await apiCall('/mentors/department-allocations');
     departmentStudents = res.students || [];
     departmentMentors = res.mentors || [];
+    departmentFaculty = res.faculty || res.mentors || [];
 
+    // Sector 1 KPIs
     document.getElementById('kpi-dept-students').textContent = departmentStudents.length;
-    document.getElementById('kpi-dept-mentors').textContent = departmentMentors.length;
+    document.getElementById('kpi-dept-faculty').textContent = departmentFaculty.length;
+    const mentorsSub = document.getElementById('kpi-dept-mentors-sub');
+    if (mentorsSub) mentorsSub.textContent = `${departmentMentors.length} Authorized Mentors`;
 
-    renderMentorsCards(departmentMentors);
+    const countBadge = document.getElementById('faculty-count-badge');
+    if (countBadge) countBadge.textContent = `${departmentFaculty.length} Department Faculty`;
+
+    // Render Sector 2: Faculty Roster
+    renderFacultyCards(departmentFaculty);
+
+    // Render Sector 3: Students Roster
     renderAllocationsTable(departmentStudents);
+
     populateMentorDropdown(departmentMentors);
   } catch (err) {
     console.error('[HOD Load Allocations Error]', err);
-    document.getElementById('allocations-table-body').innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171;">Failed to load mentor allocations: ${err.message}</td></tr>`;
+    document.getElementById('allocations-table-body').innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171;">Failed to load records: ${err.message}</td></tr>`;
   }
 }
 
-function renderMentorsCards(mentors) {
-  const container = document.getElementById('mentors-cards-bar');
-  if (!mentors || mentors.length === 0) {
-    container.innerHTML = '<div style="color: var(--text-dim); font-size: 0.85rem;">No active mentors designated in this department.</div>';
+// Sector 2: Render Department Faculty Roster
+function renderFacultyCards(facultyList) {
+  const container = document.getElementById('dept-faculty-cards-container');
+  if (!facultyList || facultyList.length === 0) {
+    container.innerHTML = '<div style="color: var(--text-dim); font-size: 0.85rem; padding: 20px; text-align: center; grid-column: 1 / -1;">No faculty members registered in this department yet.</div>';
     return;
   }
 
-  container.innerHTML = mentors.map(m => {
-    const avatarSrc = m.avatar || getInitialsAvatar(m.name);
+  container.innerHTML = facultyList.map(f => {
+    const avatarSrc = f.avatar || getInitialsAvatar(f.name, 48);
+    const isHod = Boolean(f.is_hod);
+    const rolePill = isHod 
+      ? '<span class="badge" style="background: rgba(250,204,21,0.15); color: #facc15; font-size: 0.72rem; padding: 2px 7px;">👑 HOD</span>'
+      : (f.can_mentor ? '<span class="badge" style="background: rgba(34,197,94,0.15); color: #4ade80; font-size: 0.72rem; padding: 2px 7px;">Mentor</span>' : '<span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.72rem; padding: 2px 7px;">Faculty</span>');
+
     return `
-      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 16px; min-width: 220px; display: flex; align-items: center; gap: 12px;">
-        <img src="${avatarSrc}" alt="${m.name}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-blue);" onerror="this.src='${getInitialsAvatar(m.name)}'">
-        <div>
-          <strong style="color: #fff; font-size: 0.88rem;">${m.name}</strong>
-          <div style="font-size: 0.74rem; color: var(--text-dim);">${m.designation || 'Faculty Mentor'}</div>
-          <span class="kpi-pill pill-blue" style="margin-top: 4px; display: inline-block;">${m.mentee_count || 0} Mentees</span>
+      <div style="background: var(--bg-surface, #1e293b); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: var(--radius-sm, 10px); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <img src="${avatarSrc}" alt="${f.name}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid ${isHod ? '#facc15' : '#38bdf8'};" onerror="this.src='${getInitialsAvatar(f.name, 48)}'">
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <strong style="color: #fff; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${f.name}</strong>
+              ${rolePill}
+            </div>
+            <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 2px;">${f.designation || 'Faculty Member'}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${f.email || ''}</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; margin-top: 2px;">
+          <span class="kpi-pill pill-blue" style="font-size: 0.72rem;">
+            ${f.mentee_count || 0} Assigned Mentees
+          </span>
+          <button class="btn btn-secondary btn-sm" onclick="openFacultyMiniDashboard(${f.id})" style="font-size: 0.74rem; padding: 4px 10px;">
+            👤 View Details
+          </button>
         </div>
       </div>
     `;
   }).join('');
 }
 
+// Sector 3: Render Department Students Roster
 function renderAllocationsTable(students) {
   const tbody = document.getElementById('allocations-table-body');
   if (!students || students.length === 0) {
@@ -126,14 +204,14 @@ function renderAllocationsTable(students) {
             </div>
           </div>
         </td>
-        <td><strong style="color: var(--accent-cyan);">${s.register_number}</strong></td>
+        <td><strong style="color: var(--accent-cyan); font-family: monospace;">${s.register_number}</strong></td>
         <td>${s.year || 'III Year'}<br><span style="font-size: 0.75rem; color: var(--text-dim);">${s.semester || 'Semester 1'}</span></td>
         <td>${mentorBadge}</td>
         <td>${s.assigned_at ? formatDate(s.assigned_at) : '—'}</td>
         <td>
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
             <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.75rem; font-weight:700;" onclick="openStudentMiniDashboard(${s.student_id})">
-              📊 Mini-Dashboard
+              📊 View Dashboard
             </button>
             <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.75rem;" onclick="openReassignModal(${s.student_id}, '${escapeHtml(s.student_name)}', '${s.register_number}', ${s.mentor_faculty_id || 'null'})">
               ${hasMentor ? '🔄 Reassign' : '➕ Assign'}
@@ -145,8 +223,23 @@ function renderAllocationsTable(students) {
   }).join('');
 }
 
+function filterDepartmentStudents() {
+  const query = (document.getElementById('student-search-input').value || '').toLowerCase().trim();
+  if (!query) {
+    renderAllocationsTable(departmentStudents);
+    return;
+  }
+  const filtered = departmentStudents.filter(s =>
+    (s.student_name || '').toLowerCase().includes(query) ||
+    (s.register_number || '').toLowerCase().includes(query) ||
+    (s.email || '').toLowerCase().includes(query)
+  );
+  renderAllocationsTable(filtered);
+}
+
 function populateMentorDropdown(mentors) {
   const select = document.getElementById('reassign-mentor-select');
+  if (!select) return;
   select.innerHTML = '<option value="">-- Choose active mentor --</option>' +
     mentors.map(m => `<option value="${m.id}">${m.name} (${m.mentee_count || 0} active mentees)</option>`).join('');
 }
@@ -204,6 +297,7 @@ function filterDepartmentResults(type) {
 
 function renderDeptResultsTable() {
   const tbody = document.getElementById('dept-results-table-body');
+  if (!tbody) return;
   let list = allDeptResults;
   if (currentResultFilter !== 'all') {
     list = allDeptResults.filter(r => r.assessment_type === currentResultFilter);
@@ -250,6 +344,7 @@ async function loadDepartmentLeaves() {
     document.getElementById('kpi-dept-leaves').textContent = pending;
 
     const tbody = document.getElementById('dept-leaves-table-body');
+    if (!tbody) return;
     if (leaves.length === 0) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-dim);">No leave requests found in your department.</td></tr>';
       return;
@@ -288,6 +383,7 @@ async function loadDepartmentFees() {
     document.getElementById('kpi-dept-fees').textContent = `₹${Number(summary.totalBalance).toLocaleString('en-IN')}`;
 
     const tbody = document.getElementById('dept-fees-table-body');
+    if (!tbody) return;
     if (fees.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">No fee records found in this department.</td></tr>';
       return;

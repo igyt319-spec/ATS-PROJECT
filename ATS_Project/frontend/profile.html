@@ -166,40 +166,17 @@
           </form>
         </div>
 
-        <!-- Academic Standing Summary Card -->
-        <div class="glass-card">
+        <!-- Role-Specific Summary Card -->
+        <div class="glass-card" id="profile-summary-card">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>Academic Highlights</h3>
-              <p>Verified Database Standing</p>
+              <h3 id="prof-summary-title">Institutional Standing</h3>
+              <p id="prof-summary-subtitle">Verified Database Standing</p>
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 16px; font-size: 0.88rem;">
-            <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Current CGPA:</span>
-              <strong style="color: #38bdf8;" id="prof-stat-cgpa">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Semester SGPA:</span>
-              <strong style="color: #34d399;" id="prof-stat-gpa">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Attendance Ratio:</span>
-              <strong style="color: #fbbf24;" id="prof-stat-att">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Verified Activities:</span>
-              <strong style="color: var(--accent-purple);" id="prof-stat-ach">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-              <span style="color: var(--text-dim);">Academic Score:</span>
-              <strong style="color: #fff;" id="prof-stat-score">—</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: var(--text-dim);">Risk Categorization:</span>
-              <span class="kpi-pill pill-green" id="prof-stat-risk">LOW</span>
-            </div>
+          <div id="prof-summary-content" style="display: flex; flex-direction: column; gap: 16px; font-size: 0.88rem;">
+            <!-- Populated dynamically by profile.js based on role -->
           </div>
         </div>
 

@@ -42,31 +42,6 @@ async function login(req, res) {
       });
     }
 
-    // Validate role if specified
-    if (role && role !== 'all') {
-      const normalizedRole = role.toLowerCase();
-      const userRole = (user.role || '').toLowerCase();
-      const facRole = (user.faculty_role || '').toLowerCase();
-
-      let roleAllowed = false;
-      if (normalizedRole === 'student') {
-        roleAllowed = (userRole === 'student');
-      } else if (normalizedRole === 'faculty') {
-        roleAllowed = (userRole === 'faculty' || userRole === 'admin');
-      } else if (normalizedRole === 'hod') {
-        roleAllowed = ((userRole === 'faculty' && facRole === 'hod') || userRole === 'admin');
-      } else if (normalizedRole === 'admin') {
-        roleAllowed = (userRole === 'admin' || userRole === 'faculty');
-      }
-
-      if (!roleAllowed) {
-        return res.status(401).json({
-          success: false,
-          message: `Account found, but role does not match selected '${role}' login mode.`
-        });
-      }
-    }
-
     let isMatch = false;
     if (user.password && /^\$2[aby]\$/.test(user.password)) {
       try {
@@ -99,37 +74,76 @@ async function login(req, res) {
 
     if (user.role === 'student') {
       const [studentRows] = await db.query(
-        `SELECT st.*, d.name AS department_name 
+        `SELECT st.*, d.name AS department_name, d.code AS department_code 
          FROM students st 
          LEFT JOIN departments d ON d.id = st.department_id 
-         WHERE st.user_id = ? OR st.register_number = ?`,
-        [user.id, user.register_number]
+         WHERE st.user_id = ? OR st.register_number = ? OR st.email = ?`,
+        [user.id, user.register_number, user.email]
       );
       if (studentRows && studentRows.length > 0) {
         studentDetails = studentRows[0];
         departmentId = studentDetails.department_id;
         departmentName = studentDetails.department_name;
+        if (studentDetails.user_id !== user.id) {
+          await db.query('UPDATE students SET user_id = ? WHERE id = ?', [user.id, studentDetails.id]).catch(() => {});
+        }
       }
     } else if (user.role === 'faculty') {
       const [facRows] = await db.query(
-        `SELECT f.*, d.name AS department_name 
+        `SELECT f.*, d.name AS department_name, d.code AS department_code,
+                dha.id AS active_hod_assignment
          FROM faculty f 
          LEFT JOIN departments d ON d.id = f.department_id 
-         WHERE f.user_id = ?`,
-        [user.id]
+         LEFT JOIN department_hod_assignments dha ON dha.faculty_id = f.id AND dha.status = 'active'
+         WHERE f.user_id = ? OR f.email = ? OR f.faculty_code = ?`,
+        [user.id, user.email, user.register_number]
       );
       if (facRows && facRows.length > 0) {
         facultyDetails = facRows[0];
         departmentId = facultyDetails.department_id;
         departmentName = facultyDetails.department_name;
-        if (facultyDetails.is_hod) facultyRole = 'hod';
-        else if (facultyDetails.can_mentor) facultyRole = 'mentor';
+        if (facultyDetails.user_id !== user.id) {
+          await db.query('UPDATE faculty SET user_id = ? WHERE id = ?', [user.id, facultyDetails.id]).catch(() => {});
+        }
+        if (facultyDetails.active_hod_assignment || facultyDetails.is_hod) {
+          facultyRole = 'hod';
+          facultyDetails.is_hod = 1;
+        } else if (facultyDetails.can_mentor) {
+          facultyRole = 'mentor';
+        } else {
+          facultyRole = 'faculty';
+        }
       }
     }
 
     if (!departmentName && departmentId) {
       const [deptRows] = await db.query('SELECT name FROM departments WHERE id = ?', [departmentId]);
       if (deptRows.length > 0) departmentName = deptRows[0].name;
+    }
+
+    // Role validation: ensure valid users from every department can authenticate and access the correct portal
+    if (role && role !== 'all') {
+      const normalizedRole = role.toLowerCase();
+      const userRole = (user.role || '').toLowerCase();
+      const resolvedFacRole = (facultyRole || user.faculty_role || '').toLowerCase();
+
+      let roleAllowed = false;
+      if (normalizedRole === 'student') {
+        roleAllowed = (userRole === 'student');
+      } else if (normalizedRole === 'faculty') {
+        roleAllowed = (userRole === 'faculty' || userRole === 'admin');
+      } else if (normalizedRole === 'hod') {
+        roleAllowed = ((userRole === 'faculty' && (resolvedFacRole === 'hod' || (facultyDetails && facultyDetails.is_hod))) || userRole === 'admin');
+      } else if (normalizedRole === 'admin') {
+        roleAllowed = (userRole === 'admin');
+      }
+
+      if (!roleAllowed) {
+        return res.status(401).json({
+          success: false,
+          message: `Account verified, but registered as '${userRole === 'faculty' ? (resolvedFacRole === 'hod' ? 'Head of Department (HOD)' : 'Faculty') : userRole}'. Please select the corresponding '${userRole}' portal.`
+        });
+      }
     }
 
     const tokenPayload = {
@@ -215,27 +229,94 @@ async function getMe(req, res) {
 
     if (user.role === 'student') {
       const [stRows] = await db.query(
-        'SELECT st.*, d.name AS department FROM students st LEFT JOIN departments d ON d.id=st.department_id WHERE st.user_id = ?',
-        [user.id]
+        `SELECT st.*, d.name AS department_name, d.code AS department_code 
+         FROM students st 
+         LEFT JOIN departments d ON d.id = st.department_id 
+         WHERE st.user_id = ? OR st.register_number = ? OR st.email = ?`,
+        [user.id, user.register_number, user.email]
       );
-      if (stRows.length > 0) student = stRows[0];
+      if (stRows.length > 0) {
+        student = stRows[0];
+        student.department = student.department_name || student.department;
+      }
     } else if (user.role === 'faculty') {
       const [facRows] = await db.query(
-        'SELECT f.*, d.name AS department FROM faculty f LEFT JOIN departments d ON d.id=f.department_id WHERE f.user_id = ?',
-        [user.id]
+        `SELECT f.*, d.name AS department_name, d.code AS department_code,
+                (SELECT COUNT(*) FROM student_mentors sm WHERE sm.faculty_id = f.id AND sm.status = 'active') AS mentee_count,
+                dha.id AS active_hod_assignment, dha.start_date AS hod_since
+         FROM faculty f 
+         LEFT JOIN departments d ON d.id = f.department_id 
+         LEFT JOIN department_hod_assignments dha ON dha.faculty_id = f.id AND dha.status = 'active'
+         WHERE f.user_id = ? OR f.email = ? OR f.faculty_code = ?`,
+        [user.id, user.email, user.register_number]
       );
-      if (facRows.length > 0) faculty = facRows[0];
+      if (facRows.length > 0) {
+        faculty = facRows[0];
+        faculty.department = faculty.department_name || 'Department';
+        if (faculty.active_hod_assignment || faculty.is_hod) {
+          faculty.is_hod = 1;
+          user.faculty_role = 'hod';
+          faculty.designation = 'Head of Department';
+        } else {
+          user.faculty_role = faculty.can_mentor ? 'mentor' : 'faculty';
+        }
+      }
     }
 
     return res.status(200).json({
       success: true,
       user: {
         ...user,
+        department: student ? student.department : (faculty ? faculty.department : (user.role === 'admin' ? 'Institution Administration' : 'General')),
         student,
         faculty
       }
     });
   } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// PUT /api/auth/me (Update authenticated user's own profile without cross-user mixing)
+async function updateProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const { name, phone, bio } = req.body;
+
+    const [users] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (!users || users.length === 0) {
+      return res.status(404).json({ success: false, message: 'User record not found.' });
+    }
+    const user = users[0];
+
+    if (user.role === 'student') {
+      // Student: update contact and bio
+      if (phone !== undefined) {
+        await db.query('UPDATE students SET phone = ?, updated_at = NOW() WHERE user_id = ? OR register_number = ?', [phone, user.id, user.register_number]);
+      }
+      if (bio !== undefined) {
+        await db.query('UPDATE students SET bio = ?, updated_at = NOW() WHERE user_id = ? OR register_number = ?', [bio, user.id, user.register_number]);
+      }
+    } else if (user.role === 'faculty') {
+      // Faculty: update phone
+      if (phone !== undefined) {
+        await db.query('UPDATE faculty SET updated_at = NOW() WHERE user_id = ? OR email = ?', [user.id, user.email]);
+      }
+      if (bio !== undefined) {
+        await db.query('UPDATE users SET updated_at = NOW() WHERE id = ?', [user.id]);
+      }
+    } else if (user.role === 'admin') {
+      if (name && name.trim()) {
+        await db.query('UPDATE users SET name = ?, updated_at = NOW() WHERE id = ?', [name.trim(), user.id]);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully.'
+    });
+  } catch (error) {
+    console.error('[Update Profile Error]', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 }
@@ -513,6 +594,7 @@ module.exports = {
   login,
   logout,
   getMe,
+  updateProfile,
   updateProfilePhoto,
   forgotPassword,
   changePassword,

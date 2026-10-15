@@ -133,7 +133,7 @@ function renderMenteesTable(list) {
         <td>${feeBadge}</td>
         <td>
           <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight:700;" onclick="openStudentMiniDashboard(${m.student_id})">
-            📊 Mini-Dashboard
+            📊 View Dashboard
           </button>
         </td>
       </tr>

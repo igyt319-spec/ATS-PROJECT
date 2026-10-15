@@ -59,23 +59,28 @@ async function getDepartmentAllocations(req, res) {
       [departmentId]
     );
 
-    // Get all active eligible mentors in department
-    const [mentors] = await db.query(
-      `SELECT f.id, f.name, f.email, f.designation, f.avatar,
+    // Get all department faculty members (including HOD and all staff)
+    const [faculty] = await db.query(
+      `SELECT f.id, f.faculty_code, f.name, f.email, f.designation, f.avatar, f.is_hod, f.can_mentor,
               (SELECT COUNT(*) FROM student_mentors sm WHERE sm.faculty_id = f.id AND sm.status = 'active') AS mentee_count
        FROM faculty f
-       WHERE f.department_id = ? AND f.can_mentor = 1
-       ORDER BY f.name ASC`,
+       WHERE f.department_id = ?
+       ORDER BY f.is_hod DESC, f.name ASC`,
       [departmentId]
     );
+
+    // Eligible mentors for assignment dropdown
+    const mentors = faculty.filter(f => f.can_mentor == 1);
 
     return res.status(200).json({
       success: true,
       departmentId,
       studentsCount: students.length,
       mentorsCount: mentors.length,
+      facultyCount: faculty.length,
       students,
-      mentors
+      mentors,
+      faculty
     });
   } catch (err) {
     console.error('[getDepartmentAllocations Error]', err);

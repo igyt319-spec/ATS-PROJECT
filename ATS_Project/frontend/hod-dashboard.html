@@ -72,70 +72,117 @@
 
     <main class="page-container">
 
-      <!-- HOD Department Stats KPI -->
-      <div class="kpi-grid" style="margin-bottom: 24px;">
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Department Scholars</span>
-            <span class="kpi-icon">🎓</span>
+      <!-- =========================================================================
+           SECTOR 1: HOD / DEPARTMENT LEADERSHIP
+           ========================================================================= -->
+      <section class="glass-card" id="section-hod-leadership" style="margin-bottom: 24px; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <img src="" alt="HOD Avatar" id="hod-leader-avatar" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #facc15; box-shadow: 0 0 12px rgba(250,204,21,0.3);">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h2 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #fff;" id="hod-leader-name">Department Head</h2>
+                <span class="badge" style="background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.3); font-size: 0.72rem; padding: 3px 8px;">
+                  👑 HEAD OF DEPARTMENT
+                </span>
+              </div>
+              <p style="margin: 4px 0 0; color: var(--accent-cyan); font-size: 0.86rem; font-weight: 600;" id="hod-leader-dept">
+                Department Executive Governance
+              </p>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="hod-leader-meta">
+                Verified institutional credentials • Department Authority
+              </div>
+            </div>
           </div>
-          <div class="kpi-value" id="kpi-dept-students">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--accent-cyan);">Active Enrolled</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Designated Mentors</span>
-            <span class="kpi-icon">👨‍🏫</span>
-          </div>
-          <div class="kpi-value" id="kpi-dept-mentors">0</div>
-          <div class="kpi-footer">
-            <span style="color: #34d399;">Authorized Faculty</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Pending Leave Requests</span>
-            <span class="kpi-icon">📝</span>
-          </div>
-          <div class="kpi-value" id="kpi-dept-leaves" style="color: #fbbf24;">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--text-dim);">Across Department</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Outstanding Department Dues</span>
-            <span class="kpi-icon">💳</span>
-          </div>
-          <div class="kpi-value" id="kpi-dept-fees" style="color: #f87171;">₹0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--text-dim);">Total Student Balances</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mentor Allocation Management Card -->
-      <div class="glass-card" id="section-allocations" style="margin-bottom: 28px;">
-        <div class="card-header" style="flex-wrap: wrap; gap: 16px;">
-          <div class="card-title-group">
-            <h3>Mentor Allocation & Student Advisory Roster</h3>
-            <p>Ensure every student has an active primary mentor in your department</p>
-          </div>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="btn btn-primary" onclick="triggerAutoAssign()" id="btn-auto-assign">
-              ⚡ Deterministic Auto-Assign
+          <div>
+            <button class="btn btn-secondary btn-sm" onclick="openCurrentHODDetails()" style="font-size: 0.8rem; padding: 7px 14px;">
+              👤 View HOD Profile Details
             </button>
           </div>
         </div>
 
-        <!-- Mentors Overview Sub-Bar -->
-        <div style="display: flex; gap: 16px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px;" id="mentors-cards-bar">
-          <!-- Mentor cards rendered dynamically -->
+        <!-- HOD Department Stats KPI -->
+        <div class="kpi-grid" style="margin-bottom: 0;">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Department Scholars</span>
+              <span class="kpi-icon">🎓</span>
+            </div>
+            <div class="kpi-value" id="kpi-dept-students">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--accent-cyan);">Active In Department</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Department Faculty</span>
+              <span class="kpi-icon">👨‍🏫</span>
+            </div>
+            <div class="kpi-value" id="kpi-dept-faculty">0</div>
+            <div class="kpi-footer">
+              <span style="color: #34d399;" id="kpi-dept-mentors-sub">0 Mentors</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Pending Leave Requests</span>
+              <span class="kpi-icon">📝</span>
+            </div>
+            <div class="kpi-value" id="kpi-dept-leaves" style="color: #fbbf24;">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--text-dim);">Awaiting Mentor Review</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Outstanding Department Dues</span>
+              <span class="kpi-icon">💳</span>
+            </div>
+            <div class="kpi-value" id="kpi-dept-fees" style="color: #f87171;">₹0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--text-dim);">Total Student Balances</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================================
+           SECTOR 2: DEPARTMENT FACULTY ROSTER
+           ========================================================================= -->
+      <section class="glass-card" id="section-faculty" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h3>👨‍🏫 Department Faculty Roster</h3>
+            <p>Authorized faculty members assigned to your department with advisory and teaching scope</p>
+          </div>
+          <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.76rem;" id="faculty-count-badge">0 Faculty</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 4px 0;" id="dept-faculty-cards-container">
+          <div style="text-align: center; padding: 24px; color: var(--text-dim); grid-column: 1 / -1;">
+            Loading department faculty members... ⏳
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================================
+           SECTOR 3: DEPARTMENT STUDENTS ROSTER & MENTOR ALLOCATION
+           ========================================================================= -->
+      <section class="glass-card" id="section-students" style="margin-bottom: 28px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 16px;">
+          <div class="card-title-group">
+            <h3>🎓 Department Students Roster & Advisory Allocation</h3>
+            <p>Every student has an individual academic record and designated department mentor</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="student-search-input" placeholder="🔍 Search student name or ID..." oninput="filterDepartmentStudents()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.8rem; width: 220px;">
+            <button class="btn btn-primary btn-sm" onclick="triggerAutoAssign()" id="btn-auto-assign">
+              ⚡ Deterministic Auto-Assign
+            </button>
+          </div>
         </div>
 
         <!-- Students Allocation Table -->
@@ -152,11 +199,11 @@
               </tr>
             </thead>
             <tbody id="allocations-table-body">
-              <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading mentor allocation records... ⏳</td></tr>
+              <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading student records... ⏳</td></tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       <!-- Department Academic Results -->
       <div class="glass-card" id="section-results" style="margin-bottom: 28px;">

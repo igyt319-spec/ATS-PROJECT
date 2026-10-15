@@ -392,7 +392,65 @@ async function runRBACTestSuite() {
     const healthRoot = await api('GET', '/health');
     assert('15.1 Public /health endpoint returns HTTP 200', healthRoot.status === 200 && healthRoot.body.status === 'online');
 
-    // 16. Summary
+    // 16. Multi-Department Normal Login Verification (Requirement 3)
+    console.log('\n--- Phase 16: Multi-Department Normal Login Verification (Requirement 3) ---');
+    const eceFacultyLog = await api('POST', '/api/auth/login', { identifier: 'faculty.ece@example.test', password: 'faculty123', role: 'faculty' });
+    assert('16.1 ECE Faculty login succeeds without CSE restriction', eceFacultyLog.status === 200 && eceFacultyLog.body.success);
+
+    const itStudentLog = await api('POST', '/api/auth/login', { identifier: 'BITD0002', password: 'student123', role: 'student' });
+    assert('16.2 IT Department Student (BITD0002) login succeeds', itStudentLog.status === 200 && itStudentLog.body.success);
+
+    const eceStudentLog = await api('POST', '/api/auth/login', { identifier: 'BITD0003', password: 'student123', role: 'student' });
+    assert('16.3 ECE Department Student (BITD0003) login succeeds', eceStudentLog.status === 200 && eceStudentLog.body.success);
+
+    // 17. Profile Decoupling & Role Separation (Requirement 2)
+    console.log('\n--- Phase 17: Profile Decoupling & Role Separation (Requirement 2) ---');
+    const studentMe = await api('GET', '/api/auth/me', null, studentToken);
+    assert('17.1 Student /api/auth/me returns student-only profile', studentMe.status === 200 && studentMe.body.user.student !== null && studentMe.body.user.faculty === null);
+
+    const facultyMe = await api('GET', '/api/auth/me', null, mentorToken);
+    assert('17.2 Faculty /api/auth/me returns faculty-only profile without student metrics', facultyMe.status === 200 && facultyMe.body.user.faculty !== null && facultyMe.body.user.student === null);
+
+    const adminMe = await api('GET', '/api/auth/me', null, adminToken);
+    assert('17.3 Admin /api/auth/me returns admin-only profile without student or faculty pollution', adminMe.status === 200 && adminMe.body.user.student === null && adminMe.body.user.faculty === null);
+
+    const updateMe = await api('PUT', '/api/auth/me', { phone: '9876500000', bio: 'Verified test bio' }, studentToken);
+    assert('17.4 Authenticated user can update own profile safely', updateMe.status === 200 && updateMe.body.success);
+
+    // 18. Institutional Department Overview & Data Isolation (Requirement 5 & 7)
+    console.log('\n--- Phase 18: Institutional Department Overview & Data Isolation (Requirement 5 & 7) ---');
+    const instOverview = await api('GET', '/api/departments/institutional-overview', null, adminToken);
+    assert('18.1 Admin can fetch institutional department overview', instOverview.status === 200 && instOverview.body.success);
+    assert('18.2 Summary includes totalDepartments, totalHODs, totalFaculty, totalStudents', 
+      instOverview.body.summary && instOverview.body.summary.totalDepartments > 0 && instOverview.body.summary.totalStudents > 0);
+
+    const depts = instOverview.body.departments || [];
+    const cseGroup = depts.find(d => d.code === 'CSE');
+    const eceGroup = depts.find(d => d.code === 'ECE');
+
+    if (cseGroup && eceGroup) {
+      const cseHasEceStudent = (cseGroup.students || []).some(s => s.register_number === 'BITD0003');
+      assert('18.3 CSE department sector does NOT contain ECE students', !cseHasEceStudent);
+
+      const eceHasCseStudent = (eceGroup.students || []).some(s => s.register_number === 'BITD0001');
+      assert('18.4 ECE department sector does NOT contain CSE students', !eceHasCseStudent);
+    }
+
+    const nonAdminInstOverview = await api('GET', '/api/departments/institutional-overview', null, studentToken);
+    assert('18.5 Non-admin blocked from institutional overview (HTTP 403)', nonAdminInstOverview.status === 403);
+
+    // 19. Faculty Mini-Dashboard RBAC & Isolation (Requirement 6)
+    console.log('\n--- Phase 19: Faculty Mini-Dashboard RBAC & Isolation (Requirement 6) ---');
+    const fac1MiniDash = await api('GET', '/api/departments/faculty/1/mini-dashboard', null, adminToken);
+    assert('19.1 Admin can view faculty mini-dashboard', fac1MiniDash.status === 200 && fac1MiniDash.body.success);
+    assert('19.2 Faculty mini-dashboard returns faculty profile, mentees, and courses', 
+      fac1MiniDash.body.data && fac1MiniDash.body.data.faculty && Array.isArray(fac1MiniDash.body.data.mentees));
+
+    const eceFacultyId = (eceGroup?.faculty && eceGroup.faculty[0]?.id) || 3;
+    const crossHodAccess = await api('GET', `/api/departments/faculty/${eceFacultyId}/mini-dashboard`, null, hodToken);
+    assert('19.3 Cross-department HOD access rejected on faculty mini-dashboard (HTTP 403)', crossHodAccess.status === 403);
+
+    // 20. Summary
     console.log('\n====================================================');
     const passedCount = results.filter(r => r.passed).length;
     console.log(`=== SUMMARY: ${passedCount} / ${results.length} TESTS PASSED`);

@@ -97,8 +97,8 @@
       <!-- Action Strip -->
       <div class="glass-card" style="margin-bottom: 24px; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 700;">College Overview • <span id="admin-department-total">—</span> Departments</h2>
-          <p style="color: var(--text-muted); font-size: 0.84rem;">Real-time continuous assessment and student risk diagnostic dashboard.</p>
+          <h2 style="font-size: 1.25rem; font-weight: 700;">Institutional Governance Hub • Cross-Departmental Console</h2>
+          <p style="color: var(--text-muted); font-size: 0.84rem;">Real-time institutional oversight, department rosters, continuous assessment, and student diagnostic tracking.</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <a href="students.html" class="btn btn-primary btn-sm">➕ Add New Student</a>
@@ -106,53 +106,101 @@
         </div>
       </div>
 
-      <!-- Admin KPI Cards (Requirement 18) -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
+      <!-- Institution-Wide Summary Cards (Requirement 5) -->
+      <div class="kpi-grid" style="margin-bottom: 24px;">
+        <div class="kpi-card" style="border-top: 3px solid #38bdf8;">
           <div class="kpi-top">
-            <span class="kpi-title">Total Enrolled</span>
-            <div class="kpi-icon">👥</div>
+            <span class="kpi-title">Total Departments</span>
+            <div class="kpi-icon" style="color: #38bdf8;">🏛️</div>
           </div>
-          <div class="kpi-value" id="admin-total-students">—</div>
+          <div class="kpi-value" id="admin-inst-departments">—</div>
+          <div class="kpi-subtitle">Configured Academic Depts</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid #facc15;">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Active HODs</span>
+            <div class="kpi-icon" style="color: #facc15;">👑</div>
+          </div>
+          <div class="kpi-value" id="admin-inst-hods">—</div>
+          <div class="kpi-subtitle">Department Leaders</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid #34d399;">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Faculty</span>
+            <div class="kpi-icon" style="color: #34d399;">👨‍🏫</div>
+          </div>
+          <div class="kpi-value" id="admin-inst-faculty">—</div>
+          <div class="kpi-subtitle">Professors & Mentors</div>
+        </div>
+
+        <div class="kpi-card" style="border-top: 3px solid #a855f7;">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Enrolled Students</span>
+            <div class="kpi-icon" style="color: #a855f7;">🎓</div>
+          </div>
+          <div class="kpi-value" id="admin-inst-students">—</div>
           <div class="kpi-subtitle">Active Scholars Monitored</div>
         </div>
+      </div>
 
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span class="kpi-title">Average Department GPA</span>
-            <div class="kpi-icon">📈</div>
+      <!-- Secondary Academic Metrics -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Average GPA</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #fff;" id="admin-avg-gpa">—</div>
           </div>
-          <div class="kpi-value" id="admin-avg-gpa">—</div>
-          <div class="kpi-subtitle"><span class="kpi-pill pill-green">First Class Distinction</span></div>
+          <span class="kpi-pill pill-green" style="font-size: 0.72rem;">Distinction</span>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span class="kpi-title">Average Attendance</span>
-            <div class="kpi-icon">📅</div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Mean Attendance</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8;" id="admin-avg-att">—</div>
           </div>
-          <div class="kpi-value" id="admin-avg-att">—</div>
-          <div class="kpi-subtitle"><span class="kpi-pill pill-green">Compliant</span> Norm: 75%</div>
+          <span style="font-size: 0.75rem; color: var(--text-dim);">Norm: 75%</span>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span class="kpi-title">At-Risk Students</span>
-            <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">⚠️</div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">At-Risk Scholars</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #f87171;" id="admin-risk-count">—</div>
           </div>
-          <div class="kpi-value" id="admin-risk-count" style="color: #f87171;">—</div>
-          <div class="kpi-subtitle"><span class="kpi-pill pill-red">Needs Mentoring</span></div>
+          <span class="kpi-pill pill-red" style="font-size: 0.72rem;">Intervention</span>
         </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span class="kpi-title">Total Achievements</span>
-            <div class="kpi-icon">🏆</div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Achievements</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #a855f7;" id="admin-total-ach">—</div>
           </div>
-          <div class="kpi-value" id="admin-total-ach">—</div>
-          <div class="kpi-subtitle"><span class="kpi-pill pill-blue">Co-Curriculars Logged</span></div>
+          <span class="kpi-pill pill-blue" style="font-size: 0.72rem;">Co-Curricular</span>
         </div>
       </div>
+
+      <!-- =========================================================================
+           DEPARTMENT-WISE INSTITUTIONAL OVERVIEW (Requirement 5)
+           ========================================================================= -->
+      <section class="glass-card" style="margin-bottom: 28px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+          <div class="card-title-group">
+            <h3>🏛️ Department-Wise Institutional Interface</h3>
+            <p>Isolated department sectors for Leadership (HOD), Faculty roster, and Student cohorts</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="admin-dept-search" placeholder="🔍 Filter departments..." oninput="filterAdminDepartments()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.8rem; width: 200px;">
+          </div>
+        </div>
+
+        <!-- Dynamic Department Cards Container -->
+        <div id="admin-departments-container" style="display: flex; flex-direction: column; gap: 20px; padding: 6px 0;">
+          <div style="text-align: center; padding: 32px; color: var(--text-dim);">
+            Loading department-wise institutional records from MySQL database... ⏳
+          </div>
+        </div>
+
+        <!-- Administrative Exception View (Unassigned Personnel) -->
+        <div id="admin-unassigned-container" style="margin-top: 20px; display: none;"></div>
+      </section>
 
       <section class="glass-card" style="margin-bottom: 28px;">
         <div class="card-header"><div class="card-title-group"><h3>Recent Achievements</h3><p>Latest student records saved in ATS</p></div></div>

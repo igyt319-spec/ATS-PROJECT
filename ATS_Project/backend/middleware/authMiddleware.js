@@ -30,15 +30,19 @@ async function verifyToken(req, res, next) {
     if (decoded.role === 'faculty' && (!decoded.facultyId || decoded.departmentId === undefined)) {
       try {
         const [fac] = await db.query(
-          'SELECT id, department_id, is_hod, can_mentor FROM faculty WHERE user_id = ?',
-          [decoded.id]
+          `SELECT f.id, f.department_id, f.is_hod, f.can_mentor, dha.id AS active_hod_assignment 
+           FROM faculty f 
+           LEFT JOIN department_hod_assignments dha ON dha.faculty_id = f.id AND dha.status = 'active'
+           WHERE f.user_id = ? OR f.email = ?`,
+          [decoded.id, decoded.email]
         );
         if (fac.length > 0) {
           req.user.facultyId = fac[0].id;
           req.user.departmentId = fac[0].department_id;
-          req.user.isHOD = Boolean(fac[0].is_hod);
+          const isHod = Boolean(fac[0].is_hod || fac[0].active_hod_assignment);
+          req.user.isHOD = isHod;
           req.user.canMentor = Boolean(fac[0].can_mentor);
-          if (fac[0].is_hod) req.user.facultyRole = 'hod';
+          if (isHod) req.user.facultyRole = 'hod';
           else if (fac[0].can_mentor) req.user.facultyRole = 'mentor';
         }
       } catch (dbErr) {
@@ -49,8 +53,8 @@ async function verifyToken(req, res, next) {
     if (decoded.role === 'student' && !decoded.studentId) {
       try {
         const [st] = await db.query(
-          'SELECT id, department_id FROM students WHERE user_id = ?',
-          [decoded.id]
+          'SELECT id, department_id FROM students WHERE user_id = ? OR email = ?',
+          [decoded.id, decoded.email]
         );
         if (st.length > 0) {
           req.user.studentId = st[0].id;
@@ -130,7 +134,7 @@ function isHOD(req, res, next) {
 function isMentor(req, res, next) {
   if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
   if (req.user.role === 'admin') return next();
-  if (req.user.role === 'faculty' && (req.user.facultyRole === 'mentor' || req.user.canMentor || req.user.facultyRole === 'hod')) {
+  if (req.user.role === 'faculty' && (req.user.facultyRole === 'mentor' || req.user.canMentor || req.user.facultyRole === 'hod' || req.user.isHOD)) {
     return next();
   }
   return res.status(403).json({
@@ -175,6 +179,26 @@ async function ownsStudentOrAssigned(req, res, next) {
   }
 
   if (req.user.role === 'faculty') {
+    // If facultyId is missing, resolve it from database
+    if (!req.user.facultyId) {
+      try {
+        const [fac] = await db.query(
+          `SELECT f.id, f.department_id, f.is_hod, dha.id AS active_hod_assignment 
+           FROM faculty f 
+           LEFT JOIN department_hod_assignments dha ON dha.faculty_id = f.id AND dha.status = 'active'
+           WHERE f.user_id = ? OR f.email = ?`,
+          [req.user.id, req.user.email]
+        );
+        if (fac.length > 0) {
+          req.user.facultyId = fac[0].id;
+          req.user.departmentId = fac[0].department_id;
+          if (fac[0].is_hod || fac[0].active_hod_assignment) req.user.isHOD = true;
+        }
+      } catch (err) {
+        console.error('[ownsStudentOrAssigned facultyId resolution error]', err);
+      }
+    }
+
     // Check if faculty is HOD of the student's department
     if (req.user.facultyRole === 'hod' || req.user.isHOD) {
       try {

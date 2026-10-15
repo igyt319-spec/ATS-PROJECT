@@ -233,3 +233,77 @@ function toggleEditMode() {
     toggleBtn.textContent = '✏️ Edit Profile';
   }
 }
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🔒';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+// Attach Password Change Event Listener once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const idEl = document.getElementById('sec-user-identifier');
+  if (idEl && currentUser) {
+    idEl.textContent = currentUser.regNo || currentUser.email || `ID: ${currentUser.userId || currentUser.id}`;
+  }
+
+  const pwdForm = document.getElementById('password-change-form');
+  if (pwdForm) {
+    pwdForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const currentPassword = document.getElementById('pwd-current').value;
+      const newPassword = document.getElementById('pwd-new').value;
+      const confirmPassword = document.getElementById('pwd-confirm').value;
+      const errEl = document.getElementById('pwd-error-msg');
+      const submitBtn = document.getElementById('btn-change-password');
+
+      errEl.style.display = 'none';
+      errEl.textContent = '';
+
+      if (newPassword !== confirmPassword) {
+        errEl.textContent = 'New password and confirmation do not match.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        errEl.textContent = 'New password must be at least 6 characters in length.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying & Updating... ⏳';
+
+      try {
+        const res = await apiCall('/auth/change-password', 'PUT', {
+          currentPassword,
+          newPassword
+        });
+
+        if (res.success) {
+          showToast(res.message || 'Password successfully updated!', 'success');
+          pwdForm.reset();
+        } else {
+          errEl.textContent = res.message || 'Password update failed.';
+          errEl.style.display = 'block';
+          showToast(res.message || 'Password update failed.', 'error');
+        }
+      } catch (err) {
+        errEl.textContent = err.message || 'Error communicating with authentication server.';
+        errEl.style.display = 'block';
+        showToast(err.message || 'Password update failed.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update Password';
+      }
+    });
+  }
+});

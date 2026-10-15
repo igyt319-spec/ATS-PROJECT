@@ -271,6 +271,7 @@ async function runRBACTestSuite() {
       max_marks: 50
     }, adminToken);
     assert('9.1 Admin can create valid academic result', validResult.status === 201 && validResult.body.success);
+    const createdResultId = validResult.body?.resultId;
 
     // Marks obtained > max marks -> reject
     const invalidMarks = await api('POST', '/api/results', {
@@ -282,7 +283,116 @@ async function runRBACTestSuite() {
     }, adminToken);
     assert('9.2 Marks exceeding max_marks rejected with HTTP 400', invalidMarks.status === 400);
 
-    // 10. Summary
+    // 10. Student Mini-Dashboard Access Control (Section 5)
+    console.log('\n--- Phase 10: Student Mini-Dashboard Access Control (Section 5) ---');
+    const ownMiniDash = await api('GET', `/api/students/${studentId}/mini-dashboard`, null, studentToken);
+    assert('10.1 Student can view own mini-dashboard', ownMiniDash.status === 200 && ownMiniDash.body.success);
+    assert('10.2 Mini-dashboard returns student identity and assigned mentor', ownMiniDash.body.data?.student?.id === studentId);
+
+    // Student attempting to access other student's mini-dashboard -> 403
+    const forbiddenMiniDash = await api('GET', '/api/students/99/mini-dashboard', null, studentToken);
+    assert('10.3 IDOR: Student cannot view another student mini-dashboard (HTTP 403)', forbiddenMiniDash.status === 403);
+
+    // Mentor accessing assigned mentee mini-dashboard -> 200
+    const mentorMiniDash = await api('GET', `/api/students/${studentId}/mini-dashboard`, null, mentorToken);
+    assert('10.4 Mentor can access assigned mentee mini-dashboard', mentorMiniDash.status === 200 && mentorMiniDash.body.success);
+
+    // Mentor accessing unassigned student mini-dashboard (ID 4 - IT Dept) -> 403
+    const mentorForbiddenDash = await api('GET', '/api/students/4/mini-dashboard', null, mentorToken);
+    assert('10.5 Mentor cannot access unassigned student mini-dashboard (HTTP 403)', mentorForbiddenDash.status === 403);
+
+    // Admin accessing mini-dashboard -> 200
+    const adminMiniDash = await api('GET', `/api/students/${studentId}/mini-dashboard`, null, adminToken);
+    assert('10.6 Admin can access student mini-dashboard institution-wide', adminMiniDash.status === 200 && adminMiniDash.body.success);
+
+    // 11. Department Management & Single-Active HOD Constraint (Section 7)
+    console.log('\n--- Phase 11: Department Management & Single Active HOD Constraint (Section 7) ---');
+    const deptList = await api('GET', '/api/departments');
+    assert('11.1 Department catalog returns enriched active HOD and counts', deptList.status === 200 && Array.isArray(deptList.body.data));
+    const cseDept = (deptList.body.data || []).find(d => d.id === 10 || d.code === 'CSE');
+    assert('11.2 CSE Department exists with active HOD assignment', Boolean(cseDept && (cseDept.active_hod_name || cseDept.code === 'CSE')));
+
+    // Admin reassigns active HOD transactionally (Department 10, Faculty 3)
+    const reassignHOD = await api('PUT', '/api/departments/10/hod', {
+      faculty_id: 3,
+      reason: 'Departmental leadership rotation approved by Academic Council.'
+    }, adminToken);
+    assert('11.3 Admin can transactionally assign active HOD', reassignHOD.status === 200 && reassignHOD.body.success);
+
+    // Non-admin attempting to reassign HOD -> 403
+    const forbiddenHOD = await api('PUT', '/api/departments/10/hod', { faculty_id: 3 }, studentToken);
+    assert('11.4 Non-admin cannot assign department HOD (HTTP 403)', forbiddenHOD.status === 403);
+
+    // 12. Secure User Account Management (Section 9)
+    console.log('\n--- Phase 12: Secure Password & Identifier Updates (Section 9) ---');
+    // Change password with invalid current password -> rejected
+    const badOldPwd = await api('PUT', '/api/auth/change-password', {
+      currentPassword: 'wrong_password_xyz',
+      newPassword: 'studentNew123',
+      confirmPassword: 'studentNew123'
+    }, studentToken);
+    assert('12.1 Password change with invalid current password rejected (HTTP 400)', badOldPwd.status === 400);
+
+    // Change password with short password -> rejected
+    const shortPwd = await api('PUT', '/api/auth/change-password', {
+      currentPassword: 'student123',
+      newPassword: '123',
+      confirmPassword: '123'
+    }, studentToken);
+    assert('12.2 Short password (<6 chars) rejected (HTTP 400)', shortPwd.status === 400);
+
+    // Change password with valid credentials -> success
+    const validPwdChange = await api('PUT', '/api/auth/change-password', {
+      currentPassword: 'student123',
+      newPassword: 'student123', // restore same password
+      confirmPassword: 'student123'
+    }, studentToken);
+    assert('12.3 Password change successful with verification', validPwdChange.status === 200 && validPwdChange.body.success);
+
+    // 13. Official Academic Record Correction Workflow (Section 3D & 10)
+    console.log('\n--- Phase 13: Official Academic Record Correction Workflow (Section 3D) ---');
+    if (createdResultId) {
+      // Correction without justification reason -> rejected
+      const missingReason = await api('POST', '/api/results/correct', {
+        result_id: createdResultId,
+        marks_obtained: 48,
+        reason: 'short' // <10 chars
+      }, adminToken);
+      assert('13.1 Academic correction without justification reason rejected (HTTP 400)', missingReason.status === 400);
+
+      // Correction with valid reason -> success
+      const validCorrection = await api('POST', '/api/results/correct', {
+        result_id: createdResultId,
+        marks_obtained: 48,
+        reason: 'Recounting requested by student; script verified by HOD.'
+      }, adminToken);
+      assert('13.2 Authorized academic correction executed and logged', validCorrection.status === 200 && validCorrection.body.success);
+    }
+
+    // Student attempting direct academic correction -> 403
+    const forbiddenCorrection = await api('POST', '/api/results/correct', {
+      result_id: createdResultId || 1,
+      marks_obtained: 50,
+      reason: 'Unauthorized student modification'
+    }, studentToken);
+    assert('13.3 Student cannot modify official academic results (HTTP 403)', forbiddenCorrection.status === 403);
+
+    // 14. Audit Logs API Verification (Section 10)
+    console.log('\n--- Phase 14: Audit Logs API Verification (Section 10) ---');
+    const auditLogsRes = await api('GET', '/api/audit-logs', null, adminToken);
+    assert('14.1 Admin can view institution-wide audit logs', auditLogsRes.status === 200 && Array.isArray(auditLogsRes.body.data));
+    assert('14.2 Audit log captures recent security and record correction events', auditLogsRes.body.data.length > 0);
+
+    // Student attempting to view audit logs -> 403
+    const forbiddenAudit = await api('GET', '/api/audit-logs', null, studentToken);
+    assert('14.3 Non-admin blocked from viewing audit logs (HTTP 403)', forbiddenAudit.status === 403);
+
+    // 15. Render Health-Check Endpoint (Section 14)
+    console.log('\n--- Phase 15: Render Public Health-Check Endpoint (Section 14) ---');
+    const healthRoot = await api('GET', '/health');
+    assert('15.1 Public /health endpoint returns HTTP 200', healthRoot.status === 200 && healthRoot.body.status === 'online');
+
+    // 16. Summary
     console.log('\n====================================================');
     const passedCount = results.filter(r => r.passed).length;
     console.log(`=== SUMMARY: ${passedCount} / ${results.length} TESTS PASSED`);

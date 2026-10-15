@@ -246,10 +246,165 @@ async function deleteStudent(req, res) {
   }
 }
 
+// GET /api/students/:id/mini-dashboard (Section 5)
+async function getStudentMiniDashboard(req, res) {
+  try {
+    const studentId = parseInt(req.params.id, 10);
+
+    // 1. Fetch Student Profile with Department info
+    const [students] = await db.query(
+      `SELECT st.*, d.name AS department_name, d.code AS department_code,
+              u.email AS user_email, u.avatar AS user_avatar
+       FROM students st
+       LEFT JOIN departments d ON d.id = st.department_id
+       LEFT JOIN users u ON u.id = st.user_id
+       WHERE st.id = ?`,
+      [studentId]
+    );
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+    const student = students[0];
+
+    // 2. Fetch Active Assigned Mentor
+    const [mentorRows] = await db.query(
+      `SELECT f.id, f.name, f.email, f.faculty_code, f.designation, f.avatar,
+              d.name AS department_name, sm.assigned_at
+       FROM student_mentors sm
+       JOIN faculty f ON f.id = sm.faculty_id
+       LEFT JOIN departments d ON d.id = f.department_id
+       WHERE sm.student_id = ? AND sm.status = 'active'
+       LIMIT 1`,
+      [studentId]
+    );
+    const assignedMentor = mentorRows.length > 0 ? mentorRows[0] : null;
+
+    // 3. Fetch Attendance Summary & Subject Records
+    const [attRows] = await db.query(
+      `SELECT a.*, s.subject_name, s.subject_code, s.credits
+       FROM attendance a
+       LEFT JOIN subjects s ON s.id = a.subject_id
+       WHERE a.student_id = ?
+       ORDER BY s.subject_code ASC`,
+      [studentId]
+    );
+    const totalConducted = attRows.reduce((sum, r) => sum + (Number(r.classes_conducted) || 0), 0);
+    const totalAttended = attRows.reduce((sum, r) => sum + (Number(r.classes_attended) || 0), 0);
+    const attendancePercentage = totalConducted > 0 ? ((totalAttended / totalConducted) * 100).toFixed(1) : (student.attendance_percentage || 0);
+
+    // 4. Fetch 3-Tier Academic Results (Only published for students, all for faculty/HOD/admin)
+    const isStudentUser = req.user.role === 'student';
+    const publishFilter = isStudentUser ? 'AND ar.is_published = 1' : '';
+    const [results] = await db.query(
+      `SELECT ar.*, s.subject_name, s.subject_code, s.credits
+       FROM academic_results ar
+       LEFT JOIN subjects s ON s.id = ar.subject_id
+       WHERE ar.student_id = ? ${publishFilter}
+       ORDER BY ar.academic_year DESC, ar.assessment_type ASC, ar.created_at DESC`,
+      [studentId]
+    );
+
+    // 5. Fetch Fee Records & Payment History
+    const [feeRows] = await db.query(
+      `SELECT sf.*,
+              (SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                'transaction_ref', fp.transaction_ref,
+                'amount', fp.amount,
+                'payment_method', fp.payment_method,
+                'payment_date', fp.payment_date,
+                'status', fp.status
+              )) FROM fee_payments fp WHERE fp.fee_id = sf.id) AS payments
+       FROM student_fees sf
+       WHERE sf.student_id = ?
+       ORDER BY sf.academic_year DESC, sf.semester ASC`,
+      [studentId]
+    );
+    const parsedFees = feeRows.map(f => ({
+      ...f,
+      payments: typeof f.payments === 'string' ? JSON.parse(f.payments) : (f.payments || [])
+    }));
+
+    // 6. Fetch Leave History
+    const [leaves] = await db.query(
+      `SELECT lr.*, u.name AS reviewed_by_name
+       FROM leave_requests lr
+       LEFT JOIN users u ON u.id = lr.reviewed_by
+       WHERE lr.student_id = ?
+       ORDER BY lr.created_at DESC
+       LIMIT 10`,
+      [studentId]
+    );
+
+    // 7. Fetch Student Activities (6 Categories)
+    const [activities] = await db.query(
+      `SELECT sa.*, u.name AS verified_by_name
+       FROM student_activities sa
+       LEFT JOIN users u ON u.id = sa.verified_by
+       WHERE sa.student_id = ?
+       ORDER BY sa.event_date DESC
+       LIMIT 10`,
+      [studentId]
+    );
+
+    // 8. Fetch Academic Alerts & Trends
+    const [alerts] = await db.query(
+      `SELECT * FROM risk_alerts WHERE student_id = ? ORDER BY created_at DESC LIMIT 5`,
+      [studentId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        student: {
+          id: student.id,
+          name: student.name,
+          register_number: student.register_number,
+          email: student.email || student.user_email,
+          phone: student.phone,
+          bio: student.bio,
+          avatar: student.avatar || student.user_avatar,
+          department: student.department_name || student.department,
+          department_id: student.department_id,
+          year: student.year,
+          semester: student.semester,
+          academic_year: '2026-2027',
+          cgpa: Number(student.cgpa || 0),
+          gpa: Number(student.gpa || 0),
+          attendance_percentage: Number(attendancePercentage)
+        },
+        assignedMentor,
+        attendance: {
+          overallPercentage: Number(attendancePercentage),
+          totalConducted,
+          totalAttended,
+          subjects: attRows
+        },
+        results: {
+          total: results.length,
+          internals: results.filter(r => r.assessment_type === 'internal' || r.assessment_type === 'internal_exam'),
+          labs: results.filter(r => r.assessment_type === 'lab' || r.assessment_type === 'lab_practical'),
+          semesters: results.filter(r => r.assessment_type === 'semester' || r.assessment_type === 'semester_result'),
+          all: results
+        },
+        fees: parsedFees,
+        leaves,
+        activities,
+        alerts
+      }
+    });
+
+  } catch (error) {
+    console.error('[Student Mini-Dashboard Error]', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   getAllStudents,
   getStudentById,
   createStudent,
   updateStudent,
-  deleteStudent
+  deleteStudent,
+  getStudentMiniDashboard
 };

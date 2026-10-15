@@ -280,10 +280,117 @@ async function publishResult(req, res) {
   }
 }
 
+// POST /api/results/correct (Authorized Academic Record Correction Workflow - Section 3D)
+async function correctAcademicResult(req, res) {
+  try {
+    const { result_id, marks_obtained, max_marks, reason } = req.body;
+
+    if (!result_id || marks_obtained === undefined) {
+      return res.status(400).json({ success: false, message: 'Result ID and new marks obtained are required.' });
+    }
+
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'A mandatory justification reason (at least 10 characters) is required for official academic record correction.'
+      });
+    }
+
+    // Fetch existing record
+    const [rows] = await db.query('SELECT * FROM academic_results WHERE id = ?', [result_id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Academic result record not found.' });
+    }
+    const old = rows[0];
+
+    // If faculty/HOD, enforce department match
+    if (req.user.role === 'faculty' && req.user.departmentId && req.user.departmentId !== old.department_id) {
+      return res.status(403).json({ success: false, message: 'Cannot modify academic records outside your department.' });
+    }
+
+    const marksNum = Number(marks_obtained);
+    const maxMarksNum = max_marks !== undefined ? Number(max_marks) : Number(old.max_marks);
+
+    if (isNaN(marksNum) || isNaN(maxMarksNum) || marksNum < 0 || maxMarksNum <= 0) {
+      return res.status(400).json({ success: false, message: 'Marks must be non-negative numbers.' });
+    }
+
+    if (marksNum > maxMarksNum) {
+      return res.status(400).json({
+        success: false,
+        message: `Marks obtained (${marksNum}) cannot exceed maximum permitted marks (${maxMarksNum}).`
+      });
+    }
+
+    const pct = (marksNum / maxMarksNum) * 100;
+    let grade = 'F';
+    let gradePoint = 0.0;
+    let status = 'Fail';
+
+    if (pct >= 90) { grade = 'O'; gradePoint = 10.0; status = 'Pass'; }
+    else if (pct >= 80) { grade = 'A+'; gradePoint = 9.0; status = 'Pass'; }
+    else if (pct >= 70) { grade = 'A'; gradePoint = 8.0; status = 'Pass'; }
+    else if (pct >= 60) { grade = 'B+'; gradePoint = 7.0; status = 'Pass'; }
+    else if (pct >= 50) { grade = 'B'; gradePoint = 6.0; status = 'Pass'; }
+
+    const previousValue = {
+      marks_obtained: old.marks_obtained,
+      max_marks: old.max_marks,
+      grade: old.grade,
+      grade_point: old.grade_point,
+      status: old.status
+    };
+
+    const newValue = {
+      marks_obtained: marksNum,
+      max_marks: maxMarksNum,
+      grade,
+      grade_point: gradePoint,
+      status
+    };
+
+    await db.query(
+      `UPDATE academic_results 
+       SET marks_obtained = ?, max_marks = ?, grade = ?, grade_point = ?, status = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [marksNum, maxMarksNum, grade, gradePoint, status, result_id]
+    );
+
+    const { logAuditEvent } = require('../utils/auditLogger');
+    await logAuditEvent({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'ACADEMIC_RECORD_CORRECTION',
+      entityType: 'academic_results',
+      entityId: result_id,
+      previousValue,
+      newValue,
+      reason,
+      ipAddress: req.ip
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Official academic record correction executed and audit trail logged.',
+      data: {
+        resultId: result_id,
+        previousValue,
+        newValue,
+        reason
+      }
+    });
+
+  } catch (err) {
+    console.error('[correctAcademicResult Error]', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
 module.exports = {
   getStudentResults,
   getMentorMenteeResults,
   getDepartmentResults,
   createAcademicResult,
-  publishResult
+  publishResult,
+  correctAcademicResult
 };

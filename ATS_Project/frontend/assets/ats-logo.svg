@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <linearGradient id="neonBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="capGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#93c5fd" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer Protective Shield / Badge Frame -->
+  <path d="M 250,25 
+           C 370,25 435,75 435,175 
+           C 435,320 340,410 250,470 
+           C 160,410 65,320 65,175 
+           C 65,75 130,25 250,25 Z" 
+        fill="url(#shieldGrad)" 
+        stroke="url(#neonBlue)" 
+        stroke-width="7" />
+
+  <!-- Digital Tech Circuit Lines & Nodes -->
+  <!-- Left Circuit Branch -->
+  <path d="M 120,180 L 175,180 L 205,225" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.75" />
+  <circle cx="120" cy="180" r="5" fill="#38bdf8" />
+  <circle cx="205" cy="225" r="4" fill="#38bdf8" />
+
+  <!-- Right Circuit Branch -->
+  <path d="M 380,180 L 325,180 L 295,225" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" opacity="0.75" />
+  <circle cx="380" cy="180" r="5" fill="#38bdf8" />
+  <circle cx="295" cy="225" r="4" fill="#38bdf8" />
+
+  <!-- Bottom Data Gateway Nodes -->
+  <path d="M 250,420 L 250,380 M 210,395 L 250,380 L 290,395" fill="none" stroke="#06b6d4" stroke-width="2.5" opacity="0.6" />
+  <circle cx="210" cy="395" r="3.5" fill="#06b6d4" />
+  <circle cx="290" cy="395" r="3.5" fill="#06b6d4" />
+
+  <!-- Academic Graduation Cap (Top Core) -->
+  <!-- Diamond Cap -->
+  <polygon points="250,105 375,155 250,205 125,155" fill="url(#capGrad)" filter="url(#glow)" />
+  <!-- Skull Cap Base Under Diamond -->
+  <path d="M 175,176 L 175,215 C 175,245 325,245 325,215 L 325,176 Z" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2" />
+  <!-- Tassel & Gold Charm -->
+  <path d="M 250,155 Q 365,165 370,225" fill="none" stroke="url(#goldGrad)" stroke-width="4.5" stroke-linecap="round" />
+  <circle cx="250" cy="155" r="5" fill="#f59e0b" />
+  <circle cx="370" cy="227" r="6" fill="#f59e0b" />
+
+  <!-- Academic Progress Growth Graph (Mid-to-Bottom) -->
+  <!-- Bar 1 -->
+  <rect x="165" y="315" width="26" height="50" rx="4" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1.5" opacity="0.85" />
+  <!-- Bar 2 -->
+  <rect x="205" y="285" width="26" height="80" rx="4" fill="#1d4ed8" stroke="#60a5fa" stroke-width="1.5" opacity="0.9" />
+  <!-- Bar 3 -->
+  <rect x="245" y="255" width="26" height="110" rx="4" fill="#2563eb" stroke="#93c5fd" stroke-width="1.5" opacity="0.95" />
+  <!-- Bar 4 (Peak) -->
+  <rect x="285" y="225" width="26" height="140" rx="4" fill="url(#neonBlue)" stroke="#ffffff" stroke-width="2" filter="url(#glow)" />
+
+  <!-- Growth Trendline with Dynamic Arrow -->
+  <polyline points="150,335 178,300 218,270 258,240 310,195" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+  <!-- Trendline Arrowhead -->
+  <polygon points="310,185 322,205 300,202" fill="#22d3ee" filter="url(#glow)" />
+
+  <!-- ATS Brand Banner / Monogram Ribbon -->
+  <g transform="translate(0, 5)">
+    <rect x="145" y="375" width="210" height="34" rx="8" fill="#030712" stroke="#38bdf8" stroke-width="2" />
+    <text x="250" y="399" font-family="'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="19" font-weight="900" fill="#ffffff" letter-spacing="7" text-anchor="middle">
+      ATS
+    </text>
+  </g>
+</svg>

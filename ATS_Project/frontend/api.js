@@ -286,3 +286,231 @@ async function fetchUnreadNotificationsCount(studentId) {
     // Non-blocking notification check
   }
 }
+
+// Global Student Mini-Dashboard Controller (Section 5)
+window.closeMiniDashboard = function() {
+  const modal = document.getElementById('mini-dashboard-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.openStudentMiniDashboard = async function(studentId) {
+  let modal = document.getElementById('mini-dashboard-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'mini-dashboard-modal';
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:16px;';
+    modal.innerHTML = `
+      <div class="modal-card" style="background:var(--bg-card, #1e293b); border:1px solid rgba(255,255,255,0.12); border-radius:18px; max-width:880px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:18px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="assets/ats-logo.svg" alt="ATS" style="width:36px; height:36px; filter:drop-shadow(0 0 8px rgba(56,189,248,0.5));">
+            <div>
+              <h3 style="margin:0; font-size:1.25rem; font-weight:800; color:#fff;">Student Academic Mini-Dashboard</h3>
+              <span style="font-size:0.75rem; color:var(--accent-cyan, #38bdf8); font-weight:700; letter-spacing:0.5px;">VERIFIED INSTITUTIONAL RECORD</span>
+            </div>
+          </div>
+          <button onclick="closeMiniDashboard()" style="background:rgba(255,255,255,0.08); border:none; color:var(--text-muted, #94a3b8); font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+        </div>
+        <div id="mini-dashboard-body">
+          <div style="text-align:center; padding:50px; color:var(--text-muted, #94a3b8);">Loading Student Academic Profile... ⏳</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeMiniDashboard();
+    });
+  }
+
+  modal.style.display = 'flex';
+  const body = document.getElementById('mini-dashboard-body');
+  body.innerHTML = '<div style="text-align:center; padding:50px; color:var(--text-muted, #94a3b8);">Loading Student Academic Profile... ⏳</div>';
+
+  try {
+    const res = await apiCall(`/students/${studentId}/mini-dashboard`);
+    if (!res || !res.success || !res.data) {
+      body.innerHTML = `<div style="text-align:center; padding:30px; color:#f87171;">Could not load student profile: ${res.message || 'Record not accessible'}</div>`;
+      return;
+    }
+
+    const { student, assignedMentor, attendance, results, fees, leaves, activities, alerts } = res.data;
+    const studentAvatar = student.avatar || getInitialsAvatar(student.name, 90);
+    const mentorAvatar = assignedMentor ? (assignedMentor.avatar || getInitialsAvatar(assignedMentor.name, 50)) : '';
+
+    const attPct = Number(student.attendance_percentage || 0);
+    const attColor = attPct >= 85 ? '#22c55e' : attPct >= 75 ? '#f59e0b' : '#ef4444';
+
+    body.innerHTML = `
+      <!-- Header Profile Banner -->
+      <div style="display:flex; flex-wrap:wrap; gap:18px; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:18px; margin-bottom:20px;">
+        <img src="${studentAvatar}" alt="${student.name}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid var(--accent-cyan, #38bdf8); box-shadow:0 0 15px rgba(56,189,248,0.3);">
+        <div style="flex:1; min-width:220px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <h2 style="margin:0; font-size:1.35rem; font-weight:800; color:#fff;">${student.name}</h2>
+            <span class="badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); font-size:0.75rem; padding:3px 9px;">${student.register_number}</span>
+            <span class="badge" style="background:rgba(129,140,248,0.15); color:#a5b4fc; font-size:0.75rem; padding:3px 9px;">${student.department}</span>
+          </div>
+          <div style="font-size:0.85rem; color:var(--text-muted, #94a3b8); margin-top:6px; display:flex; gap:14px; flex-wrap:wrap;">
+            <span>📅 ${student.year || 'N/A'} • ${student.semester || 'N/A'}</span>
+            <span>✉️ ${student.email || 'N/A'}</span>
+            ${student.phone ? `<span>📞 ${student.phone}</span>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Attendance</div>
+          <div style="font-size:1.6rem; font-weight:900; color:${attColor}; margin-top:4px;">${attPct}%</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">${attPct >= 75 ? 'Eligible for Exams' : 'Attendance Shortage'}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Cumulative GPA</div>
+          <div style="font-size:1.6rem; font-weight:900; color:#38bdf8; margin-top:4px;">${Number(student.cgpa || 0).toFixed(2)}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">Current SGPA: ${Number(student.gpa || 0).toFixed(2)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Verified Activities</div>
+          <div style="font-size:1.6rem; font-weight:900; color:#a855f7; margin-top:4px;">${activities ? activities.filter(a => a.status === 'Verified').length : 0}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">${activities ? activities.length : 0} Submissions</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:0.75rem; color:var(--text-muted, #94a3b8); font-weight:700; text-transform:uppercase;">Fee Status</div>
+          <div style="font-size:1.25rem; font-weight:800; color:#10b981; margin-top:6px;">${fees && fees.length > 0 && Number(fees[0].balance_amount) <= 0 ? 'PAID' : 'PENDING'}</div>
+          <div style="font-size:0.72rem; color:var(--text-dim, #64748b);">${fees && fees.length > 0 ? `₹${Number(fees[0].balance_amount || 0).toLocaleString()} Due` : 'No Dues'}</div>
+        </div>
+      </div>
+
+      <!-- Assigned Faculty Mentor Card -->
+      <div style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.2); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          ${mentorAvatar ? `<img src="${mentorAvatar}" alt="Mentor" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid #38bdf8;">` : '<span style="font-size:1.8rem;">👨‍🏫</span>'}
+          <div>
+            <div style="font-size:0.72rem; color:#38bdf8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Assigned Faculty Mentor</div>
+            <div style="font-size:1rem; font-weight:700; color:#fff;">${assignedMentor ? assignedMentor.name : 'No Primary Mentor Assigned Yet'}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted, #94a3b8);">${assignedMentor ? `${assignedMentor.designation || 'Faculty'} • ${assignedMentor.email}` : 'Contact HOD to allocate a faculty mentor'}</div>
+          </div>
+        </div>
+        ${assignedMentor ? `<a href="mailto:${assignedMentor.email}" class="btn btn-secondary" style="font-size:0.78rem; padding:6px 12px;">✉️ Contact Mentor</a>` : ''}
+      </div>
+
+      <!-- Mini-Dashboard Content Tabs -->
+      <div style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:16px;">
+        <button class="tab-btn active" onclick="switchMiniDashTab('academics')" id="md-tab-academics" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:#fff; border-bottom:2px solid #38bdf8; cursor:pointer;">Academic Results (${results.total})</button>
+        <button class="tab-btn" onclick="switchMiniDashTab('leaves')" id="md-tab-leaves" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:var(--text-muted, #94a3b8); cursor:pointer;">Leave History (${leaves ? leaves.length : 0})</button>
+        <button class="tab-btn" onclick="switchMiniDashTab('activities')" id="md-tab-activities" style="background:none; border:none; padding:8px 14px; font-weight:700; font-size:0.85rem; color:var(--text-muted, #94a3b8); cursor:pointer;">Activities (${activities ? activities.length : 0})</button>
+      </div>
+
+      <!-- Tab: Academic Results -->
+      <div id="md-sec-academics">
+        ${results.all && results.all.length > 0 ? `
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Tier / Exam</th>
+                  <th>Subject</th>
+                  <th>Marks</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${results.all.map(r => `
+                  <tr>
+                    <td><span class="badge" style="background:rgba(255,255,255,0.06); font-size:0.75rem;">${r.assessment_type ? r.assessment_type.toUpperCase() : 'EXAM'}</span></td>
+                    <td><strong>${r.subject_code ? `${r.subject_code} - ` : ''}${r.subject_name || r.assessment_name}</strong></td>
+                    <td>${r.marks_obtained} / ${r.max_marks}</td>
+                    <td><span style="font-weight:700; color:#38bdf8;">${r.grade || 'Pass'}</span></td>
+                    <td><span class="badge badge-success" style="font-size:0.72rem;">${r.status || 'Pass'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div style="text-align:center; padding:24px; color:var(--text-muted, #94a3b8);">No published academic marks recorded yet.</div>'}
+      </div>
+
+      <!-- Tab: Leave History -->
+      <div id="md-sec-leaves" style="display:none;">
+        ${leaves && leaves.length > 0 ? `
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Leave Type</th>
+                  <th>Dates</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Mentor Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${leaves.map(l => `
+                  <tr>
+                    <td><strong>${l.leave_type}</strong></td>
+                    <td>${l.start_date ? String(l.start_date).slice(0, 10) : ''} to ${l.end_date ? String(l.end_date).slice(0, 10) : ''}</td>
+                    <td style="max-width:200px;">${l.reason}</td>
+                    <td><span class="badge ${l.status === 'Approved' ? 'badge-success' : l.status === 'Rejected' ? 'badge-danger' : 'badge-warning'}">${l.status}</span></td>
+                    <td><span style="font-style:italic; font-size:0.8rem;">${l.remarks || 'Pending Review'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div style="text-align:center; padding:24px; color:var(--text-muted, #94a3b8);">No leave applications recorded for this student.</div>'}
+      </div>
+
+      <!-- Tab: Activities -->
+      <div id="md-sec-activities" style="display:none;">
+        ${activities && activities.length > 0 ? `
+          <div style="overflow-x:auto;">
+            <table class="table" style="width:100%; font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Title & Institution</th>
+                  <th>Event Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activities.map(a => `
+                  <tr>
+                    <td><span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc;">${a.category}</span></td>
+                    <td><strong>${a.title}</strong><br><span style="font-size:0.75rem; color:var(--text-muted, #94a3b8);">${a.organizing_institution || ''}</span></td>
+                    <td>${a.event_date ? String(a.event_date).slice(0, 10) : ''}</td>
+                    <td><span class="badge ${a.status === 'Verified' ? 'badge-success' : a.status === 'Rejected' ? 'badge-danger' : 'badge-warning'}">${a.status}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : '<div style="text-align:center; padding:24px; color:var(--text-muted, #94a3b8);">No activity submissions found.</div>'}
+      </div>
+    `;
+
+  } catch (err) {
+    body.innerHTML = `<div style="text-align:center; padding:30px; color:#f87171;">Failed to load mini-dashboard: ${err.message}</div>`;
+  }
+};
+
+window.switchMiniDashTab = function(tabName) {
+  ['academics', 'leaves', 'activities'].forEach(t => {
+    const sec = document.getElementById(`md-sec-${t}`);
+    const btn = document.getElementById(`md-tab-${t}`);
+    if (sec) sec.style.display = (t === tabName ? 'block' : 'none');
+    if (btn) {
+      if (t === tabName) {
+        btn.style.color = '#fff';
+        btn.style.borderBottom = '2px solid #38bdf8';
+      } else {
+        btn.style.color = 'var(--text-muted, #94a3b8)';
+        btn.style.borderBottom = 'none';
+      }
+    }
+  });
+};

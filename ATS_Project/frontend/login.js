@@ -1,23 +1,42 @@
-// ATS Authentication Client Controller
+// ATS Authentication Client Controller - 4 Dedicated Role Login Modes
 let selectedRole = 'student';
 
 function selectRole(role) {
   selectedRole = role;
-  const tabStudent = document.getElementById('tab-student');
-  const tabAdmin = document.getElementById('tab-admin');
+  const roles = ['student', 'faculty', 'hod', 'admin'];
+  roles.forEach(r => {
+    const tab = document.getElementById(`tab-${r}`);
+    if (tab) {
+      if (r === role) tab.classList.add('active');
+      else tab.classList.remove('active');
+    }
+  });
+
+  const heading = document.getElementById('login-heading');
+  const subheading = document.getElementById('login-subheading');
   const label = document.getElementById('identifier-label');
   const input = document.getElementById('login-identifier');
 
   if (role === 'student') {
-    tabStudent.classList.add('active');
-    tabAdmin.classList.remove('active');
-    label.textContent = 'Register Number / Email';
-    input.placeholder = 'e.g. BITD0001 or student@ats.com';
-  } else {
-    tabAdmin.classList.add('active');
-    tabStudent.classList.remove('active');
-    label.textContent = 'Faculty / Admin Email';
-    input.placeholder = 'e.g. faculty.cse@example.test or admin@ats.com';
+    if (heading) heading.textContent = 'Student Login';
+    if (subheading) subheading.textContent = 'Sign in with your Register Number to access your personal academic dashboard.';
+    if (label) label.textContent = 'Register Number / Student Email';
+    if (input) input.placeholder = 'e.g. BITD0001 or student@ats.com';
+  } else if (role === 'faculty') {
+    if (heading) heading.textContent = 'Faculty & Mentor Login';
+    if (subheading) subheading.textContent = 'Sign in to access your assigned mentee roster, leave approvals, and student records.';
+    if (label) label.textContent = 'Faculty ID / Institutional Email';
+    if (input) input.placeholder = 'e.g. mentor.cse@ats.com';
+  } else if (role === 'hod') {
+    if (heading) heading.textContent = 'Head of Department (HOD) Login';
+    if (subheading) subheading.textContent = 'Sign in to access your department console, faculty allocations, and academic analytics.';
+    if (label) label.textContent = 'HOD ID / Department Email';
+    if (input) input.placeholder = 'e.g. faculty.cse@example.test';
+  } else if (role === 'admin') {
+    if (heading) heading.textContent = 'System Administrator Login';
+    if (subheading) subheading.textContent = 'Sign in with institutional administrative credentials to configure the platform.';
+    if (label) label.textContent = 'Administrator Email / Username';
+    if (input) input.placeholder = 'e.g. admin@ats.com';
   }
   hideError();
 }

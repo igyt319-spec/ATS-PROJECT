@@ -131,9 +131,14 @@ function renderAllocationsTable(students) {
         <td>${mentorBadge}</td>
         <td>${s.assigned_at ? formatDate(s.assigned_at) : '—'}</td>
         <td>
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.78rem;" onclick="openReassignModal(${s.student_id}, '${escapeHtml(s.student_name)}', '${s.register_number}', ${s.mentor_faculty_id || 'null'})">
-            ${hasMentor ? '🔄 Reassign' : '➕ Assign'}
-          </button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.75rem; font-weight:700;" onclick="openStudentMiniDashboard(${s.student_id})">
+              📊 Mini-Dashboard
+            </button>
+            <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.75rem;" onclick="openReassignModal(${s.student_id}, '${escapeHtml(s.student_name)}', '${s.register_number}', ${s.mentor_faculty_id || 'null'})">
+              ${hasMentor ? '🔄 Reassign' : '➕ Assign'}
+            </button>
+          </div>
         </td>
       </tr>
     `;

@@ -8,5 +8,7 @@ router.post('/logout', authController.logout);
 router.get('/me', verifyToken, authController.getMe);
 router.put('/profile-photo', verifyToken, authController.updateProfilePhoto);
 router.post('/forgot-password', authController.forgotPassword);
+router.put('/change-password', verifyToken, authController.changePassword);
+router.put('/change-identifier', verifyToken, authController.changeIdentifier);
 
 module.exports = router;

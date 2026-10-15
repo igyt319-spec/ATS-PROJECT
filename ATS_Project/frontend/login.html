@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In | AI-Based Academic Tracking System (ATS)</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="login-page">
 
@@ -13,23 +13,25 @@
   <div style="position: absolute; width: 450px; height: 450px; border-radius: 50%; background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%); top: 10%; left: 15%; filter: blur(50px); pointer-events: none;"></div>
   <div style="position: absolute; width: 450px; height: 450px; border-radius: 50%; background: radial-gradient(circle, rgba(129, 140, 248, 0.15), transparent 70%); bottom: 10%; right: 15%; filter: blur(50px); pointer-events: none;"></div>
 
-  <div class="login-card">
+  <div class="login-card" style="max-width: 480px;">
     <div class="login-header">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;">
-        <div class="logo-badge">ATS</div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px;">
+        <img src="assets/ats-logo.svg" alt="ATS Official Logo" style="width: 52px; height: 52px; filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.45));">
         <div style="text-align: left;">
-          <h1 style="font-size: 1.3rem; font-weight: 800; line-height: 1.1; color: #fff;">Academic Tracking System</h1>
-          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">INTELLIGENT AI PORTAL</span>
+          <h1 style="font-size: 1.35rem; font-weight: 800; line-height: 1.1; color: #fff;">Academic Tracking System</h1>
+          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">ROLE-BASED ACADEMIC PORTAL</span>
         </div>
       </div>
-      <h2 style="font-size: 1.5rem; font-weight: 700; margin-top: 14px;">Welcome Back 👋</h2>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">Sign in to continue to your academic dashboard.</p>
+      <h2 style="font-size: 1.45rem; font-weight: 700; margin-top: 14px;" id="login-heading">Student Login</h2>
+      <p style="color: var(--text-muted); font-size: 0.86rem; margin-top: 4px;" id="login-subheading">Sign in with your Register Number to access your personal dashboard.</p>
     </div>
 
-    <!-- Role Selection Tabs -->
-    <div class="role-switcher">
-      <div class="role-tab active" id="tab-student" onclick="selectRole('student')">👨‍🎓 Student</div>
-      <div class="role-tab" id="tab-admin" onclick="selectRole('admin')">🏛️ Faculty / Admin</div>
+    <!-- 4 Role Selection Options (Section 2) -->
+    <div class="role-switcher" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin-bottom: 20px;">
+      <div class="role-tab active" id="tab-student" onclick="selectRole('student')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">👨‍🎓 Student</div>
+      <div class="role-tab" id="tab-faculty" onclick="selectRole('faculty')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">👨‍🏫 Faculty</div>
+      <div class="role-tab" id="tab-hod" onclick="selectRole('hod')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">🏛️ HOD</div>
+      <div class="role-tab" id="tab-admin" onclick="selectRole('admin')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">🛡️ Admin</div>
     </div>
 
     <!-- Login Form -->

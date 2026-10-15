@@ -4,9 +4,8 @@ try {
   const origLookup = dns.lookup;
   dns.lookup = function(hostname, options, callback) {
     if (typeof options === 'function') { callback = options; options = {}; }
-    options = Object.assign({}, typeof options === 'object' ? options : { hints: options });
-    if (!options.family) { options.family = 4; }
-    return origLookup.call(this, hostname, options, callback);
+    const opts = Object.assign({}, typeof options === 'object' ? options : { hints: options }, { family: 4 });
+    return origLookup.call(this, hostname, opts, callback);
   };
 } catch (e) {}
 const mysql = require('mysql2/promise');

@@ -4,9 +4,8 @@ try {
   const origLookup = dns.lookup;
   dns.lookup = function(hostname, options, callback) {
     if (typeof options === 'function') { callback = options; options = {}; }
-    options = Object.assign({}, typeof options === 'object' ? options : { hints: options });
-    if (!options.family) { options.family = 4; }
-    return origLookup.call(this, hostname, options, callback);
+    const opts = Object.assign({}, typeof options === 'object' ? options : { hints: options }, { family: 4 });
+    return origLookup.call(this, hostname, opts, callback);
   };
 } catch (e) {}
 
@@ -35,6 +34,8 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const mentorRoutes = require('./routes/mentorRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -53,6 +54,8 @@ app.use('/uploads', express.static(uploadsPath));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/audit-logs', auditRoutes);
 app.use('/api/performance', performanceRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/achievements', achievementRoutes);
@@ -69,8 +72,8 @@ app.use('/api/mentors', mentorRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api', catalogRoutes);
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
+// Health check endpoint (both /api/health and /health supported for Render)
+app.get(['/api/health', '/health'], async (req, res) => {
   const dbStatus = db.getDbStatus();
   let dataSummary = { provenance: 'Legacy in-memory sample data; not persistent and not the 100-student MySQL seed.' };
   if (dbStatus.isMySQL) {

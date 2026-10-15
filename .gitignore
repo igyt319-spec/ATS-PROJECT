@@ -4,7 +4,12 @@ package-lock.json
 
 # Environment Secrets
 .env
+.env.*
+!.env.example
 *.local
+*.pem
+*.key
+*.cert
 
 # Logs
 *.log

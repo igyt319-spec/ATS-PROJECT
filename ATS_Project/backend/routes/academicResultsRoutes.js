@@ -7,6 +7,7 @@ router.get('/student/:studentId', verifyToken, ownsStudentOrAssigned, academicRe
 router.get('/mentor/mentees', verifyToken, isMentor, academicResultsController.getMentorMenteeResults);
 router.get('/department', verifyToken, isHOD, academicResultsController.getDepartmentResults);
 router.post('/', verifyToken, isAdmin, academicResultsController.createAcademicResult);
+router.post('/correct', verifyToken, isHOD, academicResultsController.correctAcademicResult);
 router.put('/:id/publish', verifyToken, isAdmin, academicResultsController.publishResult);
 
 module.exports = router;

@@ -96,17 +96,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const feeId = parseInt(document.getElementById('demo-pay-fee-id').value, 10);
       const amount = parseFloat(document.getElementById('demo-pay-amount').value);
-      const simulateFail = document.getElementById('demo-pay-simulate-fail').checked;
+      const outcomeSelect = document.getElementById('demo-pay-simulation-outcome');
+      const simulationOutcome = outcomeSelect ? outcomeSelect.value : 'Success';
 
       try {
         const res = await apiCall('/fees/pay', 'POST', {
           fee_id: feeId,
           amount,
           payment_method: currentSelectedPaymentMethod,
-          simulate_failure: simulateFail
+          simulation_outcome: simulationOutcome
         });
 
-        showToast(res.message, 'success');
+        if (res.status === 'Cancelled') {
+          showToast(res.message || 'Payment simulation cancelled.', 'info');
+          closeModal('demo-payment-modal');
+          return;
+        }
+
+        if (res.status === 'Pending') {
+          showToast(res.message || 'Payment simulation pending confirmation.', 'warning');
+          closeModal('demo-payment-modal');
+          await loadDashboardData(studentId);
+          return;
+        }
+
+        showToast(res.message || 'Demo payment processed!', 'success');
         closeModal('demo-payment-modal');
 
         // Reload data and show receipt

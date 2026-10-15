@@ -70,7 +70,8 @@ async function login(req, res) {
     let facultyDetails = null;
     let departmentName = null;
     let departmentId = user.department_id || null;
-    let facultyRole = user.faculty_role || null;
+    let isVerifiedHod = false;
+    let isCanMentor = true;
 
     if (user.role === 'student') {
       const [studentRows] = await db.query(
@@ -105,14 +106,9 @@ async function login(req, res) {
         if (facultyDetails.user_id !== user.id) {
           await db.query('UPDATE faculty SET user_id = ? WHERE id = ?', [user.id, facultyDetails.id]).catch(() => {});
         }
-        if (facultyDetails.active_hod_assignment || facultyDetails.is_hod) {
-          facultyRole = 'hod';
-          facultyDetails.is_hod = 1;
-        } else if (facultyDetails.can_mentor) {
-          facultyRole = 'mentor';
-        } else {
-          facultyRole = 'faculty';
-        }
+        // Faculty is ONLY HOD if they hold an active HOD assignment or is_hod == 1
+        isVerifiedHod = Boolean(facultyDetails.active_hod_assignment || facultyDetails.is_hod === 1);
+        isCanMentor = Boolean(facultyDetails.can_mentor !== 0);
       }
     }
 
@@ -121,30 +117,67 @@ async function login(req, res) {
       if (deptRows.length > 0) departmentName = deptRows[0].name;
     }
 
-    // Role validation: ensure valid users from every department can authenticate and access the correct portal
-    if (role && role !== 'all') {
-      const normalizedRole = role.toLowerCase();
-      const userRole = (user.role || '').toLowerCase();
-      const resolvedFacRole = (facultyRole || user.faculty_role || '').toLowerCase();
+    const normalizedRole = (role && role !== 'all') ? role.toLowerCase() : null;
+    const userRole = (user.role || '').toLowerCase();
 
+    // Strict Role Validation against verified database identity
+    if (normalizedRole) {
       let roleAllowed = false;
       if (normalizedRole === 'student') {
         roleAllowed = (userRole === 'student');
       } else if (normalizedRole === 'faculty') {
+        // Faculty portal accepts faculty members and administrators
         roleAllowed = (userRole === 'faculty' || userRole === 'admin');
       } else if (normalizedRole === 'hod') {
-        roleAllowed = ((userRole === 'faculty' && (resolvedFacRole === 'hod' || (facultyDetails && facultyDetails.is_hod))) || userRole === 'admin');
+        // HOD portal strictly requires verified HOD status or administrator
+        roleAllowed = ((userRole === 'faculty' && isVerifiedHod) || userRole === 'admin');
       } else if (normalizedRole === 'admin') {
         roleAllowed = (userRole === 'admin');
       }
 
       if (!roleAllowed) {
+        if (normalizedRole === 'hod' && userRole === 'faculty' && !isVerifiedHod) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied: Your account is verified as Faculty, but does not hold an active Head of Department (HOD) designation. Please use the Faculty portal.'
+          });
+        }
         return res.status(401).json({
           success: false,
-          message: `Account verified, but registered as '${userRole === 'faculty' ? (resolvedFacRole === 'hod' ? 'Head of Department (HOD)' : 'Faculty') : userRole}'. Please select the corresponding '${userRole}' portal.`
+          message: `Account verified, but registered as '${userRole === 'faculty' ? (isVerifiedHod ? 'Head of Department (HOD)' : 'Faculty') : userRole}'. Please select the corresponding '${userRole}' portal.`
         });
       }
     }
+
+    // Explicit Role-to-Dashboard Mapping (Never treat ordinary Faculty as HOD)
+    let finalFacultyRole = null;
+    let dashboardUrl = 'dashboard.html';
+
+    if (user.role === 'admin') {
+      dashboardUrl = 'admin-dashboard.html';
+    } else if (user.role === 'student') {
+      dashboardUrl = 'dashboard.html';
+    } else if (user.role === 'faculty') {
+      if (normalizedRole === 'hod' && isVerifiedHod) {
+        finalFacultyRole = 'hod';
+        dashboardUrl = 'hod-dashboard.html';
+      } else if (normalizedRole === 'faculty') {
+        // Faculty portal selected -> ALWAYS route to Faculty & Mentor Console
+        finalFacultyRole = isCanMentor ? 'mentor' : 'faculty';
+        dashboardUrl = 'mentor-dashboard.html';
+      } else if (isVerifiedHod && (!normalizedRole || normalizedRole === 'all')) {
+        // Unspecified portal: verified HOD defaults to HOD dashboard
+        finalFacultyRole = 'hod';
+        dashboardUrl = 'hod-dashboard.html';
+      } else {
+        // Regular faculty member defaults to Faculty & Mentor Console
+        finalFacultyRole = isCanMentor ? 'mentor' : 'faculty';
+        dashboardUrl = 'mentor-dashboard.html';
+      }
+    }
+
+    const isUserHOD = user.role === 'admin' ? true : isVerifiedHod;
+    const isUserMentor = user.role === 'admin' ? true : isCanMentor;
 
     const tokenPayload = {
       id: user.id,
@@ -152,13 +185,14 @@ async function login(req, res) {
       email: user.email,
       register_number: user.register_number,
       role: user.role,
-      facultyRole: facultyRole,
+      facultyRole: finalFacultyRole,
       departmentId: departmentId,
       departmentName: departmentName,
       studentId: studentDetails ? studentDetails.id : null,
       facultyId: facultyDetails ? facultyDetails.id : null,
-      isHOD: facultyDetails ? Boolean(facultyDetails.is_hod) : (user.role === 'admin' || facultyRole === 'hod'),
-      canMentor: facultyDetails ? Boolean(facultyDetails.can_mentor) : (user.role === 'admin' || facultyRole === 'mentor')
+      isHOD: isUserHOD,
+      canMentor: isUserMentor,
+      dashboardUrl: dashboardUrl
     };
 
     if (!JWT_SECRET || JWT_SECRET.length < 16) {
@@ -185,11 +219,14 @@ async function login(req, res) {
         email: user.email,
         register_number: user.register_number,
         role: user.role,
-        facultyRole: facultyRole,
+        facultyRole: finalFacultyRole,
+        isHOD: isUserHOD,
+        canMentor: isUserMentor,
         departmentId: departmentId,
         department: departmentName || (user.role === 'admin' ? 'Institution Administration' : 'General'),
-        year: studentDetails ? studentDetails.year : (facultyRole ? facultyRole.toUpperCase() : 'N/A'),
-        avatar: avatar
+        year: studentDetails ? studentDetails.year : (finalFacultyRole ? finalFacultyRole.toUpperCase() : 'N/A'),
+        avatar: avatar,
+        dashboardUrl: dashboardUrl
       }
     });
 
@@ -253,20 +290,35 @@ async function getMe(req, res) {
       if (facRows.length > 0) {
         faculty = facRows[0];
         faculty.department = faculty.department_name || 'Department';
-        if (faculty.active_hod_assignment || faculty.is_hod) {
+        const isHod = Boolean(faculty.active_hod_assignment || faculty.is_hod === 1);
+        if (isHod) {
           faculty.is_hod = 1;
           user.faculty_role = 'hod';
-          faculty.designation = 'Head of Department';
+          faculty.designation = faculty.designation || 'Head of Department';
         } else {
+          faculty.is_hod = 0;
           user.faculty_role = faculty.can_mentor ? 'mentor' : 'faculty';
         }
       }
     }
 
+    const isVerifiedHod = user.role === 'admin' ? true : Boolean(faculty && (faculty.active_hod_assignment || faculty.is_hod === 1));
+    const isCanMentor = user.role === 'admin' ? true : Boolean(faculty ? faculty.can_mentor !== 0 : true);
+    const finalFacultyRole = user.role === 'faculty' ? (isVerifiedHod ? 'hod' : (isCanMentor ? 'mentor' : 'faculty')) : null;
+
+    let dashboardUrl = 'dashboard.html';
+    if (user.role === 'admin') dashboardUrl = 'admin-dashboard.html';
+    else if (user.role === 'student') dashboardUrl = 'dashboard.html';
+    else if (user.role === 'faculty') dashboardUrl = isVerifiedHod ? 'hod-dashboard.html' : 'mentor-dashboard.html';
+
     return res.status(200).json({
       success: true,
       user: {
         ...user,
+        facultyRole: finalFacultyRole,
+        isHOD: isVerifiedHod,
+        canMentor: isCanMentor,
+        dashboardUrl: dashboardUrl,
         department: student ? student.department : (faculty ? faculty.department : (user.role === 'admin' ? 'Institution Administration' : 'General')),
         student,
         faculty

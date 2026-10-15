@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "test": "node test/test_suite.js"
+    "test": "node test/run_all_tests.js",
+    "test:e2e": "node test/test_suite.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

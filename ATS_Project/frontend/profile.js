@@ -462,4 +462,94 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Profile Photo Upload & Preview
+  const avatarForm = document.getElementById('avatar-form');
+  const avatarFileInput = document.getElementById('avatar-file-input');
+  const avatarUrlInput = document.getElementById('avatar-url-input');
+  const avatarPreviewContainer = document.getElementById('avatar-preview-container');
+  const avatarPreviewImg = document.getElementById('avatar-preview-img');
+  let selectedBase64 = null;
+
+  if (avatarFileInput) {
+    avatarFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Image size exceeds 2MB limit.', 'error');
+        avatarFileInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        selectedBase64 = loadEvt.target.result;
+        if (avatarPreviewImg) avatarPreviewImg.src = selectedBase64;
+        if (avatarPreviewContainer) avatarPreviewContainer.style.display = 'block';
+        if (avatarUrlInput) avatarUrlInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (avatarUrlInput) {
+    avatarUrlInput.addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        selectedBase64 = null;
+        if (avatarFileInput) avatarFileInput.value = '';
+        if (avatarPreviewImg) avatarPreviewImg.src = url;
+        if (avatarPreviewContainer) avatarPreviewContainer.style.display = 'block';
+      }
+    });
+  }
+
+  if (avatarForm) {
+    avatarForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('btn-save-avatar');
+      const urlVal = avatarUrlInput ? avatarUrlInput.value.trim() : '';
+      const payloadData = selectedBase64 || urlVal;
+
+      if (!payloadData) {
+        showToast('Please select an image file or enter a valid web image URL.', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Uploading... ⏳';
+
+      try {
+        const res = await apiCall('/upload/avatar', 'POST', { imageData: payloadData });
+        if (res.success && res.avatarUrl) {
+          showToast('Profile photo updated successfully!', 'success');
+          const profileImg = document.getElementById('profile-img');
+          const topbarAvatar = document.getElementById('topbar-user-avatar');
+          if (profileImg) profileImg.src = res.avatarUrl;
+          if (topbarAvatar) topbarAvatar.src = res.avatarUrl;
+
+          // Update session
+          const sessionUser = getCurrentUser();
+          if (sessionUser) {
+            sessionUser.avatar = res.avatarUrl;
+            setSession(getToken(), sessionUser);
+          }
+
+          closeModal('avatar-upload-modal');
+          avatarForm.reset();
+          selectedBase64 = null;
+          if (avatarPreviewContainer) avatarPreviewContainer.style.display = 'none';
+        } else {
+          showToast(res.message || 'Avatar upload failed.', 'error');
+        }
+      } catch (err) {
+        showToast(err.message || 'Avatar upload failed.', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Update Photo';
+      }
+    });
+  }
 });
+

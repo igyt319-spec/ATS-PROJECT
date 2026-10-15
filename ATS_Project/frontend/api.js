@@ -111,10 +111,8 @@ function checkAuth(requiredRole = null) {
     if (requiredRole === 'admin') {
       allowed = user.role === 'admin';
     } else if (requiredRole === 'hod') {
-      allowed = user.role === 'admin' || (user.role === 'faculty' && user.facultyRole === 'hod');
-    } else if (requiredRole === 'mentor') {
-      allowed = user.role === 'admin' || (user.role === 'faculty' && (user.facultyRole === 'mentor' || user.facultyRole === 'hod'));
-    } else if (requiredRole === 'faculty') {
+      allowed = user.role === 'admin' || (user.role === 'faculty' && Boolean(user.isHOD));
+    } else if (requiredRole === 'mentor' || requiredRole === 'faculty') {
       allowed = user.role === 'admin' || user.role === 'faculty';
     } else if (requiredRole === 'student') {
       allowed = user.role === 'student';
@@ -123,7 +121,7 @@ function checkAuth(requiredRole = null) {
     if (!allowed) {
       if (user.role === 'admin') window.location.href = 'admin-dashboard.html';
       else if (user.role === 'faculty') {
-        window.location.href = user.facultyRole === 'hod' ? 'hod-dashboard.html' : 'mentor-dashboard.html';
+        window.location.href = (user.facultyRole === 'hod' && Boolean(user.isHOD)) ? 'hod-dashboard.html' : 'mentor-dashboard.html';
       } else {
         window.location.href = 'dashboard.html';
       }

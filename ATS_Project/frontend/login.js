@@ -54,9 +54,11 @@ function hideError() {
 
 function getRoleRedirect(user) {
   if (!user) return 'login.html';
+  if (user.dashboardUrl) return user.dashboardUrl;
   if (user.role === 'admin') return 'admin-dashboard.html';
+  if (user.role === 'student') return 'dashboard.html';
   if (user.role === 'faculty') {
-    if (user.facultyRole === 'hod') return 'hod-dashboard.html';
+    if (user.facultyRole === 'hod' && Boolean(user.isHOD)) return 'hod-dashboard.html';
     return 'mentor-dashboard.html';
   }
   return 'dashboard.html';

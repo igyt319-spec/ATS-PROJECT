@@ -99,7 +99,17 @@ async function loadMentees() {
 function renderMenteesTable(list) {
   const tbody = document.getElementById('mentees-table-body');
   if (!list || list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">No mentees assigned under your advisory roster.</td></tr>';
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 48px 24px; color: var(--text-dim);">
+          <div style="font-size: 2.6rem; margin-bottom: 10px;">👥</div>
+          <div style="color: #fff; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">No Mentees Assigned</div>
+          <div style="font-size: 0.82rem; max-width: 380px; margin: 0 auto; color: var(--text-dim);">
+            You currently do not have any students assigned to your advisory cohort. Contact your Department Head to allocate mentees.
+          </div>
+        </td>
+      </tr>
+    `;
     return;
   }
 
@@ -349,6 +359,37 @@ function openActivityModal(id, studentName, title, category) {
   `;
   document.getElementById('activity-decision-remarks').value = '';
   openModal('activity-modal');
+}
+
+function switchFacultyTab(tabName) {
+  const tabs = ['dashboard', 'mentees', 'leaves', 'activities', 'results', 'fees'];
+  tabs.forEach(t => {
+    const navEl = document.getElementById(`nav-${t}`);
+    if (navEl) {
+      if (t === tabName) {
+        navEl.classList.add('active');
+      } else {
+        navEl.classList.remove('active');
+      }
+    }
+  });
+
+  const sectionMap = {
+    'dashboard': 'faculty-sec-overview',
+    'mentees': 'faculty-sec-mentees',
+    'leaves': 'section-leaves',
+    'activities': 'section-activities',
+    'results': 'section-results',
+    'fees': 'section-fees'
+  };
+
+  const targetId = sectionMap[tabName];
+  if (targetId) {
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 }
 
 function scrollToSection(id) {

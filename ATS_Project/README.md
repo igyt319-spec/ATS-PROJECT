@@ -207,15 +207,55 @@ Open your web browser and navigate to:
 
 ---
 
-## 🔑 Demo Credentials
+---
 
-| Role | Identifier / Email | Password | Intended Landing Page |
-|---|---|---|---|
-| **Synthetic Student Demo** | `BITD0001` | `student123` | `dashboard.html` |
-| **Synthetic Faculty** | `FAC-CSE` | `faculty123` | `admin-dashboard.html` |
-| **Admin** | `admin@ats.com` | `admin123` | `admin-dashboard.html` |
+## 🔑 Demo Credentials (4 Distinct Institutional Roles)
 
-*Tip: Click the quick demo autofill chips on the login page to sign in with one click.*
+| Role | Name | Identifier / Email | Password | Landing Portal | Scope & Permissions |
+|---|---|---|---|---|---|
+| **Student Scholar** | Kavitha Sundaram | `kavitha.demo@ats.edu` *(or `DEMO-STU-01`)* | `student123` | `dashboard.html` | Student KPI metrics, academic results, activities, leave requests, fees & demo payments |
+| **Faculty Mentor** | Dr. Senthil Nathan | `senthil.demo@ats.edu` *(or `DEMO-FAC-01`)* | `faculty123` | `mentor-dashboard.html` | Faculty advisory roster, mentee mini-dashboards, leave reviews, activity verification |
+| **Head of Department (HOD)** | Prof. Anand Ranganathan | `anand.demo@ats.edu` *(or `DEMO-HOD-01`)* | `hod123` | `hod-dashboard.html` | Department governance, mentor allocations, multi-tier results, department leaves & fees |
+| **Institutional Admin** | Rajeshwari Administrator | `admin.demo@ats.edu` *(or `DEMO-ADM-01`)* | `admin123` | `admin-dashboard.html` | Institution-wide analytics, department management, HOD appointments, student CRUD |
+
+*Tip: Click the quick demo autofill chips on `login.html` to sign in with one click.*
+
+### Running Demo Accounts Seeder
+To safely seed or update the demo accounts in local development:
+```bash
+ALLOW_DEMO_SEED=true node database/seed_demo_accounts.js
+```
+*(Protected by production guard: will refuse to run in `NODE_ENV=production` without `ALLOW_DEMO_SEED=true`)*
+
+---
+
+## 🧪 Regression Testing
+
+Run the integrated master regression test suite:
+```bash
+npm test
+```
+This automatically executes:
+- **Phase 2**: Authentication, server-authoritative portal redirects, and strict RBAC (`test/test_phase2_auth.js`)
+- **Phase 3**: Faculty console, mentee isolation, and student mini-dashboard (`test/test_phase3_faculty.js`)
+- **Phase 4**: Database safety, destructive SQL prevention, and demo account integrity (`test/test_phase4_demo_seed.js`)
+- **Phase 5**: Avatar uploads, 2MB size enforcement, Base64 elimination from DB, and relative URL paths (`test/test_phase5_upload.js`)
+- **Phase 6**: Simulated payment gateway, checkout session, idempotency, and multi-outcome simulation (`test/test_phase6_payment.js`)
+
+---
+
+## 🗄️ Database Migrations
+
+Run database migrations incrementally without resetting or dropping existing tables:
+1. **System Upgrade (HOD Assignments, Audit Logs, Rate Limits):**
+   ```bash
+   node database/migrate_system_upgrade.js
+   ```
+2. **Avatar Column Expansion to TEXT (Fixes MySQL 1406 `ER_DATA_TOO_LONG`):**
+   ```bash
+   node database/migrate_expand_avatar.js
+   ```
+   *Or execute SQL directly:* `mysql -u ... < database/migrations/expand_avatar_column.sql`
 
 ---
 

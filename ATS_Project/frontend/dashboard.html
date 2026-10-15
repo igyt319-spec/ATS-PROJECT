@@ -606,12 +606,18 @@
         </div>
       </div>
 
-      <!-- Test failure simulator toggle -->
-      <div style="margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
-        <input type="checkbox" id="demo-pay-simulate-fail" style="width: 16px; height: 16px; cursor: pointer;">
-        <label for="demo-pay-simulate-fail" style="font-size: 0.8rem; color: var(--text-dim); cursor: pointer;">
-          Simulate Payment Gateway Failure (to test error resilience)
-        </label>
+      <!-- Simulation Outcome Scenario -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label">Simulation Test Outcome</label>
+        <select id="demo-pay-simulation-outcome" class="form-control" style="background: rgba(15, 23, 42, 0.8);">
+          <option value="Success">✅ Success — Simulate Instant Approval & Settle</option>
+          <option value="Failed">❌ Failed — Simulate Bank / Gateway Decline</option>
+          <option value="Cancelled">⚠️ Cancelled — Simulate User Abort / Back</option>
+          <option value="Pending">⏳ Pending — Simulate Clearinghouse Queue</option>
+        </select>
+        <span style="font-size: 0.75rem; color: var(--text-dim); display: block; margin-top: 4px;">
+          Select how the simulated gateway engine should respond to test accounting resilience.
+        </span>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">

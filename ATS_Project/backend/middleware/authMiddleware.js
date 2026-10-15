@@ -122,31 +122,31 @@ function isAdmin(req, res, next) {
 function isHOD(req, res, next) {
   if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
   if (req.user.role === 'admin') return next();
-  if (req.user.role === 'faculty' && (req.user.facultyRole === 'hod' || req.user.isHOD)) {
+  if (req.user.role === 'faculty' && Boolean(req.user.isHOD)) {
     return next();
   }
   return res.status(403).json({
     success: false,
-    message: 'Access restricted to Head of Department (HOD) or Admin.'
+    message: 'Access denied: Requires Head of Department (HOD) or Admin authority.'
   });
 }
 
 function isMentor(req, res, next) {
   if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
   if (req.user.role === 'admin') return next();
-  if (req.user.role === 'faculty' && (req.user.facultyRole === 'mentor' || req.user.canMentor || req.user.facultyRole === 'hod' || req.user.isHOD)) {
+  if (req.user.role === 'faculty') {
     return next();
   }
   return res.status(403).json({
     success: false,
-    message: 'Access restricted to Faculty Mentors or Admin.'
+    message: 'Access denied: Requires Faculty Mentor or Admin authority.'
   });
 }
 
 function ownsStudent(req, res, next) {
   if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
   if (req.user.role === 'admin') return next();
-  const requestedId = Number(req.params.studentId || req.params.id || req.body.student_id);
+  const requestedId = Number(req.params.studentId || req.params.id || (req.body && req.body.student_id));
   if (req.user.role === 'student') {
     if (requestedId && requestedId === Number(req.user.studentId)) {
       return next();
@@ -163,7 +163,7 @@ async function ownsStudentOrAssigned(req, res, next) {
   if (!req.user) return res.status(401).json({ success: false, message: 'Authentication required.' });
   if (req.user.role === 'admin') return next();
 
-  const requestedId = Number(req.params.studentId || req.params.id || req.body.student_id);
+  const requestedId = Number(req.params.studentId || req.params.id || (req.body && req.body.student_id));
   if (!requestedId) {
     return res.status(400).json({ success: false, message: 'Valid student ID is required.' });
   }

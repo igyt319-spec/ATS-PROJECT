@@ -7,6 +7,7 @@ router.get('/student/:studentId', verifyToken, ownsStudentOrAssigned, feeControl
 router.get('/mentor/mentees', verifyToken, isMentor, feeController.getMentorMenteeFees);
 router.get('/department', verifyToken, isHOD, feeController.getDepartmentFees);
 router.get('/institution', verifyToken, isStrictAdmin, feeController.getInstitutionFees);
+router.post('/checkout', verifyToken, feeController.createCheckoutSession);
 router.post('/pay', verifyToken, feeController.processDemoPayment);
 router.get('/receipt/:transactionRef', verifyToken, feeController.getPaymentReceipt);
 router.get('/invoice/:feeId', verifyToken, feeController.getFeeInvoice);

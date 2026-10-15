@@ -167,6 +167,71 @@ async function getInstitutionFees(req, res) {
   }
 }
 
+// POST /api/fees/checkout (Initialize simulated payment checkout session)
+async function createCheckoutSession(req, res) {
+  try {
+    const { fee_id } = req.body || {};
+
+    if (!fee_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid fee_id is required to create a checkout session.'
+      });
+    }
+
+    const feeId = parseInt(fee_id, 10);
+    const [feeRows] = await db.query(
+      `SELECT sf.*, st.name AS student_name, st.register_number, st.user_id, d.name AS department_name
+       FROM student_fees sf
+       JOIN students st ON st.id = sf.student_id
+       LEFT JOIN departments d ON d.id = st.department_id
+       WHERE sf.id = ?`,
+      [feeId]
+    );
+
+    if (feeRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Fee record not found.' });
+    }
+
+    const fee = feeRows[0];
+
+    // Ownership check: Student can only checkout their own fee
+    if (req.user.role === 'student' && fee.student_id !== req.user.studentId && fee.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You can only checkout your own fee obligations.'
+      });
+    }
+
+    const orderRef = `ORD_${Date.now()}_${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const idempotencyKey = `IDEMP_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+
+    return res.status(200).json({
+      success: true,
+      checkout: {
+        order_ref: orderRef,
+        idempotency_key: idempotencyKey,
+        fee_id: fee.id,
+        fee_category: fee.fee_category,
+        academic_year: fee.academic_year,
+        semester: fee.semester,
+        total_amount: Number(fee.total_amount || 0),
+        paid_amount: Number(fee.paid_amount || 0),
+        balance_amount: Number(fee.balance_amount || 0),
+        student_name: fee.student_name,
+        register_number: fee.register_number,
+        department_name: fee.department_name,
+        supported_outcomes: ['Success', 'Failed', 'Cancelled', 'Pending'],
+        allowed_methods: ['UPI Simulation', 'Card Simulation', 'Net-Banking Simulation'],
+        notice: 'DEMO PAYMENT — NO REAL MONEY IS CHARGED'
+      }
+    });
+  } catch (err) {
+    console.error('[createCheckoutSession Error]', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
 // POST /api/fees/pay (Simulated Payment Gateway Transaction)
 async function processDemoPayment(req, res) {
   const connection = await db.getConnection();
@@ -176,10 +241,11 @@ async function processDemoPayment(req, res) {
       amount,
       payment_method, // 'UPI Simulation', 'Card Simulation', 'Net-Banking Simulation'
       idempotency_key,
+      simulation_outcome, // 'Success', 'Failed', 'Cancelled', 'Pending'
       simulate_failure
-    } = req.body;
+    } = req.body || {};
 
-    if (!fee_id || !amount) {
+    if (!fee_id || amount === undefined || amount === null) {
       connection.release();
       return res.status(400).json({
         success: false,
@@ -193,6 +259,19 @@ async function processDemoPayment(req, res) {
       return res.status(400).json({
         success: false,
         message: 'Payment amount must be a positive numeric value.'
+      });
+    }
+
+    // Determine target simulation outcome
+    const outcome = simulation_outcome || (simulate_failure === true ? 'Failed' : 'Success');
+
+    // Handle Cancelled simulation outcome early (no balance change, no locking)
+    if (outcome === 'Cancelled') {
+      connection.release();
+      return res.status(200).json({
+        success: false,
+        status: 'Cancelled',
+        message: 'Demo payment was cancelled by user. No balance was deducted.'
       });
     }
 
@@ -254,6 +333,7 @@ async function processDemoPayment(req, res) {
         connection.release();
         return res.status(200).json({
           success: true,
+          status: existingTxn[0].status,
           message: 'Payment was already processed previously (Idempotent response).',
           transaction: existingTxn[0]
         });
@@ -265,8 +345,8 @@ async function processDemoPayment(req, res) {
     const timestampStr = Date.now().toString().slice(-6);
     const transactionRef = `ATS-TXN-${timestampStr}-${randomHex}`;
 
-    // Simulated failure test scenario
-    if (simulate_failure === true) {
+    // Handle Failed simulation outcome
+    if (outcome === 'Failed') {
       await connection.query(
         `INSERT INTO fee_payments 
          (fee_id, student_id, transaction_ref, payment_method, amount, status, is_demo, payment_date, notes)
@@ -286,8 +366,37 @@ async function processDemoPayment(req, res) {
 
       return res.status(400).json({
         success: false,
+        status: 'Failed',
         message: 'DEMO PAYMENT SIMULATION FAILED: Issuer bank simulator declined the transaction.',
         transactionRef
+      });
+    }
+
+    // Handle Pending simulation outcome
+    if (outcome === 'Pending') {
+      await connection.query(
+        `INSERT INTO fee_payments 
+         (fee_id, student_id, transaction_ref, payment_method, amount, status, is_demo, payment_date, notes)
+         VALUES (?, ?, ?, ?, ?, 'Pending', 1, NOW(), ?)`,
+        [
+          fee.id,
+          fee.student_id,
+          transactionRef,
+          payment_method || 'Net-Banking Simulation',
+          payAmount,
+          `Simulated Payment Pending Confirmation.${idempotency_key ? ' Idempotency:' + idempotency_key : ''}`
+        ]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      return res.status(200).json({
+        success: true,
+        status: 'Pending',
+        message: 'DEMO PAYMENT PENDING: Awaiting confirmation from simulated payment clearinghouse.',
+        transactionRef,
+        amount: payAmount
       });
     }
 
@@ -325,6 +434,7 @@ async function processDemoPayment(req, res) {
 
     return res.status(200).json({
       success: true,
+      status: 'Success',
       message: 'Demo payment completed successfully. No real money was transferred.',
       paymentId: payResult.insertId,
       transactionRef,
@@ -427,6 +537,7 @@ async function getFeeInvoice(req, res) {
 }
 
 module.exports = {
+  createCheckoutSession,
   getStudentFees,
   getMentorMenteeFees,
   getDepartmentFees,
@@ -435,3 +546,4 @@ module.exports = {
   getPaymentReceipt,
   getFeeInvoice
 };
+

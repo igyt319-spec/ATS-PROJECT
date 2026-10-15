@@ -23,22 +23,25 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a href="mentor-dashboard.html" class="nav-item active">
-        <span class="icon">👥</span> My Mentees
+      <a href="javascript:void(0)" class="nav-item active" id="nav-dashboard" onclick="switchFacultyTab('dashboard')">
+        <span class="icon">📊</span> My Dashboard
       </a>
-      <a href="#section-leaves" class="nav-item" onclick="scrollToSection('section-leaves')">
+      <a href="javascript:void(0)" class="nav-item" id="nav-mentees" onclick="switchFacultyTab('mentees')">
+        <span class="icon">👥</span> Mentee Management
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-leaves" onclick="switchFacultyTab('leaves')">
         <span class="icon">📝</span> Leave Approvals
       </a>
-      <a href="#section-activities" class="nav-item" onclick="scrollToSection('section-activities')">
+      <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchFacultyTab('activities')">
         <span class="icon">🏆</span> Activity Verification
       </a>
-      <a href="#section-results" class="nav-item" onclick="scrollToSection('section-results')">
-        <span class="icon">📊</span> Mentee Results
+      <a href="javascript:void(0)" class="nav-item" id="nav-results" onclick="switchFacultyTab('results')">
+        <span class="icon">📈</span> Mentee Results
       </a>
-      <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
+      <a href="javascript:void(0)" class="nav-item" id="nav-fees" onclick="switchFacultyTab('fees')">
         <span class="icon">💳</span> Fee Tracking
       </a>
-      <a href="profile.html" class="nav-item">
+      <a href="profile.html" class="nav-item" id="nav-profile">
         <span class="icon">👤</span> My Profile
       </a>
     </nav>
@@ -74,8 +77,8 @@
 
     <main class="page-container">
 
-      <!-- Mentor KPI Cards -->
-      <div class="kpi-grid" style="margin-bottom: 24px;">
+      <!-- Mentor KPI Cards (My Dashboard Overview) -->
+      <div class="kpi-grid" id="faculty-sec-overview" style="margin-bottom: 24px;">
         <div class="kpi-card">
           <div class="kpi-header">
             <span class="kpi-title">Assigned Mentees</span>
@@ -121,8 +124,8 @@
         </div>
       </div>
 
-      <!-- Mentees Directory -->
-      <div class="glass-card" style="margin-bottom: 28px;">
+      <!-- Mentees Directory (Mentee Management) -->
+      <div class="glass-card" id="faculty-sec-mentees" style="margin-bottom: 28px;">
         <div class="card-header">
           <div class="card-title-group">
             <h3>Assigned Mentees Roster</h3>

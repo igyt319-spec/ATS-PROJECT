@@ -11,6 +11,7 @@ const testSuites = [
   { name: 'Phase 3: Faculty Console & Mentee Isolation', script: 'test_phase3_faculty.js' },
   { name: 'Phase 4: Database Safety & Demo Accounts', script: 'test_phase4_demo_seed.js' },
   { name: 'Phase 5: Avatar Upload & Image Storage', script: 'test_phase5_upload.js' },
+  { name: 'Phase 5 (Database): DB Configuration & Migration Safety', script: 'test_phase5_db_config.js' },
   { name: 'Phase 6: Simulated Payment Gateway Engine', script: 'test_phase6_payment.js' }
 ];
 

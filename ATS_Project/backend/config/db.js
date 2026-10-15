@@ -12,6 +12,7 @@ const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const sharedPool = require('../../database/db');
 
 let pool = null;
 let isConnected = false;
@@ -104,21 +105,37 @@ function splitSqlStatements(sql) {
   return statements;
 }
 
-function getSslConfig() {
-  const caPath = process.env.DB_SSL_CA || 'C:\\Users\\Iniyan\\OneDrive\\Documents\\ca (1).pem';
-  if (fs.existsSync(caPath)) {
-    try {
-      return { ca: fs.readFileSync(caPath) };
-    } catch (e) {
-      console.warn('[DB] Could not read CA file, falling back to rejectUnauthorized: false:', e.message);
+const HARMLESS_DDL_ERROR_CODES = new Set([
+  'ER_TABLE_EXISTS_ERROR',      // 1050
+  'ER_DUP_KEYNAME',             // 1061
+  'ER_DUP_FIELDNAME',           // 1060
+  'ER_CANT_DROP_FIELD_OR_KEY',  // 1091
+  'ER_DB_CREATE_EXISTS'         // 1007
+]);
+
+async function safeExecuteDDL(conn, sql, label = '') {
+  try {
+    return await conn.query(sql);
+  } catch (err) {
+    if (HARMLESS_DDL_ERROR_CODES.has(err.code)) {
+      console.log(`[DB Migration Notice] ${label || 'DDL'} already applied (${err.code}).`);
+      return null;
     }
+    console.warn(`[DB Migration Warning] ${label || 'DDL'} (${err.code || 'UNKNOWN'}): ${err.message}`);
+    if (err.code === 'ER_SYNTAX_ERROR' || err.code === 'ER_PARSE_ERROR' || err.code === 'ER_ACCESS_DENIED_ERROR') {
+      throw err;
+    }
+    return null;
   }
-  // If host is a remote cloud host (like aivencloud.com), enable SSL by default
-  const host = (process.env.DB_HOST || '').replace(/^"|"$/g, '');
-  if (host.includes('aivencloud.com') || process.env.DB_SSL === 'true') {
-    return { rejectUnauthorized: false };
+}
+
+function getSslConfig() {
+  if (sharedPool && typeof sharedPool.getSslConfig === 'function') {
+    return sharedPool.getSslConfig();
   }
-  return undefined;
+  const host = (process.env.DB_HOST || '').replace(/^"|"$/g, '').trim();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '') return undefined;
+  return { rejectUnauthorized: false };
 }
 
 async function initDB() {
@@ -148,8 +165,8 @@ async function initDB() {
     console.log(`[DB] Connected to MySQL server at ${host}:${port}`);
 
     // Ensure database exists
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``).catch(() => {});
-    await connection.query(`USE \`${database}\``).catch(() => {});
+    await safeExecuteDDL(connection, `CREATE DATABASE IF NOT EXISTS \`${database}\``, 'Create DB');
+    await connection.query(`USE \`${database}\``);
 
     const runSqlFile = async (file) => {
       const filePath = path.join(__dirname, '../../database', file);
@@ -175,18 +192,25 @@ async function initDB() {
     }
 
     // Ensure grade_point columns support 10.00 (DECIMAL(4,2))
-    await connection.query('ALTER TABLE marks MODIFY grade_point DECIMAL(4,2) NOT NULL DEFAULT 0').catch(() => {});
-    await connection.query('ALTER TABLE grading_rules MODIFY grade_point DECIMAL(4,2) NOT NULL').catch(() => {});
+    await safeExecuteDDL(connection, 'ALTER TABLE marks MODIFY grade_point DECIMAL(4,2) NOT NULL DEFAULT 0', 'Alter marks.grade_point');
+    await safeExecuteDDL(connection, 'ALTER TABLE grading_rules MODIFY grade_point DECIMAL(4,2) NOT NULL', 'Alter grading_rules.grade_point');
 
     // Ensure 100 original students are present
-    const [[studentCheck]] = await connection.query("SELECT COUNT(*) AS count FROM students WHERE register_number LIKE 'BITD%'").catch(() => [[{ count: 0 }]]);
-    if (Number(studentCheck.count) === 0) {
+    let studentCheckCount = 0;
+    try {
+      const [[studentCheck]] = await connection.query("SELECT COUNT(*) AS count FROM students WHERE register_number LIKE 'BITD%'");
+      studentCheckCount = Number(studentCheck.count || 0);
+    } catch (countErr) {
+      console.warn('[DB] Student check query notice:', countErr.message);
+    }
+
+    if (studentCheckCount === 0) {
       console.log('[DB] Seeding original student records from seed_data.sql...');
       await runSqlFile('seed_data.sql');
     }
 
     // Ensure department_hod_assignments exists with database-enforced single active HOD constraint
-    await connection.query(`
+    await safeExecuteDDL(connection, `
       CREATE TABLE IF NOT EXISTS department_hod_assignments (
         id INT AUTO_INCREMENT PRIMARY KEY,
         department_id INT NOT NULL,
@@ -202,57 +226,90 @@ async function initDB() {
         KEY idx_fac (faculty_id),
         UNIQUE KEY uq_one_active_hod (active_dept_id)
       )
-    `).catch(() => {});
+    `, 'Create department_hod_assignments table');
 
     // Ensure avatar columns support relative upload paths and long URLs
-    await connection.query('ALTER TABLE users MODIFY COLUMN avatar TEXT').catch(() => {});
-    await connection.query('ALTER TABLE students MODIFY COLUMN avatar TEXT').catch(() => {});
-    await connection.query('ALTER TABLE faculty MODIFY COLUMN avatar TEXT').catch(() => {});
+    await safeExecuteDDL(connection, 'ALTER TABLE users MODIFY COLUMN avatar TEXT', 'Alter users.avatar');
+    await safeExecuteDDL(connection, 'ALTER TABLE students MODIFY COLUMN avatar TEXT', 'Alter students.avatar');
+    await safeExecuteDDL(connection, 'ALTER TABLE faculty MODIFY COLUMN avatar TEXT', 'Alter faculty.avatar');
+
+    // Ensure student_fees exists for payment simulation
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS student_fees (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        fee_category VARCHAR(100) NOT NULL,
+        academic_year VARCHAR(20) NOT NULL,
+        semester VARCHAR(24) NOT NULL,
+        total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        balance_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        status ENUM('Pending', 'Partially Paid', 'Paid', 'Overdue') NOT NULL DEFAULT 'Pending',
+        due_date DATE NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_fees_student (student_id)
+      )
+    `, 'Create student_fees table');
+
+    // Ensure fee_payments exists for payment simulation
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS fee_payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        fee_id INT NOT NULL,
+        student_id INT NOT NULL,
+        transaction_ref VARCHAR(100) NOT NULL UNIQUE,
+        payment_method VARCHAR(50) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        status ENUM('Success', 'Failed', 'Pending', 'Cancelled') NOT NULL DEFAULT 'Success',
+        is_demo TINYINT(1) NOT NULL DEFAULT 1,
+        payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        notes TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_payments_fee (fee_id),
+        KEY idx_payments_student (student_id)
+      )
+    `, 'Create fee_payments table');
 
     // Safe, non-destructive demo accounts check
-    // Disabled in production by default unless ALLOW_DEMO_SEED=true is explicitly set
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Disabled in production and ambiguous environments by default unless ALLOW_DEMO_SEED=true
+    const currentEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
+    const isSafeDemoEnv = currentEnv === 'development' || currentEnv === 'demo' || currentEnv === 'test';
     const allowDemoSeed = process.env.ALLOW_DEMO_SEED === 'true';
 
-    if (!isProduction || allowDemoSeed) {
+    if (isSafeDemoEnv || allowDemoSeed) {
       try {
-        const [[demoUserCheck]] = await connection.query(
-          "SELECT COUNT(*) AS count FROM users WHERE email = 'kavitha.demo@ats.edu'"
-        ).catch(() => [[{ count: 0 }]]);
+        const requiredDemoEmails = [
+          'kavitha.demo@ats.edu',
+          'senthil.demo@ats.edu',
+          'anand.demo@ats.edu'
+        ];
+        const [existingDemoUsers] = await connection.query(
+          "SELECT email FROM users WHERE email IN (?)",
+          [requiredDemoEmails]
+        ).catch(() => [[]]);
 
-        if (Number(demoUserCheck.count) === 0) {
-          console.log('[DB] Demo accounts not detected. Running safe idempotent demo seeder...');
+        const existingEmails = new Set((existingDemoUsers || []).map(u => u.email));
+        const missingEmails = requiredDemoEmails.filter(email => !existingEmails.has(email));
+
+        if (missingEmails.length > 0) {
+          console.log(`[DB] Incomplete demo accounts detected (missing: ${missingEmails.join(', ')}). Running safe idempotent seeder...`);
           const seedDemoAccounts = require('../../database/seed_demo_accounts');
           await seedDemoAccounts(connection);
         } else {
-          console.log('[DB] Verified demo accounts are present in database.');
+          console.log('[DB] Verified all required demo accounts (Student, Faculty, HOD) are present in database.');
         }
       } catch (seedErr) {
         console.warn('[DB] Demo accounts check notice:', seedErr.message);
       }
     } else {
-      console.log('[DB] Production environment detected: demo seeding disabled by default.');
+      console.log(`[DB] Environment '${currentEnv || 'undefined'}': demo seeding disabled by default (requires ALLOW_DEMO_SEED=true).`);
     }
 
     await connection.end();
 
-    // Create pool for runtime operations
-    const poolConfig = {
-      host,
-      user,
-      password,
-      database,
-      port,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      connectTimeout: 15000,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 10000
-    };
-    if (ssl) poolConfig.ssl = ssl;
-
-    pool = mysql.createPool(poolConfig);
+    // Use unified connection pool from database/db to avoid connection leaks and multiple pools
+    pool = sharedPool;
 
     // Test a quick query from the pool
     const [[countResult]] = await pool.query('SELECT COUNT(*) AS total FROM students');
@@ -274,11 +331,12 @@ async function initDB() {
  * Unified query executor querying live MySQL pool.
  */
 async function query(sql, params = []) {
-  if (pool && isConnected) {
+  const activePool = pool || sharedPool;
+  if (activePool) {
     try {
-      return await pool.query(sql, params);
+      return await activePool.query(sql, params);
     } catch (err) {
-      console.error('[DB Query Error]', err.message, 'SQL:', sql.slice(0, 100));
+      console.error('[DB Query Error]', err.message, 'SQL:', (typeof sql === 'string' ? sql.slice(0, 100) : ''));
       throw err;
     }
   }
@@ -299,5 +357,7 @@ module.exports = {
   initDB,
   query,
   getDbStatus,
-  getPool: () => pool
+  getPool: () => pool || sharedPool,
+  safeExecuteDDL,
+  HARMLESS_DDL_ERROR_CODES
 };

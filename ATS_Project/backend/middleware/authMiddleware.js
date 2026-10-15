@@ -8,16 +8,14 @@ async function verifyToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   let token = null;
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
-  } else if (req.query && req.query.token) {
-    token = req.query.token;
+  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
   }
 
   if (!token) {
     return res.status(401).json({
       success: false,
-      message: 'Access denied. No authentication token provided.'
+      message: 'Access denied. Valid Bearer token required in Authorization header.'
     });
   }
 
@@ -67,7 +65,7 @@ async function verifyToken(req, res, next) {
 
     next();
   } catch (err) {
-    return res.status(403).json({
+    return res.status(401).json({
       success: false,
       message: 'Invalid or expired authentication token.'
     });

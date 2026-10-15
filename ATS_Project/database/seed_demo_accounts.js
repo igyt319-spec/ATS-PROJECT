@@ -24,9 +24,13 @@ async function seedDemoAccounts(externalConn = null) {
   console.log('=== ATS PROJECT — SAFE IDEMPOTENT DEMO ACCOUNTS SEEDER');
   console.log('===============================================================\n');
 
-  // Strict Production Safety Guard
-  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
-    throw new Error('Refusing to seed demo accounts in production without ALLOW_DEMO_SEED=true');
+  // Strict Production & Ambiguous Environment Safety Guard
+  const currentEnv = (process.env.NODE_ENV || '').toLowerCase().trim();
+  const isSafeDemoEnv = currentEnv === 'development' || currentEnv === 'demo' || currentEnv === 'test';
+  if ((process.env.NODE_ENV === 'production' || !isSafeDemoEnv) && process.env.ALLOW_DEMO_SEED !== 'true') {
+    throw new Error(
+      `Refusing to seed demo accounts in environment '${currentEnv || 'undefined'}'. Demo seeding is disabled in production or ambiguous environments unless ALLOW_DEMO_SEED=true is explicitly set.`
+    );
   }
 
   // Pre-hash demo passwords with salt rounds = 10
@@ -166,17 +170,40 @@ async function seedDemoAccounts(externalConn = null) {
 
     if (activeAssignment.length > 0 && activeAssignment[0].faculty_id === hodFacultyId) {
       console.log(`✅ Prof. Anand Ranganathan is already confirmed as Active HOD for Department ID: ${departmentId}`);
+    } else if (activeAssignment.length > 0 && activeAssignment[0].faculty_id !== hodFacultyId) {
+      // Department already has an active HOD who is NOT Anand - do not deactivate an unrelated HOD!
+      const activeHodFacId = activeAssignment[0].faculty_id;
+      const [curHod] = await queryExecutor.query('SELECT name FROM faculty WHERE id = ?', [activeHodFacId]).catch(() => [[]]);
+      const curHodName = curHod && curHod[0] ? curHod[0].name : `Faculty #${activeHodFacId}`;
+      console.log(`[Demo Seed] Department ID ${departmentId} already has active HOD: ${curHodName}. Seeking vacant department to preserve unrelated HOD...`);
+
+      // Find an available department without an active HOD
+      const [availableDepts] = await queryExecutor.query(`
+        SELECT d.id, d.name 
+        FROM departments d
+        LEFT JOIN department_hod_assignments dha ON dha.department_id = d.id AND dha.status = 'active'
+        WHERE dha.id IS NULL
+        LIMIT 1
+      `).catch(() => [[]]);
+
+      if (availableDepts && availableDepts.length > 0) {
+        departmentId = availableDepts[0].id;
+        console.log(`[Demo Seed] Reallocated demo HOD to unassigned department: ${availableDepts[0].name} (ID: ${departmentId})`);
+        await queryExecutor.query('UPDATE faculty SET department_id = ? WHERE id = ?', [departmentId, hodFacultyId]);
+        await queryExecutor.query(
+          `INSERT INTO department_hod_assignments (department_id, faculty_id, assigned_by, start_date, status)
+           VALUES (?, ?, ?, CURDATE(), 'active')`,
+          [departmentId, hodFacultyId, adminUserId]
+        );
+        console.log(`✅ Activated Prof. Anand Ranganathan as HOD for Department ID: ${departmentId}`);
+      } else {
+        throw new Error(`Conflict: Department ID ${departmentId} already has active HOD (${curHodName}) and no vacant department exists. Refusing to deactivate unrelated HOD.`);
+      }
     } else {
-      // Deactivate prior active assignments for this department to maintain single-active constraint
-      await queryExecutor.query(
-        "UPDATE department_hod_assignments SET status = 'inactive' WHERE department_id = ? AND faculty_id != ?",
-        [departmentId, hodFacultyId]
-      );
       await queryExecutor.query(
         `INSERT INTO department_hod_assignments (department_id, faculty_id, assigned_by, start_date, status)
-         VALUES (?, ?, ?, CURDATE(), 'active')
-         ON DUPLICATE KEY UPDATE status = 'active', faculty_id = ?`,
-        [departmentId, hodFacultyId, adminUserId, hodFacultyId]
+         VALUES (?, ?, ?, CURDATE(), 'active')`,
+        [departmentId, hodFacultyId, adminUserId]
       );
       console.log(`✅ Activated Prof. Anand Ranganathan as HOD for Department ID: ${departmentId}`);
     }

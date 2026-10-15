@@ -5,7 +5,7 @@ const { verifyToken, isAdmin, isStrictAdmin } = require('../middleware/authMiddl
 
 router.get('/', departmentController.getAllDepartments);
 router.get('/institutional-overview', verifyToken, isAdmin, departmentController.getInstitutionDepartmentOverview);
-router.get('/faculty/:id/mini-dashboard', verifyToken, departmentController.getFacultyMiniDashboard);
+router.get('/faculty/:id/mini-dashboard', verifyToken, isAdmin, departmentController.getFacultyMiniDashboard);
 router.get('/:id', departmentController.getDepartmentById);
 router.put('/:id/hod', verifyToken, isStrictAdmin, departmentController.assignDepartmentHOD);
 router.post('/', verifyToken, isStrictAdmin, departmentController.createDepartment);

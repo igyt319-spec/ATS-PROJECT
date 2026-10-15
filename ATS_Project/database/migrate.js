@@ -162,13 +162,21 @@ async function migrate() {
       await conn.query(stmt);
     }
 
-    await conn.query(
-      'ALTER TABLE marks MODIFY grade_point DECIMAL(4,2) NOT NULL DEFAULT 0'
-    ).catch(() => { });
+    const HARMLESS_DDL_CODES = new Set(['ER_TABLE_EXISTS_ERROR', 'ER_DUP_KEYNAME', 'ER_DUP_FIELDNAME', 'ER_CANT_DROP_FIELD_OR_KEY']);
+    const safeDDL = async (stmt, label) => {
+      try {
+        await conn.query(stmt);
+      } catch (err) {
+        if (HARMLESS_DDL_CODES.has(err.code)) {
+          console.log(`[Migration Notice] ${label} already applied (${err.code}).`);
+        } else {
+          console.warn(`[Migration Warning] ${label} (${err.code || 'UNKNOWN'}): ${err.message}`);
+        }
+      }
+    };
 
-    await conn.query(
-      'ALTER TABLE grading_rules MODIFY grade_point DECIMAL(4,2) NOT NULL'
-    ).catch(() => { });
+    await safeDDL('ALTER TABLE marks MODIFY grade_point DECIMAL(4,2) NOT NULL DEFAULT 0', 'Alter marks.grade_point');
+    await safeDDL('ALTER TABLE grading_rules MODIFY grade_point DECIMAL(4,2) NOT NULL', 'Alter grading_rules.grade_point');
 
     console.log(`schema.sql applied (${schemaStmts.length} statements).`);
 

@@ -149,6 +149,71 @@ async function runPhase4Tests() {
   }
   assert('4.3 Role collision detection aborts seeding with conflict error instead of overwriting', conflictDetected);
 
+  // 4.4 Test that independent account verification seeds missing accounts even if some exist
+  const independentSqls = [];
+  const mockDbPartial = {
+    query: async (sql, params = []) => {
+      independentSqls.push({ sql, params });
+      if (sql.includes('departments WHERE code =')) {
+        return [[{ id: 1, name: 'Computer Science and Engineering' }]];
+      }
+      if (sql.includes('SELECT id, role, password FROM users WHERE email = ?')) {
+        const email = params[0];
+        // Only Kavitha exists; Senthil and Anand are missing
+        if (email === 'kavitha.demo@ats.edu') {
+          return [[{ id: 10, role: 'student', password: 'hash' }]];
+        }
+        return [[]]; // Missing Senthil and Anand
+      }
+      if (sql.includes('SELECT id FROM faculty WHERE email = ?')) return [[]];
+      if (sql.includes('SELECT id, faculty_id FROM department_hod_assignments')) return [[]];
+      if (sql.includes('SELECT id FROM students WHERE email = ?')) return [[{ id: 10 }]];
+      if (sql.includes('SELECT id, status FROM student_mentors')) return [[]];
+      if (sql.includes('SELECT id FROM student_fees')) return [[]];
+      return [{ insertId: 77, affectedRows: 1 }];
+    }
+  };
+
+  await seedDemoAccounts(mockDbPartial);
+  const senthilCreated = independentSqls.some(q => q.sql.includes('INSERT INTO users') && q.params.includes('senthil.demo@ats.edu'));
+  const anandCreated = independentSqls.some(q => q.sql.includes('INSERT INTO users') && q.params.includes('anand.demo@ats.edu'));
+  assert('4.4 Missing demo accounts are seeded independently even when other demo accounts already exist', senthilCreated && anandCreated);
+
+  // 4.5 Test that existing unrelated active HOD is preserved and not deactivated
+  const hodSafetySqls = [];
+  const mockDbUnrelatedHod = {
+    query: async (sql, params = []) => {
+      hodSafetySqls.push({ sql, params });
+      if (sql.includes('departments WHERE code =')) {
+        return [[{ id: 1, name: 'Computer Science and Engineering' }]];
+      }
+      if (sql.includes('SELECT id, role, password FROM users WHERE email = ?')) {
+        return [[]];
+      }
+      if (sql.includes('SELECT id FROM faculty WHERE email = ?')) return [[]];
+      if (sql.includes("SELECT id, faculty_id FROM department_hod_assignments WHERE department_id = ? AND status = 'active'")) {
+        // Department 1 already has active HOD who is faculty #88 (unrelated existing professor)
+        return [[{ id: 50, faculty_id: 88 }]];
+      }
+      if (sql.includes('SELECT name FROM faculty WHERE id = ?')) {
+        return [[{ name: 'Dr. Unrelated Existing HOD' }]];
+      }
+      if (sql.includes('LEFT JOIN department_hod_assignments dha ON dha.department_id = d.id AND dha.status = \'active\'')) {
+        // Department 2 (ECE) is vacant without an active HOD
+        return [[{ id: 2, name: 'Electronics and Communication Engineering' }]];
+      }
+      if (sql.includes('SELECT id FROM students WHERE email = ?')) return [[]];
+      if (sql.includes('SELECT id, status FROM student_mentors')) return [[]];
+      if (sql.includes('SELECT id FROM student_fees')) return [[]];
+      return [{ insertId: 88, affectedRows: 1 }];
+    }
+  };
+
+  await seedDemoAccounts(mockDbUnrelatedHod);
+  // Ensure NO deactivation query was run against the unrelated HOD
+  const deactivatedUnrelated = hodSafetySqls.some(q => q.sql.includes("UPDATE department_hod_assignments SET status = 'inactive'"));
+  assert('4.5 Existing unrelated active HOD is preserved without being deactivated', !deactivatedUnrelated);
+
   console.log('\n===============================================================');
   console.log(`Phase 4 Test Execution Complete: ${passedCount} PASSED, ${failedCount} FAILED.`);
   console.log('===============================================================');

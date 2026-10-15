@@ -293,7 +293,7 @@ async function processDemoPayment(req, res) {
     const fee = feeRows[0];
 
     // Ownership check: Student can only pay their own fee
-    if (req.user.role === 'student' && fee.student_id !== req.user.studentId) {
+    if (req.user.role === 'student' && Number(fee.student_id) !== Number(req.user.studentId)) {
       await connection.rollback();
       connection.release();
       return res.status(403).json({
@@ -322,11 +322,12 @@ async function processDemoPayment(req, res) {
       });
     }
 
-    // Check idempotency if key provided
+    // Check idempotency if key provided (escape SQL wildcards to prevent broad matching)
     if (idempotency_key) {
+      const cleanKey = String(idempotency_key).replace(/[%_\\]/g, '\\$&');
       const [existingTxn] = await connection.query(
         'SELECT * FROM fee_payments WHERE notes LIKE ?',
-        [`%Idempotency:${idempotency_key}%`]
+        [`%Idempotency:${cleanKey}%`]
       );
       if (existingTxn.length > 0) {
         await connection.rollback();
@@ -444,8 +445,8 @@ async function processDemoPayment(req, res) {
     });
 
   } catch (err) {
-    await connection.rollback();
-    connection.release();
+    try { await connection.rollback(); } catch (_) {}
+    try { connection.release(); } catch (_) {}
     console.error('[processDemoPayment Error]', err);
     return res.status(500).json({ success: false, message: err.message });
   }

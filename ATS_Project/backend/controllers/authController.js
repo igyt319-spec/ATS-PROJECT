@@ -1,9 +1,43 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const db = require('../../database/db');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+/**
+ * Secure password verification supporting standard bcrypt and timing-safe legacy migration.
+ * Never stores or returns plaintext passwords.
+ * Returns { isMatch: boolean, needsUpgrade: boolean }
+ */
+async function verifyUserPassword(submittedPassword, storedHash) {
+  if (!submittedPassword || !storedHash || typeof storedHash !== 'string') {
+    return { isMatch: false, needsUpgrade: false };
+  }
+
+  // Standard bcrypt hash verification ($2a$, $2b$, $2y$)
+  if (/^\$2[aby]\$/.test(storedHash)) {
+    try {
+      const isMatch = await bcrypt.compare(submittedPassword, storedHash);
+      return { isMatch, needsUpgrade: false };
+    } catch (_) {
+      return { isMatch: false, needsUpgrade: false };
+    }
+  }
+
+  // Safe legacy fallback (for historical plaintext seed records):
+  // Uses timingSafeEqual to avoid timing side-channels, then marks for dynamic upgrade
+  try {
+    const bufSubmitted = Buffer.from(submittedPassword);
+    const bufStored = Buffer.from(storedHash);
+    if (bufSubmitted.length === bufStored.length && crypto.timingSafeEqual(bufSubmitted, bufStored)) {
+      return { isMatch: true, needsUpgrade: true };
+    }
+  } catch (_) {}
+
+  return { isMatch: false, needsUpgrade: false };
+}
 
 // POST /api/auth/login
 async function login(req, res) {
@@ -28,7 +62,7 @@ async function login(req, res) {
     if (!users || users.length === 0) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials. Please check your username and password.'
+        message: 'Invalid credentials. Please verify your username/email and password.'
       });
     }
 
@@ -42,28 +76,26 @@ async function login(req, res) {
       });
     }
 
-    let isMatch = false;
-    if (user.password && /^\$2[aby]\$/.test(user.password)) {
-      try {
-        isMatch = await bcrypt.compare(password, user.password);
-      } catch (_) {
-        isMatch = false;
-      }
-    }
-    // Secure fallback for demo environment passwords
-    if (!isMatch) {
-      if ((user.role === 'student' && (password === 'student123' || password === user.password)) ||
-          (user.role === 'admin' && (password === 'admin123' || password === user.password)) ||
-          (user.role === 'faculty' && (password === 'faculty123' || password === 'mentor123' || password === user.password))) {
-        isMatch = true;
-      }
-    }
+    // Secure verification without hardcoded bypasses or plaintext exposure
+    const { isMatch, needsUpgrade } = await verifyUserPassword(password, user.password);
 
     if (!isMatch) {
+      console.warn(`[Auth] Authentication failed for user #${user.id} (${user.email || user.register_number})`);
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials. Please check your password and try again.'
+        message: 'Invalid credentials. Please verify your username/email and password.'
       });
+    }
+
+    // Transparently upgrade legacy plaintext password to secure bcrypt hash in database
+    if (needsUpgrade) {
+      try {
+        const upgradedHash = await bcrypt.hash(password, 10);
+        await db.query('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?', [upgradedHash, user.id]);
+        console.log(`[Auth] User #${user.id} legacy password transparently upgraded to secure bcrypt hash.`);
+      } catch (upgradeErr) {
+        console.error(`[Auth] Failed to upgrade legacy password for user #${user.id}:`, upgradeErr.message);
+      }
     }
 
     let studentDetails = null;
@@ -376,49 +408,8 @@ async function updateProfile(req, res) {
 // PUT /api/auth/profile-photo
 async function updateProfilePhoto(req, res) {
   try {
-    const { avatar, targetUserId } = req.body;
-
-    if (!avatar) {
-      return res.status(400).json({
-        success: false,
-        message: 'Profile photo URL or image data is required.'
-      });
-    }
-
-    // Validate image format: either HTTP/HTTPS URL or valid base64 data URL
-    const isValidUrl = /^https?:\/\/.+/i.test(avatar);
-    const isValidDataUri = /^data:image\/(jpeg|png|webp|gif|svg\+xml);base64,/i.test(avatar);
-    if (!isValidUrl && !isValidDataUri) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid image format. Must be a valid URL or base64 image data URI.'
-      });
-    }
-
-    // Determine target user
-    let userIdToUpdate = req.user.id;
-    if (targetUserId && targetUserId !== req.user.id) {
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied: You are not authorised to modify another user\'s profile photo.'
-        });
-      }
-      userIdToUpdate = parseInt(targetUserId, 10);
-    }
-
-    // Update users table
-    await db.query('UPDATE users SET avatar = ?, updated_at = NOW() WHERE id = ?', [avatar, userIdToUpdate]);
-
-    // Also sync to students and faculty tables if linked
-    await db.query('UPDATE students SET avatar = ?, updated_at = NOW() WHERE user_id = ?', [avatar, userIdToUpdate]);
-    await db.query('UPDATE faculty SET avatar = ?, updated_at = NOW() WHERE user_id = ?', [avatar, userIdToUpdate]);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Profile photo updated successfully.',
-      avatar
-    });
+    const { uploadAvatar } = require('./uploadController');
+    return await uploadAvatar(req, res);
   } catch (error) {
     console.error('[Update Profile Photo Error]', error);
     return res.status(500).json({
@@ -490,13 +481,7 @@ async function changePassword(req, res) {
     }
 
     const storedHash = users[0].password;
-    let isMatch = false;
-    if (storedHash && /^\$2[aby]\$/.test(storedHash)) {
-      isMatch = await bcrypt.compare(currentPassword, storedHash);
-    }
-    if (!isMatch && (currentPassword === storedHash || currentPassword === 'student123' || currentPassword === 'faculty123' || currentPassword === 'mentor123' || currentPassword === 'admin123')) {
-      isMatch = true;
-    }
+    const { isMatch, needsUpgrade } = await verifyUserPassword(currentPassword, storedHash);
 
     if (!isMatch) {
       await recordFailedAttempt(userEmail, 'PASSWORD_CHANGE', 5, 15);
@@ -566,13 +551,7 @@ async function changeIdentifier(req, res) {
     if (!users || users.length === 0) return res.status(404).json({ success: false, message: 'User not found.' });
 
     const currentUser = users[0];
-    let isMatch = false;
-    if (currentUser.password && /^\$2[aby]\$/.test(currentUser.password)) {
-      isMatch = await bcrypt.compare(password, currentUser.password);
-    }
-    if (!isMatch && (password === currentUser.password || password === 'admin123' || password === 'student123' || password === 'mentor123' || password === 'faculty123')) {
-      isMatch = true;
-    }
+    const { isMatch } = await verifyUserPassword(password, currentUser.password);
 
     if (!isMatch) {
       await recordFailedAttempt(userEmail, 'IDENTIFIER_CHANGE', 5, 15);
@@ -690,5 +669,6 @@ module.exports = {
   forgotPassword,
   changePassword,
   changeIdentifier,
-  seedDemoData
+  seedDemoData,
+  verifyUserPassword
 };

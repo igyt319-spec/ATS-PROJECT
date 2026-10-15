@@ -1,5 +1,5 @@
 const db = require('../database/db');
-const { createCheckoutSession, processDemoPayment } = require('../backend/controllers/feeController');
+const { createCheckoutSession, processDemoPayment, getPaymentReceipt, getFeeInvoice } = require('../backend/controllers/feeController');
 
 function createMockRes() {
   const res = {
@@ -62,6 +62,15 @@ async function runPhase6Tests() {
       if (params[0] === 101) return [[mockFee]];
       return [[]];
     }
+    if (sql.includes('FROM fee_payments fp')) {
+      if (params[0] === 'ATS-TXN-SAMPLE') {
+        return [[{ id: 1, fee_id: 101, student_id: 1, transaction_ref: 'ATS-TXN-SAMPLE', fee_category: 'Tuition Fee', academic_year: '2026-2027', total_amount: 50000, paid_amount: 20000, balance_amount: 30000 }]];
+      }
+      return [[]];
+    }
+    if (sql.includes('SELECT * FROM fee_payments WHERE fee_id = ?')) {
+      return [recordedPayments.filter(p => p.fee_id === params[0])];
+    }
     return [[]];
   };
 
@@ -77,12 +86,13 @@ async function runPhase6Tests() {
           return [[]];
         }
         if (sql.includes('SELECT * FROM fee_payments WHERE notes LIKE ?')) {
-          const keyMatch = params[0].match(/%Idempotency:([^%]+)%/);
-          if (keyMatch) {
-            const found = recordedPayments.find(p => p.notes && p.notes.includes(keyMatch[1]));
-            return [found ? [found] : []];
-          }
-          return [[]];
+          const rawPattern = params[0];
+          let patternBody = rawPattern;
+          if (patternBody.startsWith('%')) patternBody = patternBody.slice(1);
+          if (patternBody.endsWith('%')) patternBody = patternBody.slice(0, -1);
+          const literalSubstr = patternBody.replace(/\\(.)/g, '$1');
+          const found = recordedPayments.find(p => p.notes && p.notes.includes(literalSubstr));
+          return [found ? [found] : []];
         }
         if (sql.includes('UPDATE student_fees')) {
           mockFee.paid_amount = params[0];
@@ -219,6 +229,79 @@ async function runPhase6Tests() {
   assert('4.1 Replaying request with existing idempotency key succeeds', resDuplicate.statusCode === 200);
   assert('4.2 Replayed request returns cached response without double-charging', resDuplicate.body.message.includes('Idempotent'));
   assert('4.3 Fee balance was NOT deducted a second time (still 20000)', mockFee.balance_amount === 20000.00);
+
+  // -------------------------------------------------------------
+  // Test 5: Ownership & IDOR Protection
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 5: Ownership & IDOR Protection ---');
+
+  // 5.1 Student cannot create checkout session for another student's fee obligation
+  let reqOtherCheckout = {
+    user: { id: 99, role: 'student', studentId: 99 },
+    body: { fee_id: 101 }
+  };
+  let resOtherCheckout = createMockRes();
+  await createCheckoutSession(reqOtherCheckout, resOtherCheckout);
+  assert('5.1 Student cannot checkout another student fee obligation (HTTP 403)', resOtherCheckout.statusCode === 403);
+
+  // 5.2 Student cannot process payment for another student's fee obligation
+  let reqOtherPay = {
+    user: { id: 99, role: 'student', studentId: 99 },
+    body: { fee_id: 101, amount: 5000 }
+  };
+  let resOtherPay = createMockRes();
+  await processDemoPayment(reqOtherPay, resOtherPay);
+  assert('5.2 Student cannot pay towards another student fee obligation (HTTP 403)', resOtherPay.statusCode === 403);
+
+  // 5.3 Student cannot view another student payment receipt
+  let reqOtherReceipt = {
+    user: { id: 99, role: 'student', studentId: 99 },
+    params: { transactionRef: 'ATS-TXN-SAMPLE' }
+  };
+  let resOtherReceipt = createMockRes();
+  await getPaymentReceipt(reqOtherReceipt, resOtherReceipt);
+  assert('5.3 Student cannot view another student payment receipt (HTTP 403)', resOtherReceipt.statusCode === 403);
+
+  // 5.4 Student cannot view another student fee invoice
+  let reqOtherInvoice = {
+    user: { id: 99, role: 'student', studentId: 99 },
+    params: { feeId: 101 }
+  };
+  let resOtherInvoice = createMockRes();
+  await getFeeInvoice(reqOtherInvoice, resOtherInvoice);
+  assert('5.4 Student cannot view another student fee invoice (HTTP 403)', resOtherInvoice.statusCode === 403);
+
+  // -------------------------------------------------------------
+  // Test 6: Zero Balance & Idempotency Wildcard Handling
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 6: Zero Balance & Wildcard Safety ---');
+
+  // 6.1 Payment against fully paid fee (balance 0.00)
+  mockFee.balance_amount = 0.00;
+  mockFee.status = 'Paid';
+  let reqPaidInFull = {
+    user: { id: 1, role: 'student', studentId: 1 },
+    body: { fee_id: 101, amount: 1000 }
+  };
+  let resPaidInFull = createMockRes();
+  await processDemoPayment(reqPaidInFull, resPaidInFull);
+  assert('6.1 Payment against fully paid fee (balance 0.00) returns HTTP 400', resPaidInFull.statusCode === 400 && resPaidInFull.body.message.includes('paid in full'));
+
+  // 6.2 Escaped wildcard in idempotency key
+  mockFee.balance_amount = 10000.00;
+  mockFee.status = 'Partially Paid';
+  const wildcardKey = 'TEST%_WILDCARD_KEY';
+  let reqWildcard = {
+    user: { id: 1, role: 'student', studentId: 1 },
+    body: { fee_id: 101, amount: 2000, idempotency_key: wildcardKey }
+  };
+  let resWildcard1 = createMockRes();
+  await processDemoPayment(reqWildcard, resWildcard1);
+  assert('6.2 Payment with wildcard idempotency key processes successfully', resWildcard1.statusCode === 200);
+
+  let resWildcard2 = createMockRes();
+  await processDemoPayment(reqWildcard, resWildcard2);
+  assert('6.3 Replaying wildcard idempotency key safely returns cached response', resWildcard2.statusCode === 200 && resWildcard2.body.message.includes('Idempotent'));
 
   // Restore DB methods
   db.getConnection = originalGetConnection;

@@ -177,6 +177,117 @@ async function runPhase2Tests() {
   assert('5.2 IDOR attempt rejected with HTTP 403', resIdorStudent.statusCode === 403 && !nextCalled);
 
   // -------------------------------------------------------------
+  // Test 6: Secure Password Verification & Transparent Legacy Upgrade
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 6: Secure Password Verification & Legacy Upgrade ---');
+
+  const bcrypt = require('bcryptjs');
+  const { verifyUserPassword } = require('../backend/controllers/authController');
+
+  // 6.1 Valid bcrypt hash comparison
+  const samplePlain = 'StudentSecretPass#2026';
+  const validHash = await bcrypt.hash(samplePlain, 10);
+  const check1 = await verifyUserPassword(samplePlain, validHash);
+  assert('6.1 Valid bcrypt password matches successfully', check1.isMatch && !check1.needsUpgrade);
+
+  // 6.2 Incorrect password against bcrypt hash
+  const check2 = await verifyUserPassword('WrongPassword!', validHash);
+  assert('6.2 Incorrect password returns false match', !check2.isMatch);
+
+  // 6.3 Malformed stored hash
+  const check3 = await verifyUserPassword(samplePlain, '$2a$10$malformed_corrupt_hash_string');
+  assert('6.3 Malformed stored hash returns false match safely without crashing', !check3.isMatch);
+
+  // 6.4 Legacy plaintext password verification with timing-safe comparison
+  const legacyPlain = 'legacy_demo_plain_pwd';
+  const check4 = await verifyUserPassword(legacyPlain, legacyPlain);
+  assert('6.4 Legacy plaintext password matches and correctly flags needsUpgrade: true', check4.isMatch && check4.needsUpgrade);
+
+  // 6.5 Incorrect legacy password
+  const check5 = await verifyUserPassword('not_the_legacy_pwd', legacyPlain);
+  assert('6.5 Incorrect legacy password returns false match', !check5.isMatch);
+
+  // 6.6 Simulated upgrade creates valid bcrypt hash that matches subsequently
+  const upgradedHash = await bcrypt.hash(legacyPlain, 10);
+  const check6 = await verifyUserPassword(legacyPlain, upgradedHash);
+  assert('6.6 Upgraded hash is standard bcrypt ($2a/$2b) and verifies successfully without needsUpgrade', check6.isMatch && !check6.needsUpgrade);
+
+  // -------------------------------------------------------------
+  // Test 7: Secure Token Handling & Route RBAC Guard
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 7: Secure Token Extraction & Expiry Handling ---');
+
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+    process.env.JWT_SECRET = 'test_jwt_secret_key_minimum_16_chars_long';
+  }
+
+  // 7.1 Valid Bearer token
+  const validToken = jwt.sign(
+    { id: 99, email: 'test@ats.edu', role: 'admin' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+  let reqValid = { headers: { authorization: `Bearer ${validToken}` } };
+  let resValid = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqValid, resValid, () => { nextCalled = true; });
+  assert('7.1 Valid Bearer token in Authorization header passes verifyToken', nextCalled && reqValid.user && reqValid.user.role === 'admin');
+
+  // 7.2 Query parameter token rejection (req.query.token must NOT authenticate)
+  let reqQueryToken = { headers: {}, query: { token: validToken } };
+  let resQueryToken = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqQueryToken, resQueryToken, () => { nextCalled = true; });
+  assert('7.2 Query parameter token (?token=...) is strictly rejected with HTTP 401', !nextCalled && resQueryToken.statusCode === 401);
+
+  // 7.3 Expired token rejection with HTTP 401 (for clean client session expiry)
+  const expiredToken = jwt.sign(
+    { id: 99, email: 'test@ats.edu', role: 'student' },
+    process.env.JWT_SECRET,
+    { expiresIn: -10 } // expired 10 seconds ago
+  );
+  let reqExpired = { headers: { authorization: `Bearer ${expiredToken}` } };
+  let resExpired = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqExpired, resExpired, () => { nextCalled = true; });
+  assert('7.3 Expired token is rejected with HTTP 401 (enables clean logout/redirect)', !nextCalled && resExpired.statusCode === 401);
+
+  // 7.4 Tampered / invalid token rejection
+  let reqTampered = { headers: { authorization: 'Bearer invalid.tampered.token.signature' } };
+  let resTampered = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqTampered, resTampered, () => { nextCalled = true; });
+  assert('7.4 Tampered token is rejected with HTTP 401', !nextCalled && resTampered.statusCode === 401);
+
+  // 7.5 Missing Authorization header
+  let reqMissing = { headers: {} };
+  let resMissing = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqMissing, resMissing, () => { nextCalled = true; });
+  assert('7.5 Missing Authorization header rejected with HTTP 401', !nextCalled && resMissing.statusCode === 401);
+
+  // 7.6 isAdmin blocks student role from faculty mini-dashboard (HTTP 403)
+  let reqStudentMini = { user: { id: 1, role: 'student' } };
+  let resStudentMini = createMockRes();
+  nextCalled = false;
+  isAdmin(reqStudentMini, resStudentMini, () => { nextCalled = true; });
+  assert('7.6 isAdmin middleware blocks student role with HTTP 403', !nextCalled && resStudentMini.statusCode === 403);
+
+  // 7.7 isAdmin allows faculty member
+  let reqFacultyMini = { user: { id: 2, role: 'faculty' } };
+  let resFacultyMini = createMockRes();
+  nextCalled = false;
+  isAdmin(reqFacultyMini, resFacultyMini, () => { nextCalled = true; });
+  assert('7.7 isAdmin middleware allows faculty role', nextCalled && resFacultyMini.statusCode === 200);
+
+  // 7.8 isAdmin allows system admin
+  let reqAdminMini = { user: { id: 4, role: 'admin' } };
+  let resAdminMini = createMockRes();
+  nextCalled = false;
+  isAdmin(reqAdminMini, resAdminMini, () => { nextCalled = true; });
+  assert('7.8 isAdmin middleware allows admin role', nextCalled && resAdminMini.statusCode === 200);
+
+  // -------------------------------------------------------------
   // Summary
   // -------------------------------------------------------------
   console.log('\n===============================================================');

@@ -138,6 +138,47 @@ async function runPhase5Tests() {
   assert('4.3 Migration alters students.avatar to TEXT', migrationSql.includes('ALTER TABLE students MODIFY COLUMN avatar TEXT'));
   assert('4.4 Migration alters faculty.avatar to TEXT', migrationSql.includes('ALTER TABLE faculty MODIFY COLUMN avatar TEXT'));
 
+  // -------------------------------------------------------------
+  // Test 5: authController.updateProfilePhoto Endpoint Delegation
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 5: authController.updateProfilePhoto Delegation & RBAC ---');
+
+  const { updateProfilePhoto } = require('../backend/controllers/authController');
+
+  // 5.1 updateProfilePhoto with Base64 payload delegates to disk storage
+  queriesExecuted.length = 0;
+  let reqAuthBase64 = {
+    user: { id: 12, role: 'student' },
+    body: { avatar: smallPngBase64 }
+  };
+  let resAuthBase64 = createMockRes();
+  await updateProfilePhoto(reqAuthBase64, resAuthBase64);
+  assert('5.1 updateProfilePhoto delegates to disk storage (HTTP 200)', resAuthBase64.statusCode === 200);
+  assert('5.2 updateProfilePhoto returns relative file path, not raw base64', 
+    resAuthBase64.body.avatarUrl && resAuthBase64.body.avatarUrl.startsWith('/uploads/avatars/'));
+  assert('5.3 updateProfilePhoto returns both avatarUrl and avatar properties', 
+    resAuthBase64.body.avatarUrl === resAuthBase64.body.avatar);
+  assert('5.4 Cross-table synchronization: queries executed for users, students, and faculty',
+    queriesExecuted.some(q => q.includes('UPDATE users')) &&
+    queriesExecuted.some(q => q.includes('UPDATE students')) &&
+    queriesExecuted.some(q => q.includes('UPDATE faculty')));
+
+  // Clean up written test file
+  if (resAuthBase64.body.avatarUrl) {
+    const fn = path.basename(resAuthBase64.body.avatarUrl);
+    const fp = path.join(__dirname, '../uploads/avatars', fn);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  }
+
+  // 5.5 updateProfilePhoto rejects targetUserId if caller is not admin
+  let reqAuthIdor = {
+    user: { id: 12, role: 'student' },
+    body: { avatar: 'https://example.com/avatar.jpg', targetUserId: 99 }
+  };
+  let resAuthIdor = createMockRes();
+  await updateProfilePhoto(reqAuthIdor, resAuthIdor);
+  assert('5.5 Non-admin cannot modify another user profile photo (HTTP 403)', resAuthIdor.statusCode === 403);
+
   // Restore query
   db.query = originalQuery;
 

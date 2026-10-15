@@ -401,8 +401,15 @@ async function getFacultyMiniDashboard(req, res) {
     const fac = facultyRows[0];
     const isHod = Boolean(fac.is_hod || fac.active_hod_assignment);
 
-    // RBAC validation: Admin can view any; HOD only own department; Faculty only self
-    if (req.user && req.user.role === 'faculty') {
+    // RBAC validation: Admin can view any; HOD only own department; Faculty only self; Students denied
+    if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'faculty')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only faculty members and administrators can access faculty mini-dashboards.'
+      });
+    }
+
+    if (req.user.role === 'faculty') {
       const isHodUser = req.user.facultyRole === 'hod' || req.user.isHOD;
       if (isHodUser) {
         if (req.user.departmentId && fac.department_id !== req.user.departmentId) {
@@ -412,7 +419,8 @@ async function getFacultyMiniDashboard(req, res) {
           });
         }
       } else {
-        if (req.user.facultyId && req.user.facultyId !== fac.id) {
+        const isSelf = (req.user.facultyId && req.user.facultyId === fac.id) || (req.user.id && fac.user_id === req.user.id);
+        if (!isSelf) {
           return res.status(403).json({
             success: false,
             message: 'Access denied: Faculty members can only view their own profile.'

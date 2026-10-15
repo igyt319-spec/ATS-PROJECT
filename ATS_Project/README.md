@@ -246,12 +246,13 @@ Run the integrated master regression test suite:
 ```bash
 npm test
 ```
-This automatically executes:
-- **Phase 2**: Authentication, server-authoritative portal redirects, and strict RBAC (`test/test_phase2_auth.js`)
-- **Phase 3**: Faculty console, mentee isolation, and student mini-dashboard (`test/test_phase3_faculty.js`)
-- **Phase 4**: Database safety, destructive SQL prevention, and demo account integrity (`test/test_phase4_demo_seed.js`)
-- **Phase 5**: Avatar uploads, 2MB size enforcement, Base64 elimination from DB, and relative URL paths (`test/test_phase5_upload.js`)
-- **Phase 6**: Simulated payment gateway, checkout session, idempotency, and multi-outcome simulation (`test/test_phase6_payment.js`)
+This automatically executes all 6 regression test suites (124 tests):
+- **Phase 2 (Auth & RBAC)**: Authentication, timing-safe legacy password upgrade, server-authoritative portal redirects, and strict RBAC guards (`test/test_phase2_auth.js`)
+- **Phase 3 (Faculty & Mentees)**: Faculty console, mentee isolation, student mini-dashboard, and cross-department protection (`test/test_phase3_faculty.js`)
+- **Phase 4 (Database Safety & Seeding)**: Destructive SQL prevention, idempotent independent demo account seeding, and data preservation (`test/test_phase4_demo_seed.js`)
+- **Phase 5 (Avatar Storage)**: Avatar upload persistence, 2MB limit, Base64 elimination from DB, relative URL paths, and cross-table synchronization (`test/test_phase5_upload.js`)
+- **Phase 5 (Database Architecture)**: Unified connection pooling, TLS/SSL auto-configuration without hardcoded paths, and structured DDL error handling (`test/test_phase5_db_config.js`)
+- **Phase 6 (Payment Simulation Engine)**: Simulated payment gateway, checkout sessions, idempotency key deduplication with wildcard escaping, and IDOR protection (`test/test_phase6_payment.js`)
 
 ---
 

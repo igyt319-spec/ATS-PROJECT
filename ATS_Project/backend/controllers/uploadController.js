@@ -17,16 +17,17 @@ if (!fs.existsSync(avatarsDir)) {
 // POST /api/upload/avatar
 async function uploadAvatar(req, res) {
   try {
-    const { imageData, fileName, mimeType, targetUserId } = req.body || {};
+    const inputData = req.body && (req.body.imageData || req.body.avatar);
+    const { fileName, mimeType, targetUserId } = req.body || {};
 
-    if (!imageData || typeof imageData !== 'string' || !imageData.trim()) {
+    if (!inputData || typeof inputData !== 'string' || !inputData.trim()) {
       return res.status(400).json({
         success: false,
         message: 'No image data provided. Provide a valid base64 image or public image URL.'
       });
     }
 
-    const trimmedInput = imageData.trim();
+    const trimmedInput = inputData.trim();
 
     // Determine target user ID
     let targetId = req.user.id;
@@ -73,7 +74,8 @@ async function uploadAvatar(req, res) {
       return res.status(200).json({
         success: true,
         message: 'Profile photo URL updated successfully.',
-        avatarUrl: cleanUrl
+        avatarUrl: cleanUrl,
+        avatar: cleanUrl
       });
     }
 
@@ -149,7 +151,8 @@ async function uploadAvatar(req, res) {
     return res.status(200).json({
       success: true,
       message: 'Profile photo uploaded and updated successfully.',
-      avatarUrl: storedUrlPath
+      avatarUrl: storedUrlPath,
+      avatar: storedUrlPath
     });
 
   } catch (err) {

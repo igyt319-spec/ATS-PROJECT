@@ -209,23 +209,34 @@ Open your web browser and navigate to:
 
 ---
 
-## 🔑 Demo Credentials (4 Distinct Institutional Roles)
+## 🔑 Demo Credentials — LOCAL / DEMO ENVIRONMENTS ONLY
+
+> [!IMPORTANT]
+> The credentials below are strictly for **local development and demonstration environments only**. Demo data seeding is guarded and disabled by default in production (`NODE_ENV=production`) unless `ALLOW_DEMO_SEED=true` is explicitly provided. Production databases are never seeded with fictional accounts.
 
 | Role | Name | Identifier / Email | Password | Landing Portal | Scope & Permissions |
 |---|---|---|---|---|---|
-| **Student Scholar** | Kavitha Sundaram | `kavitha.demo@ats.edu` *(or `DEMO-STU-01`)* | `student123` | `dashboard.html` | Student KPI metrics, academic results, activities, leave requests, fees & demo payments |
-| **Faculty Mentor** | Dr. Senthil Nathan | `senthil.demo@ats.edu` *(or `DEMO-FAC-01`)* | `faculty123` | `mentor-dashboard.html` | Faculty advisory roster, mentee mini-dashboards, leave reviews, activity verification |
+| **Student Scholar** | Kavitha Sundaram | `kavitha.demo@ats.edu` *(or `DEMO-STU-01` / `BITD0001`)* | `student123` | `dashboard.html` | Student KPI metrics, academic results, activities, leave requests, fees & demo payments |
+| **Faculty Mentor** | Dr. Senthil Nathan | `senthil.demo@ats.edu` *(or `DEMO-FAC-01` / `FAC-CSE`)* | `faculty123` | `mentor-dashboard.html` | Faculty advisory roster, mentee mini-dashboards, leave reviews, activity verification |
 | **Head of Department (HOD)** | Prof. Anand Ranganathan | `anand.demo@ats.edu` *(or `DEMO-HOD-01`)* | `hod123` | `hod-dashboard.html` | Department governance, mentor allocations, multi-tier results, department leaves & fees |
-| **Institutional Admin** | Rajeshwari Administrator | `admin.demo@ats.edu` *(or `DEMO-ADM-01`)* | `admin123` | `admin-dashboard.html` | Institution-wide analytics, department management, HOD appointments, student CRUD |
+| **Institutional Admin** | Rajeshwari Administrator | `admin.demo@ats.edu` *(or `DEMO-ADM-01` / `admin@ats.com`)* | `admin123` | `admin-dashboard.html` | Institution-wide analytics, department management, HOD appointments, student CRUD |
 
 *Tip: Click the quick demo autofill chips on `login.html` to sign in with one click.*
 
 ### Running Demo Accounts Seeder
-To safely seed or update the demo accounts in local development:
+To safely seed or verify the demo accounts in local or demo environments:
+```bash
+npm run seed:demo
+```
+Or directly:
 ```bash
 ALLOW_DEMO_SEED=true node database/seed_demo_accounts.js
 ```
-*(Protected by production guard: will refuse to run in `NODE_ENV=production` without `ALLOW_DEMO_SEED=true`)*
+*Idempotency & Safety Guarantees:*
+- **Zero Destructive Operations:** Never executes `DROP`, `TRUNCATE`, or un-scoped `DELETE`.
+- **Preserves Existing Data:** All 100 original synthetic student records (`BITD0001` - `BITD0100`), attendance, marks, and fees are preserved untouched.
+- **Strictly Idempotent:** Running repeatedly updates metadata only and **never resets existing user passwords** or creates duplicate records.
+- **Production Guard:** Blocked automatically in production environments unless `ALLOW_DEMO_SEED=true`.
 
 ---
 

@@ -11,5 +11,6 @@ router.put('/profile-photo', verifyToken, authController.updateProfilePhoto);
 router.post('/forgot-password', authController.forgotPassword);
 router.put('/change-password', verifyToken, authController.changePassword);
 router.put('/change-identifier', verifyToken, authController.changeIdentifier);
+router.post('/seed-demo', verifyToken, authController.seedDemoData);
 
 module.exports = router;

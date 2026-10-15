@@ -70,6 +70,44 @@
         <span id="btn-text">SIGN IN →</span>
         <span id="btn-spinner" style="display: none;">Authenticating... ⏳</span>
       </button>
+
+      <!-- Quick Demo Account Autofill Chips (Local / Demo Only) -->
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.12);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ One-Click Demo Autofill</span>
+          <span style="font-size: 0.70rem; color: var(--text-dim);">LOCAL / DEMO ONLY</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('student')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
+            <span>👨‍🎓</span>
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <strong style="display: block; color: #fff;">Student</strong>
+              <small style="color: var(--text-dim);">Kavitha Sundaram</small>
+            </div>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('faculty')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
+            <span>👨‍🏫</span>
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <strong style="display: block; color: #fff;">Faculty Mentor</strong>
+              <small style="color: var(--text-dim);">Dr. Senthil Nathan</small>
+            </div>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('hod')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
+            <span>🏛️</span>
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <strong style="display: block; color: #fff;">Head of Dept</strong>
+              <small style="color: var(--text-dim);">Prof. Anand</small>
+            </div>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('admin')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
+            <span>🛡️</span>
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <strong style="display: block; color: #fff;">Admin</strong>
+              <small style="color: var(--text-dim);">Institutional Admin</small>
+            </div>
+          </button>
+        </div>
+      </div>
     </form>
   </div>
 

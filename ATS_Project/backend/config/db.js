@@ -185,6 +185,55 @@ async function initDB() {
       await runSqlFile('seed_data.sql');
     }
 
+    // Ensure department_hod_assignments exists with database-enforced single active HOD constraint
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS department_hod_assignments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        department_id INT NOT NULL,
+        faculty_id INT NOT NULL,
+        assigned_by INT NULL,
+        start_date DATE NOT NULL,
+        end_date DATE NULL,
+        status ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+        active_dept_id INT GENERATED ALWAYS AS (IF(status = 'active', department_id, NULL)) STORED,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        KEY idx_dept (department_id),
+        KEY idx_fac (faculty_id),
+        UNIQUE KEY uq_one_active_hod (active_dept_id)
+      )
+    `).catch(() => {});
+
+    // Ensure avatar columns support relative upload paths and long URLs
+    await connection.query('ALTER TABLE users MODIFY COLUMN avatar TEXT').catch(() => {});
+    await connection.query('ALTER TABLE students MODIFY COLUMN avatar TEXT').catch(() => {});
+    await connection.query('ALTER TABLE faculty MODIFY COLUMN avatar TEXT').catch(() => {});
+
+    // Safe, non-destructive demo accounts check
+    // Disabled in production by default unless ALLOW_DEMO_SEED=true is explicitly set
+    const isProduction = process.env.NODE_ENV === 'production';
+    const allowDemoSeed = process.env.ALLOW_DEMO_SEED === 'true';
+
+    if (!isProduction || allowDemoSeed) {
+      try {
+        const [[demoUserCheck]] = await connection.query(
+          "SELECT COUNT(*) AS count FROM users WHERE email = 'kavitha.demo@ats.edu'"
+        ).catch(() => [[{ count: 0 }]]);
+
+        if (Number(demoUserCheck.count) === 0) {
+          console.log('[DB] Demo accounts not detected. Running safe idempotent demo seeder...');
+          const seedDemoAccounts = require('../../database/seed_demo_accounts');
+          await seedDemoAccounts(connection);
+        } else {
+          console.log('[DB] Verified demo accounts are present in database.');
+        }
+      } catch (seedErr) {
+        console.warn('[DB] Demo accounts check notice:', seedErr.message);
+      }
+    } else {
+      console.log('[DB] Production environment detected: demo seeding disabled by default.');
+    }
+
     await connection.end();
 
     // Create pool for runtime operations

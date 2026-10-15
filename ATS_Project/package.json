@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
+    "seed:demo": "node database/seed_demo_accounts.js",
     "test": "node test/run_all_tests.js",
     "test:e2e": "node test/test_suite.js"
   },

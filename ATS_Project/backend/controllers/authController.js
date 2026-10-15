@@ -642,6 +642,45 @@ async function changeIdentifier(req, res) {
   }
 }
 
+// POST /api/auth/seed-demo (Strict Admin Only)
+async function seedDemoData(req, res) {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: System Administrator privileges required to run demo data seeding.'
+      });
+    }
+
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+      return res.status(403).json({
+        success: false,
+        message: 'Demo seeding is disabled in production environments without ALLOW_DEMO_SEED=true.'
+      });
+    }
+
+    const seedDemoAccounts = require('../../database/seed_demo_accounts');
+    const result = await seedDemoAccounts(db);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Demo accounts verified and seeded successfully in idempotent mode.',
+      accounts: {
+        student: result.student.email,
+        mentor: result.mentor.email,
+        hod: result.hod.email,
+        admin: result.admin.email
+      }
+    });
+  } catch (err) {
+    console.error('[Demo Seed Controller Error]', err.message);
+    return res.status(500).json({
+      success: false,
+      message: `Failed to seed demo accounts: ${err.message}`
+    });
+  }
+}
+
 module.exports = {
   login,
   logout,
@@ -650,5 +689,6 @@ module.exports = {
   updateProfilePhoto,
   forgotPassword,
   changePassword,
-  changeIdentifier
+  changeIdentifier,
+  seedDemoData
 };

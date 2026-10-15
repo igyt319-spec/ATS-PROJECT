@@ -77,6 +77,78 @@ async function runPhase4Tests() {
                             seedScriptContent.includes('assigned_by');
   assert('3.6 Active mentorship assignment logic configured for demo student and mentor', hasMentorshipLink);
 
+  // -------------------------------------------------------------
+  // Test 4: Idempotency, Password Preservation & Role Conflict Protection
+  // -------------------------------------------------------------
+  console.log('\n--- Test Group 4: Idempotency & Role Conflict Protection ---');
+
+  const seedDemoAccounts = require('../database/seed_demo_accounts');
+
+  // 4.1 Mock DB tracking executed queries
+  const executedSqls = [];
+  const mockDbSuccess = {
+    query: async (sql, params = []) => {
+      executedSqls.push({ sql, params });
+      if (sql.includes('departments WHERE code =')) {
+        return [[{ id: 1, name: 'Computer Science and Engineering' }]];
+      }
+      if (sql.includes('SELECT id, role, password FROM users WHERE email = ?')) {
+        const email = params[0];
+        const role = email.includes('admin') ? 'admin' : email.includes('kavitha') ? 'student' : 'faculty';
+        return [[{ id: 10, role, password: 'existing_secure_custom_hash' }]];
+      }
+      if (sql.includes('SELECT id FROM faculty WHERE email = ?')) {
+        return [[{ id: 5 }]];
+      }
+      if (sql.includes('SELECT id, faculty_id FROM department_hod_assignments')) {
+        return [[{ id: 1, faculty_id: 5 }]];
+      }
+      if (sql.includes('SELECT id FROM students WHERE email = ?')) {
+        return [[{ id: 12 }]];
+      }
+      if (sql.includes('SELECT id, status FROM student_mentors')) {
+        return [[{ id: 1, status: 'active' }]];
+      }
+      if (sql.includes('SELECT id FROM student_fees')) {
+        return [[{ id: 1 }]];
+      }
+      return [{ insertId: 99, affectedRows: 1 }];
+    }
+  };
+
+  // Run seeder with mock DB
+  await seedDemoAccounts(mockDbSuccess);
+
+  // Assert no password updates were performed on existing users
+  const passwordUpdates = executedSqls.filter(q => /UPDATE\s+users\s+SET.*password/i.test(q.sql));
+  assert('4.1 Idempotent execution preserves existing passwords (0 password updates on existing users)', passwordUpdates.length === 0);
+
+  // Assert no destructive queries executed
+  const destructiveQueries = executedSqls.filter(q => /DROP\s+TABLE|DROP\s+DATABASE|TRUNCATE/i.test(q.sql));
+  assert('4.2 Zero destructive queries executed during seeding run', destructiveQueries.length === 0);
+
+  // 4.3 Test Role Conflict Guard
+  const mockDbConflict = {
+    query: async (sql, params = []) => {
+      if (sql.includes('departments WHERE code =')) {
+        return [[{ id: 1, name: 'Computer Science' }]];
+      }
+      if (sql.includes('SELECT id, role, password FROM users WHERE email = ?')) {
+        // Return mismatched role: admin email already owned by student
+        return [[{ id: 10, role: 'student', password: 'hash' }]];
+      }
+      return [{ insertId: 99 }];
+    }
+  };
+
+  let conflictDetected = false;
+  try {
+    await seedDemoAccounts(mockDbConflict);
+  } catch (err) {
+    conflictDetected = err.message.includes('Conflict');
+  }
+  assert('4.3 Role collision detection aborts seeding with conflict error instead of overwriting', conflictDetected);
+
   console.log('\n===============================================================');
   console.log(`Phase 4 Test Execution Complete: ${passedCount} PASSED, ${failedCount} FAILED.`);
   console.log('===============================================================');

@@ -41,6 +41,27 @@ function selectRole(role) {
   hideError();
 }
 
+function autofillDemo(role) {
+  selectRole(role);
+  const identifierInput = document.getElementById('login-identifier');
+  const passwordInput = document.getElementById('login-password');
+  hideError();
+
+  if (role === 'student') {
+    identifierInput.value = 'kavitha.demo@ats.edu';
+    passwordInput.value = 'student123';
+  } else if (role === 'faculty') {
+    identifierInput.value = 'senthil.demo@ats.edu';
+    passwordInput.value = 'faculty123';
+  } else if (role === 'hod') {
+    identifierInput.value = 'anand.demo@ats.edu';
+    passwordInput.value = 'hod123';
+  } else if (role === 'admin') {
+    identifierInput.value = 'admin.demo@ats.edu';
+    passwordInput.value = 'admin123';
+  }
+}
+
 function showError(msg) {
   const el = document.getElementById('login-error');
   el.textContent = msg;

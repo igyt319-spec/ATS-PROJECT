@@ -5,6 +5,13 @@ const crypto = require('crypto');
 // GET /api/students
 async function getAllStudents(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators manage accounts via the Account Management portal, not operational student academic lists.'
+      });
+    }
+
     const { search, department, risk, semester } = req.query;
     const [students] = await db.query(`SELECT st.*,d.name AS department_name,
       (SELECT COALESCE(SUM(m.grade_point*su.credits)/NULLIF(SUM(su.credits),0),0) FROM marks m JOIN subjects su ON su.id=m.subject_id WHERE m.student_id=st.id AND m.semester_id=st.current_semester_id) AS computed_gpa,
@@ -49,6 +56,13 @@ async function getAllStudents(req, res) {
 // GET /api/students/:id
 async function getStudentById(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not have access to operational student records.'
+      });
+    }
+
     const id = parseInt(req.params.id, 10);
     const [rows] = await db.query(`SELECT st.*,d.name AS department_name,
       COALESCE((SELECT SUM(m.grade_point*su.credits)/NULLIF(SUM(su.credits),0) FROM marks m JOIN subjects su ON su.id=m.subject_id WHERE m.student_id=st.id AND m.semester_id=st.current_semester_id),0) AS computed_gpa,
@@ -186,44 +200,33 @@ async function updateStudent(req, res) {
       });
     }
 
-    // If faculty/HOD: ensure department scope
+    // If faculty/HOD: ensure department scope and prevent privilege escalation into user table
     if (req.user && req.user.role === 'faculty') {
       const [st] = await db.query('SELECT department_id FROM students WHERE id = ?', [id]);
       if (st.length === 0) return res.status(404).json({ success: false, message: 'Student not found.' });
       if (req.user.departmentId && st[0].department_id !== req.user.departmentId) {
         return res.status(403).json({ success: false, message: 'Access denied: Student is outside your department.' });
       }
+
+      const { bio } = req.body;
+      if (bio !== undefined) {
+        await db.query('UPDATE students SET bio = ? WHERE id = ?', [bio, id]);
+      }
+      return res.status(200).json({
+        success: true,
+        message: 'Student record updated within faculty authorization scope.'
+      });
     }
 
-    // Admin full update
-    const { name, email, phone, department, year, bio, avatar } = req.body;
-
-    await db.query(
-      `UPDATE students st 
-       LEFT JOIN departments d ON d.name = ?
-       SET st.name = COALESCE(?, st.name),
-           st.email = COALESCE(?, st.email),
-           st.phone = ?,
-           st.department_id = COALESCE(d.id, st.department_id),
-           st.year = COALESCE(?, st.year),
-           st.bio = COALESCE(?, st.bio),
-           st.avatar = COALESCE(?, st.avatar)
-       WHERE st.id = ?`,
-      [department, name, email, phone || null, year, bio, avatar, id]
-    );
-
-    const [student] = await db.query('SELECT user_id FROM students WHERE id = ?', [id]);
-    if (student.length && (name || email || avatar)) {
-      await db.query(
-        'UPDATE users SET name = COALESCE(?, name), email = COALESCE(?, email), avatar = COALESCE(?, avatar) WHERE id = ?',
-        [name, email, avatar, student[0].user_id]
-      );
+    // Admin should only perform account-level operations via user management APIs
+    if (req.user && req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators manage student accounts through the Admin Account Management portal, not operational student records.'
+      });
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Student details updated successfully by administrator.'
-    });
+    return res.status(403).json({ success: false, message: 'Unauthorized operation.' });
   } catch (error) {
     console.error('[Student Update Error]', error);
     return res.status(500).json({ success: false, message: error.message });
@@ -249,6 +252,13 @@ async function deleteStudent(req, res) {
 // GET /api/students/:id/mini-dashboard (Section 5)
 async function getStudentMiniDashboard(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not have access to student operational dossiers or mini-dashboards.'
+      });
+    }
+
     const studentId = parseInt(req.params.id, 10);
 
     // 1. Fetch Student Profile with Department info

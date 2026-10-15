@@ -58,12 +58,12 @@ async function runPhase3Tests() {
   // -------------------------------------------------------------
   console.log('\n--- Test Group 2: Mini-Dashboard Access Authorization ---');
 
-  // 2.1 Admin access to any student
+  // 2.1 Admin blocked from student mini-dashboard (HTTP 403 Forbidden)
   let reqAdmin = { user: { id: 99, role: 'admin' }, params: { id: 505 } };
   let resAdmin = createMockRes();
   nextCalled = false;
   await ownsStudentOrAssigned(reqAdmin, resAdmin, () => { nextCalled = true; });
-  assert('2.1 Admin has universal access to student mini-dashboard', nextCalled && resAdmin.statusCode === 200);
+  assert('2.1 Admin is strictly blocked from student mini-dashboard (HTTP 403)', !nextCalled && resAdmin.statusCode === 403);
 
   // 2.2 Student viewing own mini-dashboard
   let reqStudentMini = { user: { id: 5, role: 'student', studentId: 202 }, params: { id: 202 } };

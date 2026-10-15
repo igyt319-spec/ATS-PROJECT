@@ -116,9 +116,16 @@ async function getDepartmentActivities(req, res) {
   }
 }
 
-// GET /api/activities/institution (Admin only)
+// GET /api/activities/institution (Faculty/Leadership only)
 async function getInstitutionActivities(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not have access to student activity management.'
+      });
+    }
+
     const [rows] = await db.query(
       `SELECT sa.*, 
               st.name AS student_name, st.register_number, st.year,
@@ -211,9 +218,16 @@ async function submitActivity(req, res) {
   }
 }
 
-// PUT /api/activities/:id/verify (Mentor, HOD, Admin)
+// PUT /api/activities/:id/verify (Mentor, HOD)
 async function verifyActivity(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not manage or verify operational student activities.'
+      });
+    }
+
     const id = parseInt(req.params.id, 10);
     const { status, remarks } = req.body;
 

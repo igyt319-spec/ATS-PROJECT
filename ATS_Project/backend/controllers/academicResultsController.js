@@ -149,9 +149,16 @@ async function getDepartmentResults(req, res) {
   }
 }
 
-// POST /api/results (Admin or authorized faculty)
+// POST /api/results (Authorized faculty only)
 async function createAcademicResult(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not create or manage operational grades and academic results.'
+      });
+    }
+
     const {
       student_id,
       subject_id,
@@ -252,6 +259,13 @@ async function createAcademicResult(req, res) {
 // PUT /api/results/:id/publish (Toggle or set publication status)
 async function publishResult(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not publish operational grades and academic results.'
+      });
+    }
+
     const id = parseInt(req.params.id, 10);
     const { is_published } = req.body;
     const published = is_published === false || is_published === 0 ? 0 : 1;
@@ -283,6 +297,13 @@ async function publishResult(req, res) {
 // POST /api/results/correct (Authorized Academic Record Correction Workflow - Section 3D)
 async function correctAcademicResult(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not correct operational academic records. This action is restricted to department leadership (HOD).'
+      });
+    }
+
     const { result_id, marks_obtained, max_marks, reason } = req.body;
 
     if (!result_id || marks_obtained === undefined) {

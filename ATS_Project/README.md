@@ -48,9 +48,9 @@ An enterprise-grade, modern, full-stack academic monitoring and achievement port
    - Generates contextual answers for GPA improvement plans, weak subject revision strategies, and personalized 7-day study timetables.
    - Instant suggested prompt chips and full chat history persistence.
 
-10. **Faculty & Admin Console (`admin-dashboard.html` & `students.html`)**:
-    - Class-wide averages, risk distribution graphs, and student directory with live search & multi-field filtering.
-    - Full CRUD operations: Enroll new students, update profiles, remove records, and log semester marks.
+10. **System Administration Console & Strict Role Separation**:
+    - **Administrator Console (`admin-dashboard.html`)**: Exclusively governs identity lifecycle & account maintenance — provision new student/faculty accounts, reset passwords, update department assignments, and toggle active/deactivated statuses. Administrators are strictly blocked from academic marks, attendance, and operational consoles.
+    - **Faculty & Mentor Consoles (`students.html`, `mentor-dashboard.html`, `hod-dashboard.html`)**: Faculty manage student rosters, mentee allocations, continuous assessments, attendance, leaves, activities, and departmental operations.
 
 ---
 
@@ -272,35 +272,65 @@ Run database migrations incrementally without resetting or dropping existing tab
 ---
 
 ## 📡 REST API Reference
+ 
+ | Method | Endpoint | Description | Access |
+ |---|---|---|---|
+ | `POST` | `/api/auth/login` | Authenticate user & issue JWT | Public |
+ | `POST` | `/api/auth/logout` | Invalidate user session | Public |
+ | `GET` | `/api/auth/me` | Fetch authenticated profile (decoupled by role) | Token Required |
+ | `POST` | `/api/auth/forgot-password`| Submit password reset request | Public |
+ | `GET` | `/api/auth/users` | List all accounts with search & filters | Admin Only |
+ | `POST` | `/api/auth/users` | Provision new student or faculty account | Admin Only |
+ | `PUT` | `/api/auth/users/:id/status` | Toggle user active / deactivated state | Admin Only |
+ | `PUT` | `/api/auth/users/:id/reset-password` | Administratively reset user password | Admin Only |
+ | `PUT` | `/api/auth/users/:id/department` | Transfer user department affiliation | Admin Only |
+ | `GET` | `/api/dashboard/:studentId` | Full student dashboard KPI & chart payload | Student / Assigned Mentor |
+ | `GET` | `/api/dashboard/admin/summary`| Department statistics & risk matrix | Admin Only |
+ | `GET` | `/api/students` | List all students with search & filters | Faculty Only (Admin: 403) |
+ | `GET` | `/api/students/:id` | Student detailed academic profile | Faculty / Assigned Mentor |
+ | `GET` | `/api/students/:id/mini-dashboard` | Mentee snapshot & overview | Faculty / Assigned Mentor |
+ | `POST` | `/api/students` | Enroll new student | Admin Only |
+ | `PUT` | `/api/students/:id` | Update student profile metadata | Student (self) / Admin |
+ | `DELETE`| `/api/students/:id` | Remove student record | Admin Only |
+ | `GET` | `/api/performance/:studentId`| Course marks & grades | Student / Faculty |
+ | `POST` | `/api/performance` | Add/update semester marks | Faculty Only (Admin: 403) |
+ | `GET` | `/api/attendance/:studentId` | Attendance records & shortage deficit | Student / Faculty |
+ | `POST` | `/api/attendance` | Log subject attendance | Faculty Only (Admin: 403) |
+ | `GET` | `/api/results/student/:id` | Official 3-tier academic results | Student / Assigned Mentor |
+ | `POST` | `/api/results` | Enter semester assessment marks | Faculty Only (Admin: 403) |
+ | `POST` | `/api/results/correct` | Official academic record correction | HOD Only (Audit Logged) |
+ | `GET` | `/api/activities/student/:id` | Verified co-curricular activities | Student / Assigned Mentor |
+ | `POST` | `/api/activities` | Submit co-curricular activity | Student Only |
+ | `PUT` | `/api/activities/:id/verify` | Verify submitted activity with remarks | Mentor Only (Admin: 403) |
+ | `GET` | `/api/leave/student/:id` | Leave requests & on-duty history | Student / Assigned Mentor |
+ | `POST` | `/api/leave` | Apply for leave / On Duty (OD) | Student Only |
+ | `PUT` | `/api/leave/:id/decision` | Review mentee leave request | Mentor Only (Admin: 403) |
+ | `GET` | `/api/achievements/:studentId`| Verified co-curricular milestones | Token Required |
+ | `POST` | `/api/achievements` | Log new student achievement | Token Required |
+ | `GET` | `/api/recommendations/:studentId`| Active prioritized AI recommendations | Token Required |
+ | `PUT` | `/api/recommendations/:id` | Mark recommendation as completed | Token Required |
+ | `GET` | `/api/notifications/:studentId`| Notification alerts stream | Token Required |
+ | `PUT` | `/api/notifications/:id/read` | Mark individual notification as read | Token Required |
+ | `POST` | `/api/chatbot/message` | Send query to AI Academic Assistant | Token Required |
+ | `DELETE`| `/api/chatbot/history/:studentId`| Clear conversation history | Token Required |
+ | `GET` | `/api/ai/analysis/:studentId` | Run explainable statistical analysis | Token Required |
+ | `POST` | `/api/ai/run-agent` | Execute Autonomous Academic Monitoring Agent | Token Required |
+ | `GET` | `/api/health` | System & database connectivity check | Public |
 
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `POST` | `/api/auth/login` | Authenticate user & issue JWT | Public |
-| `POST` | `/api/auth/logout` | Invalidate user session | Public |
-| `GET` | `/api/auth/me` | Fetch authenticated profile | Token Required |
-| `POST` | `/api/auth/forgot-password`| Submit password reset request | Public |
-| `GET` | `/api/dashboard/:studentId` | Full student dashboard KPI & chart payload | Token Required |
-| `GET` | `/api/dashboard/admin/summary`| Department statistics & risk matrix | Admin Only |
-| `GET` | `/api/students` | List all students with search & filters | Token Required |
-| `GET` | `/api/students/:id` | Student detailed academic profile | Token Required |
-| `POST` | `/api/students` | Enroll new student | Admin Only |
-| `PUT` | `/api/students/:id` | Update student profile metadata | Token Required |
-| `DELETE`| `/api/students/:id` | Remove student record | Admin Only |
-| `GET` | `/api/performance/:studentId`| Course marks & grades | Token Required |
-| `POST` | `/api/performance` | Add/update semester marks | Admin Only |
-| `GET` | `/api/attendance/:studentId` | Attendance records & shortage deficit | Token Required |
-| `POST` | `/api/attendance` | Log subject attendance | Admin Only |
-| `GET` | `/api/achievements/:studentId`| Verified co-curricular milestones | Token Required |
-| `POST` | `/api/achievements` | Log new student achievement | Token Required |
-| `GET` | `/api/recommendations/:studentId`| Active prioritized AI recommendations | Token Required |
-| `PUT` | `/api/recommendations/:id` | Mark recommendation as completed | Token Required |
-| `GET` | `/api/notifications/:studentId`| Notification alerts stream | Token Required |
-| `PUT` | `/api/notifications/:id/read` | Mark individual notification as read | Token Required |
-| `POST` | `/api/chatbot/message` | Send query to AI Academic Assistant | Token Required |
-| `DELETE`| `/api/chatbot/history/:studentId`| Clear conversation history | Token Required |
-| `GET` | `/api/ai/analysis/:studentId` | Run explainable statistical analysis | Token Required |
-| `POST` | `/api/ai/run-agent` | Execute Autonomous Academic Monitoring Agent | Token Required |
-| `GET` | `/api/health` | System & database connectivity check | Public |
+---
+
+## 🧪 Comprehensive Automated Test Suites
+
+```bash
+# 1. Run all Unit & Regression Suites (Phases 2-6)
+npm test
+
+# 2. Run Live End-to-End API Verification
+npm run test:e2e
+
+# 3. Run Live Strict Role-Based Access Control (RBAC) & Separation of Duties Suite
+node test/test_rbac_security.js
+```
 
 ---
 

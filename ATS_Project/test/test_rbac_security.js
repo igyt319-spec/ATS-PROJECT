@@ -63,12 +63,12 @@ async function runRBACTestSuite() {
     assert('1.1 Admin login successful', adminLog.status === 200 && adminLog.body.success);
     const adminToken = adminLog.body.token;
 
-    const hodLog = await api('POST', '/api/auth/login', { identifier: 'faculty.cse@example.test', password: 'faculty123', role: 'admin' });
+    const hodLog = await api('POST', '/api/auth/login', { identifier: 'faculty.cse@example.test', password: 'faculty123', role: 'hod' });
     assert('1.2 HOD (CSE Dept) login successful', hodLog.status === 200 && hodLog.body.success);
     const hodToken = hodLog.body.token;
     assert('1.3 HOD token contains HOD role/flag', hodLog.body.user?.facultyRole === 'hod' || hodLog.body.user?.role === 'faculty');
 
-    const mentorLog = await api('POST', '/api/auth/login', { identifier: 'mentor.cse@ats.com', password: 'mentor123', role: 'admin' });
+    const mentorLog = await api('POST', '/api/auth/login', { identifier: 'mentor.cse@ats.com', password: 'mentor123', role: 'faculty' });
     assert('1.4 Mentor (CSE Dept) login successful', mentorLog.status === 200 && mentorLog.body.success);
     const mentorToken = mentorLog.body.token;
     assert('1.5 Mentor token contains mentor role', mentorLog.body.user?.facultyRole === 'mentor');
@@ -77,6 +77,13 @@ async function runRBACTestSuite() {
     assert('1.6 Student (BITD0001) login successful', studentLog.status === 200 && studentLog.body.success);
     const studentToken = studentLog.body.token;
     const studentId = studentLog.body.user?.studentId || 1;
+
+    // Cross-Role Portal Login Defense
+    const adminAsFaculty = await api('POST', '/api/auth/login', { identifier: 'admin@ats.com', password: 'admin123', role: 'faculty' });
+    assert('1.7 Admin blocked from logging into faculty portal (HTTP 403)', adminAsFaculty.status === 403);
+
+    const facultyAsAdmin = await api('POST', '/api/auth/login', { identifier: 'faculty.cse@example.test', password: 'faculty123', role: 'admin' });
+    assert('1.8 Faculty blocked from logging into admin portal (HTTP 403)', facultyAsAdmin.status === 403);
 
     // 2. Student Data Isolation & IDOR Prevention
     console.log('\n--- Phase 2: Student Data Isolation & IDOR Prevention ---');
@@ -262,15 +269,25 @@ async function runRBACTestSuite() {
 
     // 9. Academic Results Marks Validation
     console.log('\n--- Phase 9: Academic Results Marks Validation ---');
-    // Admin creates valid result
+    // Admin blocked from creating academic results (separation of duties)
+    const adminCreateResult = await api('POST', '/api/results', {
+      student_id: studentId,
+      assessment_type: 'internal',
+      assessment_name: 'Unit Test Admin Unauthorized',
+      marks_obtained: 45,
+      max_marks: 50
+    }, adminToken);
+    assert('9.1 Admin blocked from creating academic results (HTTP 403)', adminCreateResult.status === 403);
+
+    // Faculty creates valid result
     const validResult = await api('POST', '/api/results', {
       student_id: studentId,
       assessment_type: 'internal',
       assessment_name: 'Unit Test 1',
       marks_obtained: 45,
       max_marks: 50
-    }, adminToken);
-    assert('9.1 Admin can create valid academic result', validResult.status === 201 && validResult.body.success);
+    }, mentorToken);
+    assert('9.2 Faculty can create valid academic result', validResult.status === 201 && validResult.body.success);
     const createdResultId = validResult.body?.resultId;
 
     // Marks obtained > max marks -> reject
@@ -280,8 +297,8 @@ async function runRBACTestSuite() {
       assessment_name: 'Unit Test 1 Exceeded',
       marks_obtained: 60,
       max_marks: 50
-    }, adminToken);
-    assert('9.2 Marks exceeding max_marks rejected with HTTP 400', invalidMarks.status === 400);
+    }, mentorToken);
+    assert('9.3 Marks exceeding max_marks rejected with HTTP 400', invalidMarks.status === 400);
 
     // 10. Student Mini-Dashboard Access Control (Section 5)
     console.log('\n--- Phase 10: Student Mini-Dashboard Access Control (Section 5) ---');
@@ -301,9 +318,9 @@ async function runRBACTestSuite() {
     const mentorForbiddenDash = await api('GET', '/api/students/4/mini-dashboard', null, mentorToken);
     assert('10.5 Mentor cannot access unassigned student mini-dashboard (HTTP 403)', mentorForbiddenDash.status === 403);
 
-    // Admin accessing mini-dashboard -> 200
+    // Admin accessing student mini-dashboard -> 403 (strict separation of duties)
     const adminMiniDash = await api('GET', `/api/students/${studentId}/mini-dashboard`, null, adminToken);
-    assert('10.6 Admin can access student mini-dashboard institution-wide', adminMiniDash.status === 200 && adminMiniDash.body.success);
+    assert('10.6 Admin is restricted from student mini-dashboard (HTTP 403)', adminMiniDash.status === 403);
 
     // 11. Department Management & Single-Active HOD Constraint (Section 7)
     console.log('\n--- Phase 11: Department Management & Single Active HOD Constraint (Section 7) ---');
@@ -351,22 +368,30 @@ async function runRBACTestSuite() {
 
     // 13. Official Academic Record Correction Workflow (Section 3D & 10)
     console.log('\n--- Phase 13: Official Academic Record Correction Workflow (Section 3D) ---');
+    // Admin attempting direct academic correction -> 403
+    const adminCorrection = await api('POST', '/api/results/correct', {
+      result_id: createdResultId || 1,
+      marks_obtained: 48,
+      reason: 'Administrative correction attempt without HOD role'
+    }, adminToken);
+    assert('13.1 Admin cannot execute academic result correction (HTTP 403)', adminCorrection.status === 403);
+
     if (createdResultId) {
       // Correction without justification reason -> rejected
       const missingReason = await api('POST', '/api/results/correct', {
         result_id: createdResultId,
         marks_obtained: 48,
         reason: 'short' // <10 chars
-      }, adminToken);
-      assert('13.1 Academic correction without justification reason rejected (HTTP 400)', missingReason.status === 400);
+      }, hodToken);
+      assert('13.2 Academic correction without justification reason rejected (HTTP 400)', missingReason.status === 400);
 
-      // Correction with valid reason -> success
+      // Correction with valid reason by HOD -> success
       const validCorrection = await api('POST', '/api/results/correct', {
         result_id: createdResultId,
         marks_obtained: 48,
         reason: 'Recounting requested by student; script verified by HOD.'
-      }, adminToken);
-      assert('13.2 Authorized academic correction executed and logged', validCorrection.status === 200 && validCorrection.body.success);
+      }, hodToken);
+      assert('13.3 Authorized HOD academic correction executed and logged', validCorrection.status === 200 && validCorrection.body.success);
     }
 
     // Student attempting direct academic correction -> 403
@@ -375,7 +400,7 @@ async function runRBACTestSuite() {
       marks_obtained: 50,
       reason: 'Unauthorized student modification'
     }, studentToken);
-    assert('13.3 Student cannot modify official academic results (HTTP 403)', forbiddenCorrection.status === 403);
+    assert('13.4 Student cannot modify official academic results (HTTP 403)', forbiddenCorrection.status === 403);
 
     // 14. Audit Logs API Verification (Section 10)
     console.log('\n--- Phase 14: Audit Logs API Verification (Section 10) ---');
@@ -441,14 +466,118 @@ async function runRBACTestSuite() {
 
     // 19. Faculty Mini-Dashboard RBAC & Isolation (Requirement 6)
     console.log('\n--- Phase 19: Faculty Mini-Dashboard RBAC & Isolation (Requirement 6) ---');
-    const fac1MiniDash = await api('GET', '/api/departments/faculty/1/mini-dashboard', null, adminToken);
-    assert('19.1 Admin can view faculty mini-dashboard', fac1MiniDash.status === 200 && fac1MiniDash.body.success);
-    assert('19.2 Faculty mini-dashboard returns faculty profile, mentees, and courses', 
-      fac1MiniDash.body.data && fac1MiniDash.body.data.faculty && Array.isArray(fac1MiniDash.body.data.mentees));
+    const fac1MiniDash = await api('GET', '/api/departments/faculty/3/mini-dashboard', null, adminToken);
+    assert('19.1 Admin is restricted from faculty mini-dashboard (HTTP 403)', fac1MiniDash.status === 403);
 
-    const eceFacultyId = (eceGroup?.faculty && eceGroup.faculty[0]?.id) || 3;
+    const facMiniDash = await api('GET', '/api/departments/faculty/3/mini-dashboard', null, hodToken);
+    assert('19.2 Faculty/HOD can view department faculty mini-dashboard', 
+      facMiniDash.status === 200 && facMiniDash.body.success && facMiniDash.body.data?.faculty?.id === 3);
+
+    const eceFacultyId = (eceGroup?.faculty && eceGroup.faculty[0]?.id) || 4;
     const crossHodAccess = await api('GET', `/api/departments/faculty/${eceFacultyId}/mini-dashboard`, null, hodToken);
     assert('19.3 Cross-department HOD access rejected on faculty mini-dashboard (HTTP 403)', crossHodAccess.status === 403);
+
+    // 21. Admin Account Lifecycle & Maintenance Only (Strict Access Governance)
+    console.log('\n--- Phase 21: Admin Account Lifecycle & Operational Barrier ---');
+    // 21.1 Admin lists all accounts
+    const userListRes = await api('GET', '/api/auth/users', null, adminToken);
+    assert('21.1 Admin can list user accounts with directory metadata', userListRes.status === 200 && Array.isArray(userListRes.body.data));
+
+    // 21.2 Non-admin cannot list user accounts
+    const studentUserList = await api('GET', '/api/auth/users', null, studentToken);
+    assert('21.2 Student cannot access user management directory (HTTP 403)', studentUserList.status === 403);
+    const mentorUserList = await api('GET', '/api/auth/users', null, mentorToken);
+    assert('21.3 Faculty cannot access user management directory (HTTP 403)', mentorUserList.status === 403);
+
+    // 21.4 Admin creates a new student user
+    const testRegNo = 'TST' + Date.now().toString().slice(-5);
+    const testStudentEmail = `test.student.${Date.now().toString().slice(-5)}@example.test`;
+    const createStudentRes = await api('POST', '/api/auth/users', {
+      name: 'Test Managed Student',
+      email: testStudentEmail,
+      role: 'student',
+      department_id: 10,
+      register_number: testRegNo,
+      year: 2,
+      semester: 3
+    }, adminToken);
+    assert('21.4 Admin can provision new student account', createStudentRes.status === 201 && createStudentRes.body.success);
+    const newUserId = createStudentRes.body.user?.id;
+
+    // 21.5 Non-admin cannot create user accounts
+    const unauthorizedCreate = await api('POST', '/api/auth/users', {
+      name: 'Attacker Provision',
+      email: 'attacker@example.test',
+      role: 'student',
+      department_id: 10,
+      register_number: 'ATK9999'
+    }, mentorToken);
+    assert('21.5 Non-admin cannot provision accounts (HTTP 403)', unauthorizedCreate.status === 403);
+
+    if (newUserId) {
+      // 21.6 Admin can toggle active status (deactivate user)
+      const deactRes = await api('PUT', `/api/auth/users/${newUserId}/status`, { is_active: 0 }, adminToken);
+      assert('21.6 Admin can deactivate user account', deactRes.status === 200 && deactRes.body.is_active === 0);
+
+      // Verify deactivated user cannot log in
+      const deactLogin = await api('POST', '/api/auth/login', {
+        identifier: testStudentEmail,
+        password: createStudentRes.body.temporaryPassword || 'TempPass123!',
+        role: 'student'
+      });
+      assert('21.7 Deactivated user login is rejected (HTTP 403)', deactLogin.status === 403);
+
+      // 21.8 Admin can reactivate user account
+      const reactRes = await api('PUT', `/api/auth/users/${newUserId}/status`, { is_active: 1 }, adminToken);
+      assert('21.8 Admin can reactivate user account', reactRes.status === 200 && reactRes.body.is_active === 1);
+
+      // 21.9 Admin self-deactivation is blocked
+      const selfDeact = await api('PUT', '/api/auth/users/1/status', { is_active: 0 }, adminToken);
+      assert('21.9 Admin self-deactivation is prevented (HTTP 400)', selfDeact.status === 400);
+
+      // 21.10 Admin can reset user password
+      const resetPwdRes = await api('PUT', `/api/auth/users/${newUserId}/reset-password`, {
+        newPassword: 'NewSecurePassword123!'
+      }, adminToken);
+      assert('21.10 Admin can reset user credentials', resetPwdRes.status === 200 && resetPwdRes.body.success);
+
+      // 21.11 Admin can update user department affiliation
+      const updateDeptRes = await api('PUT', `/api/auth/users/${newUserId}/department`, {
+        department_id: 13
+      }, adminToken);
+      assert('21.11 Admin can reassign user department affiliation', updateDeptRes.status === 200 && updateDeptRes.body.success);
+    }
+
+    // 21.12 Operational Barriers: Admin blocked from Student/Faculty/Mentor/HOD operations
+    const adminMarks = await api('POST', '/api/performance', {
+      student_id: studentId,
+      subject_id: 1,
+      internal1_marks: 40
+    }, adminToken);
+    assert('21.12 Operational Barrier: Admin blocked from modifying marks (HTTP 403)', adminMarks.status === 403);
+
+    const adminAtt = await api('POST', '/api/attendance', {
+      student_id: studentId,
+      subject_id: 1,
+      classes_attended: 45,
+      classes_conducted: 50
+    }, adminToken);
+    assert('21.13 Operational Barrier: Admin blocked from recording attendance (HTTP 403)', adminAtt.status === 403);
+
+    const adminLeave = await api('PUT', '/api/leave/1/decision', {
+      status: 'Approved',
+      remarks: 'Admin override attempt'
+    }, adminToken);
+    assert('21.14 Operational Barrier: Admin blocked from reviewing leave requests (HTTP 403)', adminLeave.status === 403);
+
+    const adminAct = await api('PUT', '/api/activities/1/verify', {
+      status: 'Verified',
+      remarks: 'Admin verify attempt'
+    }, adminToken);
+    assert('21.15 Operational Barrier: Admin blocked from verifying student activities (HTTP 403)', adminAct.status === 403);
+
+    const adminStudentsList = await api('GET', '/api/students', null, adminToken);
+    assert('21.16 Operational Barrier: Admin blocked from faculty student directory (HTTP 403)', adminStudentsList.status === 403);
 
     // 20. Summary
     console.log('\n====================================================');

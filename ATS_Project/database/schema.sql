@@ -41,12 +41,14 @@ CREATE TABLE IF NOT EXISTS attendance_thresholds (
 CREATE TABLE IF NOT EXISTS users (
  id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, email VARCHAR(160) NOT NULL UNIQUE,
  register_number VARCHAR(50) UNIQUE, password VARCHAR(255) NOT NULL, role ENUM('student','faculty','admin') NOT NULL DEFAULT 'student',
+ avatar TEXT NULL, faculty_role VARCHAR(30) NULL, department_id INT NULL, is_active TINYINT(1) NOT NULL DEFAULT 1,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- INDEX idx_users_role(role)
+ INDEX idx_users_role(role), INDEX idx_users_active(is_active)
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS faculty (
  id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NULL UNIQUE, faculty_code VARCHAR(32) NOT NULL UNIQUE, name VARCHAR(100) NOT NULL,
  email VARCHAR(160) NOT NULL UNIQUE, department_id INT NOT NULL, designation VARCHAR(100) NOT NULL,
+ is_hod TINYINT(1) NOT NULL DEFAULT 0, can_mentor TINYINT(1) NOT NULL DEFAULT 1, avatar TEXT NULL,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL, FOREIGN KEY(department_id) REFERENCES departments(id), INDEX idx_faculty_dept(department_id)
 ) ENGINE=InnoDB;
@@ -57,7 +59,7 @@ CREATE TABLE IF NOT EXISTS students (
  date_of_birth DATE NULL, status ENUM('active','inactive','graduated','withdrawn') NOT NULL DEFAULT 'active',
  gpa DECIMAL(4,2) NOT NULL DEFAULT 0, cgpa DECIMAL(4,2) NOT NULL DEFAULT 0, attendance_percentage DECIMAL(5,2) NOT NULL DEFAULT 0,
  academic_score INT NOT NULL DEFAULT 0, risk_level ENUM('LOW','MEDIUM','HIGH') NOT NULL DEFAULT 'LOW',
- avatar VARCHAR(255) NULL, bio TEXT NULL,
+ avatar TEXT NULL, bio TEXT NULL,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY(department_id) REFERENCES departments(id),
  FOREIGN KEY(program_id) REFERENCES programs(id), FOREIGN KEY(current_semester_id) REFERENCES semesters(id),
@@ -139,3 +141,91 @@ CREATE TABLE IF NOT EXISTS chat_history (
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
  FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE, INDEX idx_chat_student_date(student_id,created_at)
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS department_hod_assignments (
+ id INT AUTO_INCREMENT PRIMARY KEY, department_id INT NOT NULL, faculty_id INT NOT NULL, assigned_by INT NULL,
+ start_date DATE NOT NULL, end_date DATE NULL, status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+ active_dept_id INT GENERATED ALWAYS AS (IF(status = 'active', department_id, NULL)) STORED,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_dha_dept(department_id), KEY idx_dha_fac(faculty_id), UNIQUE KEY uq_one_active_hod(active_dept_id),
+ FOREIGN KEY(department_id) REFERENCES departments(id) ON DELETE CASCADE, FOREIGN KEY(faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS student_mentors (
+ id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, faculty_id INT NOT NULL, assigned_by INT NULL,
+ status ENUM('active','inactive') NOT NULL DEFAULT 'active',
+ assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_sm_student(student_id), KEY idx_sm_faculty(faculty_id),
+ FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE, FOREIGN KEY(faculty_id) REFERENCES faculty(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS academic_results (
+ id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, subject_id INT NULL, semester_id INT NULL,
+ department_id INT NULL, academic_year VARCHAR(20) NULL, assessment_type VARCHAR(50) NOT NULL, assessment_name VARCHAR(120) NOT NULL,
+ marks_obtained DECIMAL(5,2) NOT NULL, max_marks DECIMAL(5,2) NOT NULL, grade VARCHAR(5) NULL, grade_point DECIMAL(4,2) NULL,
+ status ENUM('Pass','Fail','Pending') NOT NULL DEFAULT 'Pending', is_published TINYINT(1) NOT NULL DEFAULT 1,
+ published_at DATETIME NULL, created_by INT NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_ar_student(student_id), KEY idx_ar_subject(subject_id), KEY idx_ar_sem(semester_id),
+ FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS student_activities (
+ id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL,
+ category ENUM('Hackathons','Technical competitions','Paper presentations','NPTEL courses and certifications','IEEE membership','External vendor training') NOT NULL,
+ title VARCHAR(180) NOT NULL, description TEXT NULL, organizing_institution VARCHAR(180) NULL, event_date DATE NOT NULL,
+ participation_level VARCHAR(100) NULL, certificate_url VARCHAR(255) NULL,
+ status ENUM('Pending','Verified','Rejected') NOT NULL DEFAULT 'Pending', mentor_remarks TEXT NULL, verified_by INT NULL, verified_at DATETIME NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_act_student(student_id), KEY idx_act_status(status),
+ FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS leave_requests (
+ id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, leave_type VARCHAR(60) NOT NULL,
+ start_date DATE NOT NULL, end_date DATE NOT NULL, reason TEXT NOT NULL,
+ status ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+ reviewed_by INT NULL, remarks TEXT NULL, reviewed_at DATETIME NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_leave_student(student_id), KEY idx_leave_status(status),
+ FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS student_fees (
+ id INT AUTO_INCREMENT PRIMARY KEY, student_id INT NOT NULL, fee_category VARCHAR(100) NOT NULL,
+ academic_year VARCHAR(20) NOT NULL, semester VARCHAR(24) NOT NULL,
+ total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00, paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00, balance_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+ status ENUM('Pending','Partially Paid','Paid','Failed') NOT NULL DEFAULT 'Pending', due_date DATE NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ KEY idx_fees_student(student_id), KEY idx_fees_status(status),
+ FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS fee_payments (
+ id INT AUTO_INCREMENT PRIMARY KEY, fee_id INT NOT NULL, student_id INT NOT NULL,
+ transaction_ref VARCHAR(80) NOT NULL UNIQUE, payment_method VARCHAR(60) NOT NULL,
+ amount DECIMAL(10,2) NOT NULL, status ENUM('Success','Failed') NOT NULL DEFAULT 'Success',
+ is_demo TINYINT(1) NOT NULL DEFAULT 1, payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, notes TEXT NULL,
+ KEY idx_fp_fee(fee_id), KEY idx_fp_student(student_id),
+ FOREIGN KEY(fee_id) REFERENCES student_fees(id) ON DELETE CASCADE, FOREIGN KEY(student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+ id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NULL, user_email VARCHAR(100) NULL,
+ action VARCHAR(80) NOT NULL, entity_type VARCHAR(60) NOT NULL, entity_id VARCHAR(50) NULL,
+ previous_value JSON NULL, new_value JSON NULL, reason TEXT NULL, ip_address VARCHAR(50) NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ KEY idx_audit_user(user_id), KEY idx_audit_action(action), KEY idx_audit_entity(entity_type,entity_id), KEY idx_audit_created(created_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS sensitive_action_rate_limits (
+ id INT AUTO_INCREMENT PRIMARY KEY, identifier VARCHAR(120) NOT NULL, action_type VARCHAR(50) NOT NULL,
+ failed_attempts INT NOT NULL DEFAULT 1, locked_until DATETIME NULL,
+ last_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ UNIQUE KEY uq_action_identifier(identifier,action_type)
+) ENGINE=InnoDB;
+
+CREATE OR REPLACE VIEW mentor_assignments AS
+SELECT sm.id, sm.student_id, sm.faculty_id, sm.assigned_by, sm.status, sm.assigned_at, sm.updated_at
+FROM student_mentors sm;
+

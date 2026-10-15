@@ -102,8 +102,29 @@ function checkAuth(requiredRole = null) {
   const user = getCurrentUser();
 
   if (!token || !user) {
-    window.location.href = 'login.html';
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('login.html')) {
+      window.location.href = 'login.html';
+    }
     return null;
+  }
+
+  // Strict Admin Isolation: Admin must ONLY access account governance views
+  if (user.role === 'admin') {
+    const operationalPages = [
+      'students.html',
+      'performance.html',
+      'attendance.html',
+      'achievements.html',
+      'recommendations.html',
+      'mentor-dashboard.html',
+      'hod-dashboard.html',
+      'dashboard.html'
+    ];
+    const currentPage = (window.location.pathname || '').split('/').pop().toLowerCase();
+    if (operationalPages.includes(currentPage)) {
+      window.location.href = 'admin-dashboard.html';
+      return null;
+    }
   }
 
   if (requiredRole) {
@@ -111,16 +132,19 @@ function checkAuth(requiredRole = null) {
     if (requiredRole === 'admin') {
       allowed = user.role === 'admin';
     } else if (requiredRole === 'hod') {
-      allowed = user.role === 'admin' || (user.role === 'faculty' && Boolean(user.isHOD));
+      // HOD portal strictly requires verified faculty with active HOD status (never admin)
+      allowed = (user.role === 'faculty' && Boolean(user.isHOD));
     } else if (requiredRole === 'mentor' || requiredRole === 'faculty') {
-      allowed = user.role === 'admin' || user.role === 'faculty';
+      // Mentor/Faculty portal strictly requires faculty role (never admin)
+      allowed = (user.role === 'faculty');
     } else if (requiredRole === 'student') {
-      allowed = user.role === 'student';
+      allowed = (user.role === 'student');
     }
 
     if (!allowed) {
-      if (user.role === 'admin') window.location.href = 'admin-dashboard.html';
-      else if (user.role === 'faculty') {
+      if (user.role === 'admin') {
+        window.location.href = 'admin-dashboard.html';
+      } else if (user.role === 'faculty') {
         window.location.href = (user.facultyRole === 'hod' && Boolean(user.isHOD)) ? 'hod-dashboard.html' : 'mentor-dashboard.html';
       } else {
         window.location.href = 'dashboard.html';
@@ -135,12 +159,24 @@ function checkAuth(requiredRole = null) {
 // Unified API Caller
 async function apiCall(endpoint, method = 'GET', body = null) {
   const token = getToken();
+  const isAuthEndpoint = endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/forgot-password');
+
+  if (!isAuthEndpoint && (!token || !token.trim())) {
+    const sessionErr = 'Authentication required: Valid session token not found. Please log in.';
+    showToast(sessionErr, 'error');
+    if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html')) {
+      clearSession();
+      window.location.href = 'login.html';
+    }
+    throw new Error(sessionErr);
+  }
+
   const headers = {
     'Content-Type': 'application/json'
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (token && token.trim()) {
+    headers['Authorization'] = `Bearer ${token.trim()}`;
   }
 
   const options = { method, headers };
@@ -356,6 +392,21 @@ window.openStudentMiniDashboard = async function(studentId, options = {}) {
     </div>
   `;
 
+  const token = getToken();
+  if (!token || !token.trim()) {
+    body.innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:2.2rem; margin-bottom:12px;">🔒</div>
+        <div style="color:#f87171; font-weight:700; font-size:1.1rem; margin-bottom:8px;">Authentication Required</div>
+        <p style="color:var(--text-muted, #94a3b8); font-size:0.85rem; max-width:440px; margin:0 auto 18px;">
+          Valid session token required. Please sign in to access student academic dossiers.
+        </p>
+        <button class="btn btn-primary" onclick="window.location.href='login.html'">Sign In</button>
+      </div>
+    `;
+    return;
+  }
+
   try {
     const res = await apiCall(`/students/${studentId}/mini-dashboard`);
     if (!res || !res.success || !res.data) {
@@ -539,15 +590,19 @@ window.openStudentMiniDashboard = async function(studentId, options = {}) {
     `;
 
   } catch (err) {
+    const isForbidden = err.message && (err.message.includes('403') || err.message.toLowerCase().includes('access denied'));
+    const isAuth = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('token') || err.message.toLowerCase().includes('bearer'));
     body.innerHTML = `
       <div style="text-align:center; padding:40px 20px;">
-        <div style="font-size:2.2rem; color:#f87171; margin-bottom:12px;">❌</div>
-        <div style="color:#f87171; font-weight:700; font-size:1rem; margin-bottom:8px;">
-          Failed to load mini-dashboard: ${err.message}
+        <div style="font-size:2.2rem; margin-bottom:12px;">${isForbidden ? '🛡️' : (isAuth ? '🔒' : '❌')}</div>
+        <div style="color:#f87171; font-weight:700; font-size:1.1rem; margin-bottom:8px;">
+          ${isForbidden ? 'Access Restricted' : (isAuth ? 'Session Authentication Required' : 'Failed to Load Record')}
         </div>
-        <button class="btn btn-primary" onclick="openStudentMiniDashboard(${studentId}, ${JSON.stringify(options).replace(/"/g, '&quot;')})">
-          🔄 Retry Loading Record
-        </button>
+        <p style="color:var(--text-muted, #94a3b8); font-size:0.84rem; max-width:440px; margin:0 auto 18px;">
+          ${err.message}
+        </p>
+        <button class="btn btn-secondary" onclick="closeMiniDashboard()">Close</button>
+        ${isAuth ? `<button class="btn btn-primary" style="margin-left:8px;" onclick="window.location.href='login.html'">Sign In</button>` : (!isForbidden ? `<button class="btn btn-primary" style="margin-left:8px;" onclick="openStudentMiniDashboard(${studentId}, ${JSON.stringify(options).replace(/"/g, '&quot;')})">🔄 Retry</button>` : '')}
       </div>
     `;
   }

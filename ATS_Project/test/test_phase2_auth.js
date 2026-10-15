@@ -5,6 +5,7 @@ const {
   isStudent,
   isStrictAdmin,
   isAdmin,
+  isFaculty,
   isHOD,
   isMentor,
   ownsStudent,
@@ -223,7 +224,7 @@ async function runPhase2Tests() {
 
   // 7.1 Valid Bearer token
   const validToken = jwt.sign(
-    { id: 99, email: 'test@ats.edu', role: 'admin' },
+    { id: 1, email: 'admin@ats.com', role: 'admin' },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );
@@ -232,6 +233,18 @@ async function runPhase2Tests() {
   nextCalled = false;
   await verifyToken(reqValid, resValid, () => { nextCalled = true; });
   assert('7.1 Valid Bearer token in Authorization header passes verifyToken', nextCalled && reqValid.user && reqValid.user.role === 'admin');
+
+  // 7.1b Privilege escalation prevention: Forged role claim overridden by trusted DB identity
+  const forgedToken = jwt.sign(
+    { id: 99, email: 'test@ats.edu', role: 'admin' }, // student user 99 attempting to forge admin claim
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+  let reqForged = { headers: { authorization: `Bearer ${forgedToken}` } };
+  let resForged = createMockRes();
+  nextCalled = false;
+  await verifyToken(reqForged, resForged, () => { nextCalled = true; });
+  assert('7.1b Privilege escalation prevented: Forged admin claim overridden by database student role', nextCalled && reqForged.user && reqForged.user.role === 'student');
 
   // 7.2 Query parameter token rejection (req.query.token must NOT authenticate)
   let reqQueryToken = { headers: {}, query: { token: validToken } };
@@ -273,12 +286,17 @@ async function runPhase2Tests() {
   isAdmin(reqStudentMini, resStudentMini, () => { nextCalled = true; });
   assert('7.6 isAdmin middleware blocks student role with HTTP 403', !nextCalled && resStudentMini.statusCode === 403);
 
-  // 7.7 isAdmin allows faculty member
+  // 7.7 isAdmin blocks faculty member (HTTP 403) and isFaculty allows faculty
   let reqFacultyMini = { user: { id: 2, role: 'faculty' } };
   let resFacultyMini = createMockRes();
   nextCalled = false;
   isAdmin(reqFacultyMini, resFacultyMini, () => { nextCalled = true; });
-  assert('7.7 isAdmin middleware allows faculty role', nextCalled && resFacultyMini.statusCode === 200);
+  assert('7.7 isAdmin blocks faculty role with HTTP 403', !nextCalled && resFacultyMini.statusCode === 403);
+
+  let resFacultyAllowed = createMockRes();
+  nextCalled = false;
+  isFaculty(reqFacultyMini, resFacultyAllowed, () => { nextCalled = true; });
+  assert('7.7b isFaculty allows faculty role', nextCalled && resFacultyAllowed.statusCode === 200);
 
   // 7.8 isAdmin allows system admin
   let reqAdminMini = { user: { id: 4, role: 'admin' } };

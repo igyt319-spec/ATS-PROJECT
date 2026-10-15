@@ -35,6 +35,13 @@ function determineRiskLevel(gpa, attendance, weakSubjectCount) {
 // GET /api/dashboard/:studentId
 async function getStudentDashboard(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not have access to student personal operational dashboards.'
+      });
+    }
+
     const studentId = parseInt(req.params.studentId, 10);
     const [studentRows] = await db.query('SELECT st.*,d.name AS department FROM students st LEFT JOIN departments d ON d.id=st.department_id WHERE st.id = ?', [studentId]);
 

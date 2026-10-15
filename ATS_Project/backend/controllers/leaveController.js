@@ -107,9 +107,16 @@ async function getDepartmentLeaves(req, res) {
   }
 }
 
-// GET /api/leave/institution (Admin only)
+// GET /api/leave/institution (Faculty/Leadership only)
 async function getInstitutionLeaves(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not have access to student leave management.'
+      });
+    }
+
     const [rows] = await db.query(
       `SELECT lr.*, 
               st.name AS student_name, st.register_number, st.year,
@@ -192,9 +199,16 @@ async function applyLeave(req, res) {
   }
 }
 
-// PUT /api/leave/:id/decision (Mentor, HOD, Admin)
+// PUT /api/leave/:id/decision (Mentor, HOD)
 async function reviewLeaveDecision(req, res) {
   try {
+    if (!req.user || req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Administrators do not manage or approve operational leave requests.'
+      });
+    }
+
     const id = parseInt(req.params.id, 10);
     const { status, remarks } = req.body;
 

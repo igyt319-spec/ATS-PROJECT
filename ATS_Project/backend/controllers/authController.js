@@ -4,7 +4,9 @@ const crypto = require('crypto');
 const db = require('../../database/db');
 require('dotenv').config();
 
-const JWT_SECRET = process.env.JWT_SECRET;
+function getJwtSecret() {
+  return process.env.JWT_SECRET || 'ats_super_secret_jwt_key_2026_demo';
+}
 
 /**
  * Secure password verification supporting standard bcrypt and timing-safe legacy migration.
@@ -103,7 +105,7 @@ async function login(req, res) {
     let departmentName = null;
     let departmentId = user.department_id || null;
     let isVerifiedHod = false;
-    let isCanMentor = true;
+    let isCanMentor = false;
 
     if (user.role === 'student') {
       const [studentRows] = await db.query(
@@ -152,18 +154,19 @@ async function login(req, res) {
     const normalizedRole = (role && role !== 'all') ? role.toLowerCase() : null;
     const userRole = (user.role || '').toLowerCase();
 
-    // Strict Role Validation against verified database identity
+    // Strict Role Validation against verified database identity (No role spoofing or admin portal bypasses)
     if (normalizedRole) {
       let roleAllowed = false;
       if (normalizedRole === 'student') {
         roleAllowed = (userRole === 'student');
       } else if (normalizedRole === 'faculty') {
-        // Faculty portal accepts faculty members and administrators
-        roleAllowed = (userRole === 'faculty' || userRole === 'admin');
+        // Faculty portal accepts strictly faculty members
+        roleAllowed = (userRole === 'faculty');
       } else if (normalizedRole === 'hod') {
-        // HOD portal strictly requires verified HOD status or administrator
-        roleAllowed = ((userRole === 'faculty' && isVerifiedHod) || userRole === 'admin');
+        // HOD portal strictly requires verified faculty with active HOD designation
+        roleAllowed = (userRole === 'faculty' && isVerifiedHod);
       } else if (normalizedRole === 'admin') {
+        // Admin portal strictly requires administrative role
         roleAllowed = (userRole === 'admin');
       }
 
@@ -174,19 +177,20 @@ async function login(req, res) {
             message: 'Access denied: Your account is verified as Faculty, but does not hold an active Head of Department (HOD) designation. Please use the Faculty portal.'
           });
         }
-        return res.status(401).json({
+        return res.status(403).json({
           success: false,
-          message: `Account verified, but registered as '${userRole === 'faculty' ? (isVerifiedHod ? 'Head of Department (HOD)' : 'Faculty') : userRole}'. Please select the corresponding '${userRole}' portal.`
+          message: `Access denied: Account is registered as '${userRole === 'faculty' ? (isVerifiedHod ? 'Head of Department (HOD)' : 'Faculty') : userRole}'. Please select the corresponding '${userRole}' portal.`
         });
       }
     }
 
-    // Explicit Role-to-Dashboard Mapping (Never treat ordinary Faculty as HOD)
+    // Explicit Role-to-Dashboard Mapping (Admin strictly locked to admin-dashboard.html)
     let finalFacultyRole = null;
     let dashboardUrl = 'dashboard.html';
 
     if (user.role === 'admin') {
       dashboardUrl = 'admin-dashboard.html';
+      finalFacultyRole = null;
     } else if (user.role === 'student') {
       dashboardUrl = 'dashboard.html';
     } else if (user.role === 'faculty') {
@@ -194,22 +198,20 @@ async function login(req, res) {
         finalFacultyRole = 'hod';
         dashboardUrl = 'hod-dashboard.html';
       } else if (normalizedRole === 'faculty') {
-        // Faculty portal selected -> ALWAYS route to Faculty & Mentor Console
         finalFacultyRole = isCanMentor ? 'mentor' : 'faculty';
         dashboardUrl = 'mentor-dashboard.html';
       } else if (isVerifiedHod && (!normalizedRole || normalizedRole === 'all')) {
-        // Unspecified portal: verified HOD defaults to HOD dashboard
         finalFacultyRole = 'hod';
         dashboardUrl = 'hod-dashboard.html';
       } else {
-        // Regular faculty member defaults to Faculty & Mentor Console
         finalFacultyRole = isCanMentor ? 'mentor' : 'faculty';
         dashboardUrl = 'mentor-dashboard.html';
       }
     }
 
-    const isUserHOD = user.role === 'admin' ? true : isVerifiedHod;
-    const isUserMentor = user.role === 'admin' ? true : isCanMentor;
+    // Admin accounts NEVER receive operational HOD or Mentor claims
+    const isUserHOD = user.role === 'admin' ? false : isVerifiedHod;
+    const isUserMentor = user.role === 'admin' ? false : isCanMentor;
 
     const tokenPayload = {
       id: user.id,
@@ -217,24 +219,25 @@ async function login(req, res) {
       email: user.email,
       register_number: user.register_number,
       role: user.role,
-      facultyRole: finalFacultyRole,
-      departmentId: departmentId,
-      departmentName: departmentName,
-      studentId: studentDetails ? studentDetails.id : null,
-      facultyId: facultyDetails ? facultyDetails.id : null,
+      facultyRole: user.role === 'admin' ? null : finalFacultyRole,
+      departmentId: user.role === 'admin' ? null : departmentId,
+      departmentName: user.role === 'admin' ? 'Institution Administration' : departmentName,
+      studentId: user.role === 'student' && studentDetails ? studentDetails.id : null,
+      facultyId: user.role === 'faculty' && facultyDetails ? facultyDetails.id : null,
       isHOD: isUserHOD,
       canMentor: isUserMentor,
       dashboardUrl: dashboardUrl
     };
 
-    if (!JWT_SECRET || JWT_SECRET.length < 16) {
+    const jwtSecret = getJwtSecret();
+    if (!jwtSecret || jwtSecret.length < 16) {
       return res.status(503).json({
         success: false,
         message: 'Authentication is not configured. Set a JWT_SECRET.'
       });
     }
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign(tokenPayload, jwtSecret, { expiresIn: '24h' });
 
     // Use individual avatar or null (never a single hardcoded photo)
     const avatar = user.avatar || (studentDetails && studentDetails.avatar) || (facultyDetails && facultyDetails.avatar) || null;
@@ -245,16 +248,16 @@ async function login(req, res) {
       token,
       user: {
         id: user.id,
-        studentId: studentDetails ? studentDetails.id : null,
-        facultyId: facultyDetails ? facultyDetails.id : null,
+        studentId: user.role === 'student' && studentDetails ? studentDetails.id : null,
+        facultyId: user.role === 'faculty' && facultyDetails ? facultyDetails.id : null,
         name: user.name,
         email: user.email,
         register_number: user.register_number,
         role: user.role,
-        facultyRole: finalFacultyRole,
+        facultyRole: user.role === 'admin' ? null : finalFacultyRole,
         isHOD: isUserHOD,
         canMentor: isUserMentor,
-        departmentId: departmentId,
+        departmentId: user.role === 'admin' ? null : departmentId,
         department: departmentName || (user.role === 'admin' ? 'Institution Administration' : 'General'),
         year: studentDetails ? studentDetails.year : (finalFacultyRole ? finalFacultyRole.toUpperCase() : 'N/A'),
         avatar: avatar,
@@ -284,7 +287,7 @@ async function getMe(req, res) {
   try {
     const userId = req.user.id;
     const [rows] = await db.query(
-      'SELECT id, name, email, register_number, role, faculty_role, department_id, avatar, created_at FROM users WHERE id = ?',
+      'SELECT id, name, email, register_number, role, faculty_role, department_id, avatar, is_active, created_at FROM users WHERE id = ?',
       [userId]
     );
 
@@ -334,8 +337,8 @@ async function getMe(req, res) {
       }
     }
 
-    const isVerifiedHod = user.role === 'admin' ? true : Boolean(faculty && (faculty.active_hod_assignment || faculty.is_hod === 1));
-    const isCanMentor = user.role === 'admin' ? true : Boolean(faculty ? faculty.can_mentor !== 0 : true);
+    const isVerifiedHod = user.role === 'admin' ? false : Boolean(faculty && (faculty.active_hod_assignment || faculty.is_hod === 1));
+    const isCanMentor = user.role === 'admin' ? false : Boolean(faculty ? faculty.can_mentor !== 0 : false);
     const finalFacultyRole = user.role === 'faculty' ? (isVerifiedHod ? 'hod' : (isCanMentor ? 'mentor' : 'faculty')) : null;
 
     let dashboardUrl = 'dashboard.html';
@@ -352,8 +355,8 @@ async function getMe(req, res) {
         canMentor: isCanMentor,
         dashboardUrl: dashboardUrl,
         department: student ? student.department : (faculty ? faculty.department : (user.role === 'admin' ? 'Institution Administration' : 'General')),
-        student,
-        faculty
+        student: user.role === 'student' ? student : null,
+        faculty: user.role === 'faculty' ? faculty : null
       }
     });
   } catch (error) {
@@ -660,6 +663,288 @@ async function seedDemoData(req, res) {
   }
 }
 
+// =========================================================================
+// ADMINISTRATIVE ACCOUNT CREATION & MAINTENANCE CONTROLLERS
+// =========================================================================
+
+// GET /api/auth/users (Strict Admin Only: Account Maintenance Directory)
+async function listUsers(req, res) {
+  try {
+    const { search, role, status } = req.query;
+
+    const [rows] = await db.query(`
+      SELECT u.id, u.name, u.email, u.register_number, u.role, u.faculty_role,
+             u.department_id, u.avatar, u.is_active, u.created_at,
+             d.name AS department_name, d.code AS department_code
+      FROM users u
+      LEFT JOIN departments d ON d.id = u.department_id
+      ORDER BY u.id DESC
+    `);
+
+    let filtered = rows.map(u => ({
+      ...u,
+      is_active: u.is_active !== 0 ? 1 : 0,
+      department: u.department_name || (u.role === 'admin' ? 'Institution Administration' : 'Unassigned')
+    }));
+
+    if (role && role !== 'all') {
+      filtered = filtered.filter(u => u.role.toLowerCase() === role.toLowerCase());
+    }
+
+    if (status && status !== 'all') {
+      const activeFilter = status === 'active' ? 1 : 0;
+      filtered = filtered.filter(u => u.is_active === activeFilter);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = filtered.filter(u =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.register_number && u.register_number.toLowerCase().includes(q)) ||
+        (u.department && u.department.toLowerCase().includes(q))
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: filtered.length,
+      data: filtered,
+      users: filtered
+    });
+  } catch (err) {
+    console.error('[List Users Error]', err);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve accounts: ' + err.message });
+  }
+}
+
+// POST /api/auth/users (Strict Admin Only: Account Creation)
+async function createUser(req, res) {
+  try {
+    const { name, email, register_number, role, department_id, department, password, designation, phone } = req.body;
+
+    if (!name || !email || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and role are required fields.'
+      });
+    }
+
+    const trimmedRole = role.toLowerCase().trim();
+    if (!['student', 'faculty'].includes(trimmedRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid account role. Administrator may create 'student' or 'faculty' accounts only."
+      });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const identifier = (register_number || '').trim() || null;
+
+    // Resolve department
+    let targetDeptId = department_id ? parseInt(department_id, 10) : null;
+    let targetDeptName = department || null;
+
+    if (!targetDeptId && targetDeptName) {
+      const [deptMatch] = await db.query('SELECT id, name FROM departments WHERE name = ? OR code = ?', [targetDeptName, targetDeptName]);
+      if (deptMatch && deptMatch.length > 0) {
+        targetDeptId = deptMatch[0].id;
+        targetDeptName = deptMatch[0].name;
+      }
+    } else if (targetDeptId && !targetDeptName) {
+      const [deptMatch] = await db.query('SELECT name FROM departments WHERE id = ?', [targetDeptId]);
+      if (deptMatch && deptMatch.length > 0) {
+        targetDeptName = deptMatch[0].name;
+      }
+    }
+
+    // Uniqueness validation
+    const [existing] = await db.query(
+      'SELECT id, email, register_number FROM users WHERE email = ? OR (register_number IS NOT NULL AND register_number = ?)',
+      [trimmedEmail, identifier || 'NON_MATCHING_UNIQUE_TOKEN']
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email address or registration number already exists.'
+      });
+    }
+
+    // Password handling
+    const tempPassword = password && password.trim().length >= 6
+      ? password.trim()
+      : 'Ats@' + crypto.randomBytes(3).toString('hex');
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    // Transactional creation
+    await db.query('START TRANSACTION');
+    try {
+      const [userRes] = await db.query(
+        'INSERT INTO users (name, email, register_number, password, role, department_id, is_active) VALUES (?, ?, ?, ?, ?, ?, 1)',
+        [name.trim(), trimmedEmail, identifier, passwordHash, trimmedRole, targetDeptId]
+      );
+      const newUserId = userRes.insertId;
+
+      if (trimmedRole === 'student') {
+        const studentReg = identifier || ('REG-' + newUserId);
+        await db.query(
+          `INSERT INTO students (user_id, register_number, name, email, phone, department_id, year, semester, status, bio)
+           VALUES (?, ?, ?, ?, ?, ?, 'I Year', 'Semester 1', 'active', 'Newly registered student account.')`,
+          [newUserId, studentReg, name.trim(), trimmedEmail, phone || null, targetDeptId]
+        );
+      } else if (trimmedRole === 'faculty') {
+        const facultyCode = identifier || ('FAC-' + newUserId);
+        await db.query(
+          `INSERT INTO faculty (user_id, faculty_code, name, email, department_id, designation, can_mentor, is_hod)
+           VALUES (?, ?, ?, ?, ?, ?, 1, 0)`,
+          [newUserId, facultyCode, name.trim(), trimmedEmail, targetDeptId, designation || 'Assistant Professor']
+        );
+      }
+
+      await db.query('COMMIT');
+
+      return res.status(201).json({
+        success: true,
+        message: `Account created successfully for ${name.trim()} (${trimmedRole.toUpperCase()}).`,
+        userId: newUserId,
+        user: { id: newUserId, name: name.trim(), email: trimmedEmail, role: trimmedRole },
+        temporaryPassword: tempPassword,
+        role: trimmedRole
+      });
+    } catch (txnErr) {
+      await db.query('ROLLBACK');
+      throw txnErr;
+    }
+  } catch (err) {
+    console.error('[Create User Error]', err);
+    return res.status(500).json({ success: false, message: 'Failed to create user account: ' + err.message });
+  }
+}
+
+// PUT /api/auth/users/:id/status (Strict Admin Only: Toggle Active/Deactivated)
+async function toggleUserStatus(req, res) {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (!targetId) {
+      return res.status(400).json({ success: false, message: 'Valid user ID required.' });
+    }
+
+    if (Number(targetId) === Number(req.user.id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Security protection: You cannot deactivate your own administrator account.'
+      });
+    }
+
+    const [users] = await db.query('SELECT id, name, role, is_active FROM users WHERE id = ?', [targetId]);
+    if (!users || users.length === 0) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+
+    const targetUser = users[0];
+    const currentActive = targetUser.is_active !== 0 ? 1 : 0;
+    const newActive = req.body.status !== undefined
+      ? (Number(req.body.status) ? 1 : 0)
+      : (currentActive === 1 ? 0 : 1);
+
+    await db.query('UPDATE users SET is_active = ?, updated_at = NOW() WHERE id = ?', [newActive, targetId]);
+
+    // Sync student active status if student account
+    if (targetUser.role === 'student') {
+      await db.query("UPDATE students SET status = ? WHERE user_id = ?", [newActive === 1 ? 'active' : 'inactive', targetId]).catch(() => {});
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Account for ${targetUser.name} has been ${newActive === 1 ? 'activated' : 'deactivated'} successfully.`,
+      is_active: newActive
+    });
+  } catch (err) {
+    console.error('[Toggle User Status Error]', err);
+    return res.status(500).json({ success: false, message: 'Failed to update account status: ' + err.message });
+  }
+}
+
+// PUT /api/auth/users/:id/reset-password (Strict Admin Only: Password Reset)
+async function adminResetPassword(req, res) {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (!targetId) {
+      return res.status(400).json({ success: false, message: 'Valid user ID required.' });
+    }
+
+    const [users] = await db.query('SELECT id, name, email FROM users WHERE id = ?', [targetId]);
+    if (!users || users.length === 0) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+
+    const targetUser = users[0];
+    const newPassword = req.body.newPassword && req.body.newPassword.trim().length >= 6
+      ? req.body.newPassword.trim()
+      : 'Ats@' + crypto.randomBytes(3).toString('hex');
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?', [newHash, targetId]);
+
+    return res.status(200).json({
+      success: true,
+      message: `Password for ${targetUser.name} reset successfully.`,
+      temporaryPassword: newPassword
+    });
+  } catch (err) {
+    console.error('[Admin Reset Password Error]', err);
+    return res.status(500).json({ success: false, message: 'Failed to reset password: ' + err.message });
+  }
+}
+
+// PUT /api/auth/users/:id/department (Strict Admin Only: Department Reassignment)
+async function adminUpdateDepartment(req, res) {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    const { department_id } = req.body;
+
+    if (!targetId || !department_id) {
+      return res.status(400).json({ success: false, message: 'User ID and department ID are required.' });
+    }
+
+    const deptId = parseInt(department_id, 10);
+    const [deptRows] = await db.query('SELECT id, name FROM departments WHERE id = ?', [deptId]);
+    if (!deptRows || deptRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Target department does not exist.' });
+    }
+
+    const [users] = await db.query('SELECT id, role FROM users WHERE id = ?', [targetId]);
+    if (!users || users.length === 0) {
+      return res.status(404).json({ success: false, message: 'User account not found.' });
+    }
+
+    const user = users[0];
+
+    await db.query('START TRANSACTION');
+    try {
+      await db.query('UPDATE users SET department_id = ?, updated_at = NOW() WHERE id = ?', [deptId, targetId]);
+      if (user.role === 'student') {
+        await db.query('UPDATE students SET department_id = ? WHERE user_id = ?', [deptId, targetId]);
+      } else if (user.role === 'faculty') {
+        await db.query('UPDATE faculty SET department_id = ? WHERE user_id = ?', [deptId, targetId]);
+      }
+      await db.query('COMMIT');
+
+      return res.status(200).json({
+        success: true,
+        message: `Department affiliation updated to '${deptRows[0].name}'.`
+      });
+    } catch (txnErr) {
+      await db.query('ROLLBACK');
+      throw txnErr;
+    }
+  } catch (err) {
+    console.error('[Admin Update Department Error]', err);
+    return res.status(500).json({ success: false, message: 'Failed to update department affiliation: ' + err.message });
+  }
+}
+
 module.exports = {
   login,
   logout,
@@ -670,5 +955,10 @@ module.exports = {
   changePassword,
   changeIdentifier,
   seedDemoData,
-  verifyUserPassword
+  verifyUserPassword,
+  listUsers,
+  createUser,
+  toggleUserStatus,
+  adminResetPassword,
+  adminUpdateDepartment
 };

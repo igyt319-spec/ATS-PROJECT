@@ -55,8 +55,9 @@ async function runSuite() {
   const aToken = aLog.body.token;
 
   // 4. Faculty Login
-  const fLog = await api('POST', '/api/auth/login', { identifier: 'faculty.cse@example.test', password: 'faculty123', role: 'admin' });
+  const fLog = await api('POST', '/api/auth/login', { identifier: 'faculty.cse@example.test', password: 'faculty123', role: 'faculty' });
   assert('Faculty Login', fLog.status === 200 && fLog.body.success, 'user: ' + fLog.body.user?.name);
+  const fToken = fLog.body.token;
 
   // 5. Invalid Login (Wrong password)
   const badLog = await api('POST', '/api/auth/login', { identifier: 'BITD0001', password: 'wrongpassword', role: 'student' });
@@ -93,8 +94,10 @@ async function runSuite() {
   assert('Notifications loaded', notif.status === 200 && notif.body.count > 0, 'count: ' + notif.body.count);
 
   // 13. Students Directory (/api/students)
-  const stList = await api('GET', '/api/students', null, aToken);
-  assert('Students Directory loaded', stList.status === 200 && stList.body.count > 0, 'count: ' + stList.body.count);
+  const stList = await api('GET', '/api/students', null, fToken);
+  assert('Students Directory loaded for Faculty', stList.status === 200 && stList.body.count > 0, 'count: ' + stList.body.count);
+  const stListAdmin = await api('GET', '/api/students', null, aToken);
+  assert('Students Directory blocked for Admin with 403', stListAdmin.status === 403);
 
   // 14. Departments and Subjects catalog
   const depts = await api('GET', '/api/departments');

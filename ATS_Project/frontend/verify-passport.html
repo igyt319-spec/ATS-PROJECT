@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap"
+    rel="stylesheet">
   <style>
     body {
       background: radial-gradient(circle at 50% 20%, #0f172a 0%, #020617 100%);
@@ -19,6 +22,7 @@
       justify-content: center;
       padding: 30px 20px;
     }
+
     .verify-box {
       max-width: 680px;
       width: 100%;
@@ -30,6 +34,7 @@
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.15);
       overflow: hidden;
     }
+
     .verify-header {
       padding: 28px 32px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -39,22 +44,25 @@
       gap: 16px;
       background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.05));
     }
+
     .verify-body {
       padding: 32px;
     }
+
     .badge-verified {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       background: rgba(16, 185, 129, 0.15);
       color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      border: 1px solid rgba(3, 228, 153, 0.35);
       padding: 8px 18px;
       border-radius: 9999px;
       font-weight: 700;
       font-size: 0.85rem;
       letter-spacing: 0.5px;
     }
+
     .badge-invalid {
       display: inline-flex;
       align-items: center;
@@ -67,18 +75,21 @@
       font-weight: 700;
       font-size: 0.85rem;
     }
+
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 20px;
       margin-top: 24px;
     }
+
     .detail-item {
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 12px;
       padding: 16px 18px;
     }
+
     .detail-label {
       font-size: 0.74rem;
       text-transform: uppercase;
@@ -87,11 +98,13 @@
       font-weight: 600;
       margin-bottom: 6px;
     }
+
     .detail-value {
       font-size: 0.98rem;
       font-weight: 700;
       color: #fff;
     }
+
     .privacy-notice {
       margin-top: 28px;
       padding: 14px 18px;
@@ -104,6 +117,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="verify-box">
@@ -115,7 +129,8 @@
         </div>
         <div>
           <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">ATS Intelligence Platform</h2>
-          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">VERIFIED ACHIEVEMENT PASSPORT GATEWAY</span>
+          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">VERIFIED
+            ACHIEVEMENT PASSPORT GATEWAY</span>
         </div>
       </div>
       <div id="status-badge-container">
@@ -129,15 +144,19 @@
       <!-- Loading State -->
       <div id="loading-state" style="text-align: center; padding: 40px 0;">
         <div class="spinner" style="margin: 0 auto 16px;"></div>
-        <p style="color: var(--text-muted); font-size: 0.92rem;">Cryptographically verifying credential authenticity against institutional ledger...</p>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">Cryptographically verifying credential authenticity
+          against institutional ledger...</p>
       </div>
 
       <!-- Result Card -->
       <div id="result-state" style="display: none;">
         <div style="margin-bottom: 20px;">
-          <span class="kpi-pill pill-blue" style="font-size: 0.72rem; margin-bottom: 8px; display: inline-block;" id="res-category">Hackathon</span>
-          <h1 style="font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0 0 8px 0; line-height: 1.3;" id="res-title">Achievement Title</h1>
-          <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;" id="res-institution">Organizing Institution</p>
+          <span class="kpi-pill pill-blue" style="font-size: 0.72rem; margin-bottom: 8px; display: inline-block;"
+            id="res-category">Hackathon</span>
+          <h1 style="font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0 0 8px 0; line-height: 1.3;"
+            id="res-title">Achievement Title</h1>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;" id="res-institution">Organizing
+            Institution</p>
         </div>
 
         <div class="detail-grid">
@@ -168,15 +187,20 @@
         </div>
 
         <div class="privacy-notice">
-          <strong>🔒 Public Verification Privacy Protection:</strong> This public record confirms authentic achievement review by institutional faculty. In compliance with student privacy regulations, confidential records (register numbers, private contact information, examination marks, and GPA) are omitted from public verification views.
+          <strong>🔒 Public Verification Privacy Protection:</strong> This public record confirms authentic achievement
+          review by institutional faculty. In compliance with student privacy regulations, confidential records
+          (register numbers, private contact information, examination marks, and GPA) are omitted from public
+          verification views.
         </div>
       </div>
 
       <!-- Error Card -->
       <div id="error-state" style="display: none; text-align: center; padding: 30px 10px;">
         <div style="font-size: 3rem; margin-bottom: 16px;">⚠️</div>
-        <h3 style="color: #f87171; font-size: 1.25rem; font-weight: 800; margin-bottom: 10px;">Verification Code Invalid or Expired</h3>
-        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 500px; margin: 0 auto 20px;" id="error-message">
+        <h3 style="color: #f87171; font-size: 1.25rem; font-weight: 800; margin-bottom: 10px;">Verification Code Invalid
+          or Expired</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 500px; margin: 0 auto 20px;"
+          id="error-message">
           The requested certificate verification token could not be resolved in the ATS database.
         </p>
         <a href="index.html" class="btn btn-secondary btn-sm">Return to ATS Portal</a>
@@ -243,4 +267,5 @@
     window.addEventListener('DOMContentLoaded', loadVerification);
   </script>
 </body>
+
 </html>

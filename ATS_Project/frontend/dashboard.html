@@ -492,68 +492,68 @@
       <!-- =========================================================================
            FEATURE 1: AI ACADEMIC DIGITAL TWIN & FORECASTING ENGINE
            ========================================================================= -->
-      <div class="glass-card" id="section-digital-twin" style="margin-top: 28px; margin-bottom: 28px; border-color: rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(56, 189, 248, 0.08);">
+      <div class="glass-card" id="section-digital-twin" style="margin-top: 28px; margin-bottom: 28px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
         <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
           <div class="card-title-group">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.4rem;">🧬</span>
-              <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #fff;">AI ACADEMIC DIGITAL TWIN & FORECASTING</h3>
-              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.72rem; padding: 3px 8px;">
+              <span style="font-size: 1.3rem;">🧬</span>
+              <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--brand-navy);">AI ACADEMIC DIGITAL TWIN & FORECASTING</h3>
+              <span class="kpi-pill pill-gold" style="font-size: 0.72rem; padding: 3px 8px;">
                 FEATURE 1 • VALIDATED OLS REGRESSION
               </span>
             </div>
-            <p style="margin-top: 4px;">Continuously updated analytical profile, performance trajectory, uncertainty bounds, and snapshot evaluation</p>
+            <p style="margin-top: 4px; color: var(--text-secondary);">Continuously updated analytical profile, performance trajectory, uncertainty bounds, and snapshot evaluation</p>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="loadDigitalTwinData()">🔄 Refresh Projection</button>
         </div>
 
         <!-- Prediction Snapshot Card -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-          <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 0.74rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Projected Next Semester GPA</div>
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px;">
+            <div style="font-size: 0.74rem; color: var(--brand-navy); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Projected Next Semester GPA</div>
             <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 6px;">
-              <span style="font-size: 2rem; font-weight: 900; color: #fff;" id="twin-predicted-gpa">—</span>
+              <span style="font-size: 2rem; font-weight: 800; color: var(--brand-navy);" id="twin-predicted-gpa">—</span>
               <span style="font-size: 0.85rem; color: var(--text-dim);">/ 10.00</span>
             </div>
-            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;" id="twin-prediction-range">
+            <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;" id="twin-prediction-range">
               Uncertainty Band: <strong>—</strong>
             </div>
           </div>
 
-          <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Model Confidence Score</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #34d399; margin-top: 6px;" id="twin-confidence-score">—%</div>
-            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;" id="twin-method-label">
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px;">
+            <div style="font-size: 0.74rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Model Confidence Score</div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--status-success); margin-top: 6px;" id="twin-confidence-score">—%</div>
+            <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;" id="twin-method-label">
               Weighted Linear Trend Regression
             </div>
           </div>
 
-          <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px 20px;">
-            <div style="font-size: 0.74rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Validation Accuracy (MAE / RMSE)</div>
-            <div style="font-size: 1.35rem; font-weight: 800; color: #facc15; margin-top: 6px;" id="twin-mae-rmse">
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px;">
+            <div style="font-size: 0.74rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Validation Accuracy (MAE / RMSE)</div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent-gold); margin-top: 6px;" id="twin-mae-rmse">
               MAE: — | RMSE: —
             </div>
-            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 4px;" id="twin-validation-status">
+            <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;" id="twin-validation-status">
               Historical snapshot comparison
             </div>
           </div>
         </div>
 
         <!-- Academic Disclaimer Banner -->
-        <div style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent-cyan); padding: 12px 18px; border-radius: 8px; margin-bottom: 24px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
-          <strong>ℹ️ Academic Advisory Notice:</strong> Predictions are statistical projections derived from linear trend regression, continuous assessment, and attendance compliance. They are provided solely for academic planning and do not represent official university examination results.
+        <div style="background: var(--brand-navy-subtle); border-left: 3px solid var(--brand-navy); padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+          <strong style="color: var(--brand-navy);">ℹ️ Academic Advisory Notice:</strong> Predictions are statistical projections derived from linear trend regression, continuous assessment, and attendance compliance. They are provided solely for academic planning and do not represent official university examination results.
         </div>
 
         <!-- Twin Influencing Factors & Diagnostics Grid -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
           <div>
-            <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px;">📊 Key Factors Influencing Prediction</h4>
+            <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 12px;">📊 Key Factors Influencing Prediction</h4>
             <div id="twin-influencing-factors-list" style="display: flex; flex-direction: column; gap: 10px;">
               <div style="color: var(--text-dim); font-size: 0.85rem;">Loading analytical factors...</div>
             </div>
           </div>
           <div>
-            <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px;">🎯 Subject Diagnostic Breakdown</h4>
+            <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 12px;">🎯 Subject Diagnostic Breakdown</h4>
             <div id="twin-subject-diagnostics" style="display: flex; flex-direction: column; gap: 10px;">
               <div style="color: var(--text-dim); font-size: 0.85rem;">Loading subject diagnostics...</div>
             </div>
@@ -561,7 +561,7 @@
         </div>
 
         <!-- Historical Snapshots Table -->
-        <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px;">📑 Dated Prediction Snapshot History & Outcome Verification</h4>
+        <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 12px;">📑 Dated Prediction Snapshot History & Outcome Verification</h4>
         <div class="table-container">
           <table class="data-table">
             <thead>
@@ -585,22 +585,22 @@
       <!-- =========================================================================
            FEATURE 2: AI CAREER READINESS & COMPETENCY ROADMAP
            ========================================================================= -->
-      <div class="glass-card" id="section-career-readiness" style="margin-bottom: 28px; border-color: rgba(99, 102, 241, 0.35);">
+      <div class="glass-card" id="section-career-readiness" style="margin-bottom: 28px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
         <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
           <div class="card-title-group">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.4rem;">🚀</span>
-              <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #fff;">AI CAREER READINESS & COMPETENCY ROADMAP</h3>
-              <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.72rem; padding: 3px 8px;">
+              <span style="font-size: 1.3rem;">🚀</span>
+              <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--brand-navy);">AI CAREER READINESS & COMPETENCY ROADMAP</h3>
+              <span class="kpi-pill pill-gold" style="font-size: 0.72rem; padding: 3px 8px;">
                 FEATURE 2 • INDUSTRY PATHWAYS
               </span>
             </div>
-            <p style="margin-top: 4px;">Competency gap analysis, verified evidence mapping, and prioritized milestone roadmaps</p>
+            <p style="margin-top: 4px; color: var(--text-secondary);">Competency gap analysis, verified evidence mapping, and prioritized milestone roadmaps</p>
           </div>
           <!-- Role Selector -->
           <div style="display: flex; align-items: center; gap: 10px;">
-            <label style="font-size: 0.82rem; color: var(--text-dim);">Target Track:</label>
-            <select id="career-role-select" class="form-control" style="width: auto; padding: 6px 14px; font-size: 0.84rem; background: #0f172a;" onchange="changeCareerRoleTarget()">
+            <label style="font-size: 0.82rem; color: var(--text-secondary);">Target Track:</label>
+            <select id="career-role-select" class="form-control" style="width: auto; padding: 6px 14px; font-size: 0.84rem; background: #FFFFFF; color: var(--text-main);" onchange="changeCareerRoleTarget()">
               <option value="">Loading career tracks...</option>
             </select>
           </div>
@@ -608,21 +608,21 @@
 
         <!-- Readiness Score Banner -->
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px; align-items: center;">
-          <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 22px; text-align: center;">
-            <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Overall Career Readiness Index</div>
-            <div style="font-size: 2.8rem; font-weight: 900; color: #818cf8; margin: 8px 0;" id="career-readiness-score">—%</div>
-            <div style="font-size: 0.82rem; color: var(--text-muted);" id="career-competency-summary">
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 22px; text-align: center;">
+            <div style="font-size: 0.74rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Overall Career Readiness Index</div>
+            <div style="font-size: 2.6rem; font-weight: 800; color: var(--brand-navy); margin: 6px 0;" id="career-readiness-score">—%</div>
+            <div style="font-size: 0.82rem; color: var(--text-secondary);" id="career-competency-summary">
               Demonstrated Competencies: <strong>0 / 0</strong>
             </div>
           </div>
           <div>
-            <h4 style="font-size: 1.05rem; color: #fff; margin: 0 0 6px 0;" id="career-role-title">Selected Track</h4>
-            <p style="font-size: 0.84rem; color: var(--text-muted); margin: 0 0 14px 0; line-height: 1.5;" id="career-role-desc">Role description</p>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; padding: 4px 10px;" id="badge-demonstrated-count">
+            <h4 style="font-size: 1.05rem; color: var(--brand-navy); margin: 0 0 6px 0;" id="career-role-title">Selected Track</h4>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); margin: 0 0 14px 0; line-height: 1.5;" id="career-role-desc">Role description</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <span class="kpi-pill pill-green" id="badge-demonstrated-count">
                 ✅ 0 Demonstrated
               </span>
-              <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; padding: 4px 10px;" id="badge-missing-count">
+              <span class="kpi-pill pill-red" id="badge-missing-count">
                 ⚠️ 0 Missing Competencies
               </span>
             </div>
@@ -630,7 +630,7 @@
         </div>
 
         <!-- Competencies Evaluation Table -->
-        <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px;">🎯 Required Competencies & Verified Evidence Mapping</h4>
+        <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 12px;">🎯 Required Competencies & Verified Evidence Mapping</h4>
         <div class="table-container" style="margin-bottom: 24px;">
           <table class="data-table">
             <thead>
@@ -650,7 +650,7 @@
         </div>
 
         <!-- Prioritized Learning Roadmap Steps -->
-        <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 12px;">🗺️ Prioritized Skill Acquisition Roadmap</h4>
+        <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 12px;">🗺️ Prioritized Skill Acquisition Roadmap</h4>
         <div id="career-roadmap-steps-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
           <div style="color: var(--text-dim); font-size: 0.85rem;">Generating tailored roadmap...</div>
         </div>
@@ -659,28 +659,28 @@
       <!-- =========================================================================
            FEATURE 6: ACADEMIC WHAT-IF SCENARIO SIMULATOR
            ========================================================================= -->
-      <div class="glass-card" id="section-simulator" style="margin-bottom: 28px; border-color: rgba(234, 179, 8, 0.35);">
+      <div class="glass-card" id="section-simulator" style="margin-bottom: 28px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
         <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
           <div class="card-title-group">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.4rem;">🔮</span>
-              <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #fff;">ACADEMIC WHAT-IF SCENARIO SIMULATOR</h3>
-              <span class="badge" style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); font-size: 0.72rem; padding: 3px 8px;">
+              <span style="font-size: 1.3rem;">🔮</span>
+              <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--brand-navy);">ACADEMIC WHAT-IF SCENARIO SIMULATOR</h3>
+              <span class="kpi-pill pill-gold" style="font-size: 0.72rem; padding: 3px 8px;">
                 FEATURE 6 • NON-DESTRUCTIVE
               </span>
             </div>
-            <p style="margin-top: 4px;">Explore hypothetical examination scores, target GPA requirements, attendance buffer projections, and subject leverage without modifying database records</p>
+            <p style="margin-top: 4px; color: var(--text-secondary);">Explore hypothetical examination scores, target GPA requirements, attendance buffer projections, and subject leverage without modifying database records</p>
           </div>
         </div>
 
         <!-- Simulator Tabs Grid -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
           <!-- Tool 1: Target GPA Solver -->
-          <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px;">
-            <h4 style="color: #fff; font-size: 0.98rem; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px;">
+            <h4 style="color: var(--brand-navy); font-size: 0.96rem; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
               <span>🎯</span> Target GPA Examination Solver
             </h4>
-            <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 16px;">
               Calculate the exact examination marks needed across enrolled subjects to achieve your target semester GPA.
             </p>
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px;">
@@ -693,20 +693,20 @@
           </div>
 
           <!-- Tool 2: Attendance Projection Calculator -->
-          <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px;">
-            <h4 style="color: #fff; font-size: 0.98rem; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+          <div style="background: var(--bg-surface-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px;">
+            <h4 style="color: var(--brand-navy); font-size: 0.96rem; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
               <span>📅</span> Attendance Projection & Safe Bunk Calculator
             </h4>
-            <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px;">
+            <p style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 16px;">
               Simulate upcoming lecture attendance to project your end-semester eligibility standing.
             </p>
             <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;">
               <div>
-                <label style="font-size: 0.74rem; color: var(--text-dim); display: block;">Upcoming Classes</label>
+                <label style="font-size: 0.74rem; color: var(--text-secondary); display: block;">Upcoming Classes</label>
                 <input type="number" id="sim-upcoming-total" class="form-control" style="width: 110px;" value="20" min="1">
               </div>
               <div>
-                <label style="font-size: 0.74rem; color: var(--text-dim); display: block;">Expected to Attend</label>
+                <label style="font-size: 0.74rem; color: var(--text-secondary); display: block;">Expected to Attend</label>
                 <input type="number" id="sim-upcoming-attended" class="form-control" style="width: 110px;" value="18" min="0">
               </div>
               <button class="btn btn-secondary btn-sm" style="margin-top: 16px;" onclick="runAttendanceSimulation()">Calculate Projection</button>
@@ -719,8 +719,8 @@
 
         <!-- Tool 3: High Leverage Subjects -->
         <div>
-          <h4 style="font-size: 0.95rem; color: #fff; margin-bottom: 10px;">⚡ High-Leverage Subjects Ranking (Highest Return on Effort)</h4>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+          <h4 style="font-size: 0.95rem; color: var(--brand-navy); margin-bottom: 10px;">⚡ High-Leverage Subjects Ranking (Highest Return on Effort)</h4>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 14px;">
             Subjects sorted by GPA boost per marks needed. Focus your revision where small mark improvements yield the highest semester CGPA jump.
           </p>
           <div class="table-container">

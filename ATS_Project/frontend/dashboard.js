@@ -533,23 +533,25 @@ function renderSubjectPerformanceChart(chartData) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0f172a',
-          titleColor: '#fff',
-          bodyColor: '#38bdf8',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1
+          backgroundColor: '#243B64',
+          titleColor: '#FFFFFF',
+          bodyColor: '#F7F7F5',
+          borderColor: '#E7E8EB',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
         }
       },
       scales: {
         y: {
           beginAtZero: true,
           max: 100,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8' }
+          grid: { color: '#E7E8EB' },
+          ticks: { color: '#68707D', font: { family: 'Inter' } }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#94a3b8' }
+          ticks: { color: '#68707D', font: { family: 'Inter' } }
         }
       }
     }
@@ -569,21 +571,25 @@ function renderAcademicTrendChart(chartData) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0f172a',
-          titleColor: '#fff',
-          bodyColor: '#38bdf8'
+          backgroundColor: '#243B64',
+          titleColor: '#FFFFFF',
+          bodyColor: '#F7F7F5',
+          borderColor: '#E7E8EB',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
         }
       },
       scales: {
         y: {
           min: 6.0,
           max: 10.0,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8' }
+          grid: { color: '#E7E8EB' },
+          ticks: { color: '#68707D', font: { family: 'Inter' } }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#94a3b8' }
+          ticks: { color: '#68707D', font: { family: 'Inter' } }
         }
       }
     }
@@ -602,19 +608,28 @@ function renderAttendanceTrendChart(chartData) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#94a3b8', font: { size: 11 } }
+          labels: { color: '#68707D', font: { family: 'Inter', size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: '#243B64',
+          titleColor: '#FFFFFF',
+          bodyColor: '#F7F7F5',
+          borderColor: '#E7E8EB',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
         }
       },
       scales: {
         y: {
           min: 50,
           max: 100,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8', callback: v => `${v}%` }
+          grid: { color: '#E7E8EB' },
+          ticks: { color: '#68707D', font: { family: 'Inter' }, callback: v => `${v}%` }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#94a3b8' }
+          ticks: { color: '#68707D', font: { family: 'Inter' } }
         }
       }
     }
@@ -634,7 +649,16 @@ function renderAchievementDistributionChart(chartData) {
       plugins: {
         legend: {
           position: 'right',
-          labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 }
+          labels: { color: '#68707D', font: { family: 'Inter', size: 11 }, boxWidth: 12 }
+        },
+        tooltip: {
+          backgroundColor: '#243B64',
+          titleColor: '#FFFFFF',
+          bodyColor: '#F7F7F5',
+          borderColor: '#E7E8EB',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6
         }
       },
       cutout: '65%'

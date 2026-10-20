@@ -477,31 +477,31 @@ async function loadDepartmentTwin() {
       attContainer.innerHTML = `
         <div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #34d399;">Good Compliance (&ge; 85%)</span>
-            <strong style="color: #fff;">${attDist.good} (${goodPct}%)</strong>
+            <span style="color: var(--status-success);">Good Compliance (&ge; 85%)</span>
+            <strong style="color: var(--text-main);">${attDist.good} (${goodPct}%)</strong>
           </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${goodPct}%; height: 100%; background: #34d399; border-radius: 4px;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #fbbf24;">Monitor Zone (75% - 84%)</span>
-            <strong style="color: #fff;">${attDist.monitor} (${monPct}%)</strong>
-          </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${monPct}%; height: 100%; background: #fbbf24; border-radius: 4px;"></div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${goodPct}%; height: 100%; background: var(--status-success); border-radius: 4px;"></div>
           </div>
         </div>
 
         <div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #f87171;">Critical Attendance Risk (&lt; 75%)</span>
-            <strong style="color: #fff;">${attDist.risk} (${riskPct}%)</strong>
+            <span style="color: var(--status-warning);">Monitor Zone (75% - 84%)</span>
+            <strong style="color: var(--text-main);">${attDist.monitor} (${monPct}%)</strong>
           </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${riskPct}%; height: 100%; background: #f87171; border-radius: 4px;"></div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${monPct}%; height: 100%; background: var(--status-warning); border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: var(--status-danger);">Critical Attendance Risk (&lt; 75%)</span>
+            <strong style="color: var(--text-main);">${attDist.risk} (${riskPct}%)</strong>
+          </div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${riskPct}%; height: 100%; background: var(--status-danger); border-radius: 4px;"></div>
           </div>
         </div>
       `;
@@ -518,31 +518,31 @@ async function loadDepartmentTwin() {
       riskContainer.innerHTML = `
         <div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #38bdf8;">Low Risk (Stable Academic Trajectory)</span>
-            <strong style="color: #fff;">${riskDist.LOW} (${lowPct}%)</strong>
+            <span style="color: var(--status-success);">Low Risk (Stable Academic Trajectory)</span>
+            <strong style="color: var(--text-main);">${riskDist.LOW} (${lowPct}%)</strong>
           </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${lowPct}%; height: 100%; background: #38bdf8; border-radius: 4px;"></div>
-          </div>
-        </div>
-
-        <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #fbbf24;">Medium Risk (Targeted Mentorship Advisable)</span>
-            <strong style="color: #fff;">${riskDist.MEDIUM} (${medPct}%)</strong>
-          </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${medPct}%; height: 100%; background: #fbbf24; border-radius: 4px;"></div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${lowPct}%; height: 100%; background: var(--status-success); border-radius: 4px;"></div>
           </div>
         </div>
 
         <div>
           <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: #f87171;">High Academic Risk (Critical Remedial Focus)</span>
-            <strong style="color: #fff;">${riskDist.HIGH} (${highPct}%)</strong>
+            <span style="color: var(--status-warning);">Medium Risk (Targeted Mentorship Advisable)</span>
+            <strong style="color: var(--text-main);">${riskDist.MEDIUM} (${medPct}%)</strong>
           </div>
-          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
-            <div style="width: ${highPct}%; height: 100%; background: #f87171; border-radius: 4px;"></div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${medPct}%; height: 100%; background: var(--status-warning); border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: var(--status-danger);">High Academic Risk (Critical Remedial Focus)</span>
+            <strong style="color: var(--text-main);">${riskDist.HIGH} (${highPct}%)</strong>
+          </div>
+          <div style="height: 6px; border-radius: 4px; background: var(--border-color); overflow: hidden;">
+            <div style="width: ${highPct}%; height: 100%; background: var(--status-danger); border-radius: 4px;"></div>
           </div>
         </div>
       `;
@@ -560,7 +560,7 @@ async function loadDepartmentTwin() {
             <td><strong>Semester ${st.semester_num}</strong></td>
             <td>${st.student_count} Scholars</td>
             <td>${Number(st.mean_marks || 0).toFixed(1)} / 100</td>
-            <td><strong style="color: #38bdf8;">${Number(st.mean_gpa || 0).toFixed(2)}</strong></td>
+            <td><strong style="color: var(--brand-navy);">${Number(st.mean_gpa || 0).toFixed(2)}</strong></td>
           </tr>
         `).join('');
       }

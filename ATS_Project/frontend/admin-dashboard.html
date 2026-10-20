@@ -247,9 +247,14 @@
               <option value="all">All Roles</option>
               <option value="student">Students</option>
               <option value="faculty">Faculty</option>
+            <select id="admin-filter-role" onchange="filterUserTable()" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
+              <option value="all">All Roles</option>
+              <option value="student">Students</option>
+              <option value="faculty">Faculty</option>
+              <option value="hod">Heads of Department (HOD)</option>
               <option value="admin">Administrators</option>
             </select>
-            <select id="admin-filter-status" onchange="filterUserTable()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 7px 12px; color: #fff; font-size: 0.82rem;">
+            <select id="admin-filter-status" onchange="filterUserTable()" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
               <option value="all">All Statuses</option>
               <option value="active">Active Only</option>
               <option value="inactive">Deactivated Only</option>
@@ -317,40 +322,40 @@
 
         <!-- Institutional Twin KPI Cards -->
         <div class="kpi-grid" style="margin-bottom: 24px;">
-          <div class="kpi-card" style="border-top: 3px solid #38bdf8;">
+          <div class="kpi-card" style="border-top: 3px solid var(--brand-navy);">
             <div class="kpi-top">
               <span class="kpi-title">Active Academic Departments</span>
-              <div class="kpi-icon" style="color: #38bdf8;">🏛️</div>
+              <div class="kpi-icon" style="color: var(--brand-navy);">🏛️</div>
             </div>
             <div class="kpi-value" id="admin-twin-total-depts">—</div>
             <div class="kpi-subtitle">Configured Institutional Units</div>
           </div>
 
-          <div class="kpi-card" style="border-top: 3px solid #34d399;">
-            <div class="kpi-header">
+          <div class="kpi-card" style="border-top: 3px solid var(--status-success);">
+            <div class="kpi-top">
               <span class="kpi-title">Institutional Mean CGPA</span>
-              <span class="kpi-icon" style="color: #34d399;">📈</span>
+              <div class="kpi-icon" style="color: var(--status-success);">📈</div>
             </div>
-            <div class="kpi-value" id="admin-twin-mean-cgpa" style="color: #34d399;">—</div>
-            <div class="kpi-footer"><span style="color: var(--text-dim);">Across all verified records</span></div>
+            <div class="kpi-value" id="admin-twin-mean-cgpa" style="color: var(--status-success);">—</div>
+            <div class="kpi-subtitle">Across all verified records</div>
           </div>
 
-          <div class="kpi-card" style="border-top: 3px solid #fbbf24;">
-            <div class="kpi-header">
+          <div class="kpi-card" style="border-top: 3px solid var(--status-warning);">
+            <div class="kpi-top">
               <span class="kpi-title">Institutional Attendance</span>
-              <span class="kpi-icon" style="color: #fbbf24;">📅</span>
+              <div class="kpi-icon" style="color: var(--status-warning);">📅</div>
             </div>
-            <div class="kpi-value" id="admin-twin-mean-att" style="color: #fbbf24;">—</div>
-            <div class="kpi-footer"><span style="color: var(--text-dim);">Institution-wide Compliance</span></div>
+            <div class="kpi-value" id="admin-twin-mean-att" style="color: var(--status-warning);">—</div>
+            <div class="kpi-subtitle">Institution-wide Compliance</div>
           </div>
 
-          <div class="kpi-card" style="border-top: 3px solid #f87171;">
-            <div class="kpi-header">
+          <div class="kpi-card" style="border-top: 3px solid var(--status-danger);">
+            <div class="kpi-top">
               <span class="kpi-title">High Risk Scholars</span>
-              <span class="kpi-icon" style="color: #f87171;">⚠️</span>
+              <div class="kpi-icon" style="color: var(--status-danger);">⚠️</div>
             </div>
-            <div class="kpi-value" id="admin-twin-high-risk" style="color: #f87171;">—</div>
-            <div class="kpi-footer"><span style="color: var(--text-dim);">Require Faculty Advisory Support</span></div>
+            <div class="kpi-value" id="admin-twin-high-risk" style="color: var(--status-danger);">—</div>
+            <div class="kpi-subtitle">Require Faculty Advisory Support</div>
           </div>
         </div>
 
@@ -392,7 +397,7 @@
             <p>Tamper-evident audit logging of marks entries, attendance records, role allocations, and security anomaly detection</p>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-            <button class="btn btn-secondary btn-sm" onclick="scanAuditAnomalies()" id="btn-scan-anomalies" style="font-size: 0.78rem; padding: 6px 12px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+            <button class="btn btn-secondary btn-sm" onclick="scanAuditAnomalies()" id="btn-scan-anomalies" style="font-size: 0.78rem; padding: 6px 12px; background: var(--status-warning-bg); color: var(--status-warning); border: 1px solid var(--status-warning-border);">
               🔍 Anomaly Scanner
             </button>
             <button class="btn btn-secondary btn-sm" onclick="exportAuditLogs('csv')" style="font-size: 0.78rem; padding: 6px 12px;">
@@ -408,21 +413,21 @@
         </div>
 
         <!-- Anomaly Scanner Alert Card (Shown when anomalies detected or scanned) -->
-        <div id="audit-anomaly-container" style="display: none; margin-bottom: 20px; padding: 16px; border-radius: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);">
+        <div id="audit-anomaly-container" style="display: none; margin-bottom: 20px; padding: 16px; border-radius: 8px; background: var(--status-warning-bg); border: 1px solid var(--status-warning-border);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.1rem;">⚠️</span>
-              <strong style="color: #fbbf24; font-size: 0.92rem;">Audit Anomaly &amp; Integrity Analysis</strong>
+              <strong style="color: var(--status-warning); font-size: 0.92rem;">Audit Anomaly &amp; Integrity Analysis</strong>
             </div>
             <button class="btn btn-secondary btn-sm" onclick="dismissAnomalyBox()" style="font-size: 0.7rem; padding: 2px 8px;">Dismiss</button>
           </div>
-          <div id="audit-anomaly-details" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;"></div>
+          <div id="audit-anomaly-details" style="font-size: 0.82rem; color: var(--text-main); line-height: 1.5;"></div>
         </div>
 
         <!-- Filter Controls -->
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid var(--border-color);">
-          <input type="text" id="audit-search-input" placeholder="🔍 Search actor, action, details..." oninput="filterAuditTable()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.82rem; min-width: 240px;">
-          <select id="audit-action-filter" onchange="filterAuditTable()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.82rem;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; background: var(--bg-surface-subtle); border-radius: 8px; border: 1px solid var(--border-color);">
+          <input type="text" id="audit-search-input" placeholder="🔍 Search actor, action, details..." oninput="filterAuditTable()" class="form-control" style="width: auto; min-width: 240px; padding: 6px 12px; font-size: 0.82rem;">
+          <select id="audit-action-filter" onchange="filterAuditTable()" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
             <option value="all">All Actions</option>
             <option value="RECORD_MARKS">Record Marks</option>
             <option value="UPDATE_MARKS">Update Marks</option>

@@ -17,7 +17,8 @@ const testSuites = [
   { name: 'Phase 6: Simulated Payment Gateway Engine', script: 'test_phase6_payment.js' },
   { name: 'Phases 1-7: Comprehensive Multi-Role Regression Suite', script: 'test_phases1_to_7_comprehensive.js' },
   { name: 'Phases 8-12: Advanced AI Chatbot, MCDA Heuristics, Attendance Recovery, Portfolio & Notifications', script: 'test_phases8_to_12_comprehensive.js' },
-  { name: 'Seven Master Features: Digital Twin, Career Readiness, Achievement Passport, College Twin, Mentor 2.0, Simulator, Audit Trail & OpenAPI', script: 'test_seven_features.js' }
+  { name: 'Seven Master Features: Digital Twin, Career Readiness, Achievement Passport, College Twin, Mentor 2.0, Simulator, Audit Trail & OpenAPI', script: 'test_seven_features.js' },
+  { name: 'ATS Impact Loop & Explainable Decision Trace Engine', script: 'test_impact_loop_and_decision_trace.js' }
 ];
 
 function checkPortListening(port = 5000) {

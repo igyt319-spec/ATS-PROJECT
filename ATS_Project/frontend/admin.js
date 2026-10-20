@@ -1,17 +1,46 @@
 /**
  * ATS System Administrator Console Controller
- * Dedicated exclusively to Account Creation, Lifecycle Maintenance, and Access Governance.
- * Operational dashboards (student dossiers, marks, attendance, leaves) are blocked.
+ * Dedicated to Account Creation, Lifecycle Maintenance, and Access Governance.
+ * Operational dashboards (student marks, attendance) are restricted to Department Faculty & Mentors.
  */
 
 let allUsers = [];
 let allDepartments = [];
 let allAuditLogs = [];
+let allAdminInterventions = [];
+let allAdminDecisionTraces = [];
+
+const ADMIN_TAB_METADATA = {
+  'overview': { title: 'System Administration Console', subtitle: 'Account Provisioning, Role Maintenance & Access Governance' },
+  'departments': { title: 'Department Management', subtitle: 'Institutional Departments, Structural Rosters & Leadership' },
+  'students': { title: 'Student Management Directory', subtitle: 'Provision, Maintain, and Manage Enrolled Undergraduate Scholars' },
+  'faculty': { title: 'Faculty & Mentors Directory', subtitle: 'Institutional Academic Staff, Advisory Assignments & Department Affiliations' },
+  'hod': { title: 'Head of Department (HOD) Governance', subtitle: 'Executive Appointments, Single Active Constraint Enforcement & Audit Trails' },
+  'mentor-assignments': { title: 'Institutional Mentor Allocations', subtitle: 'Advisory Coverage, Unassigned Scholars & Departmental Load Balancing' },
+  'academic-records': { title: 'Institutional Academic Records & Digital Twin', subtitle: 'College-Wide Macro Telemetry, Pass Rates & Read-Only Governance' },
+  'fees': { title: 'Institutional Fee Management', subtitle: 'Tuition Fee Structure Overview, Dues Tracking & Telemetry' },
+  'activities': { title: 'Activity Verification Oversight', subtitle: 'Institutional Co-Curricular Credentials and Verification Monitoring' },
+  'impact-loop': { title: 'ATS Impact Loop — Institutional Analytics', subtitle: 'Cross-Departmental Academic Interventions, Efficacy & Outcome Measures' },
+  'decision-trace': { title: 'Academic Decision Trace Telemetry', subtitle: 'Transparent Heuristic Rules, Policy Thresholds & Decision Audits' },
+  'audit-logs': { title: 'Smart Academic Integrity & Audit Trail', subtitle: 'Immutable Ledger, Anomaly Detection & Forensic Traceability' },
+  'reports': { title: 'Institutional Executive Reports', subtitle: 'Generate and Export Comprehensive Roster and Benchmark Reports' }
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth('admin');
   if (!user) return;
   initLayout();
+
+  // Route query param handler (?view=...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('view') || 'overview';
+  switchAdminTab(initialTab, false);
+
+  window.addEventListener('popstate', (e) => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get('view') || 'overview';
+    switchAdminTab(view, false);
+  });
 
   // Set today's date in header
   const dateEl = document.getElementById('topbar-current-date');
@@ -20,13 +49,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     dateEl.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
+  // Attach modal close handlers
+  document.querySelectorAll('[data-modal-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+    });
+  });
+
   await Promise.all([
     loadDepartments(),
     loadAccountDirectory(),
     loadInstitutionalTwin(),
-    loadAuditLogs()
+    loadAuditLogs(),
+    loadAdminImpactLoop(),
+    loadAdminDecisionTraces()
   ]);
 });
+
+// View switcher for Admin Console
+function switchAdminTab(tabName, pushState = true) {
+  const validTabs = [
+    'overview', 'departments', 'students', 'faculty', 'hod',
+    'mentor-assignments', 'academic-records', 'fees', 'activities',
+    'impact-loop', 'decision-trace', 'audit-logs', 'reports'
+  ];
+  const activeTab = validTabs.includes(tabName) ? tabName : 'overview';
+
+  validTabs.forEach(t => {
+    const nav = document.getElementById(`nav-${t}`);
+    if (nav) {
+      if (t === activeTab) nav.classList.add('active');
+      else nav.classList.remove('active');
+    }
+  });
+
+  validTabs.forEach(t => {
+    const viewEl = document.getElementById(`view-${t}`);
+    if (viewEl) {
+      if (t === activeTab) {
+        viewEl.classList.add('active');
+      } else {
+        viewEl.classList.remove('active');
+      }
+    }
+  });
+
+  const meta = ADMIN_TAB_METADATA[activeTab] || ADMIN_TAB_METADATA['overview'];
+  const titleEl = document.getElementById('page-admin-title');
+  const subtitleEl = document.getElementById('page-admin-subtitle');
+  if (titleEl) titleEl.textContent = meta.title;
+  if (subtitleEl) subtitleEl.textContent = meta.subtitle;
+
+  if (pushState) {
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('view', activeTab);
+    history.pushState({ view: activeTab }, '', newUrl.toString());
+  }
+
+  const sidebar = document.getElementById('app-sidebar');
+  if (sidebar) sidebar.classList.remove('open');
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+window.switchAdminTab = switchAdminTab;
+
+function toggleSidebarDrawer() {
+  const sidebar = document.getElementById('app-sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
+}
+window.toggleSidebarDrawer = toggleSidebarDrawer;
 
 /**
  * Fetch and populate department select dropdowns and structural cards
@@ -36,21 +127,20 @@ async function loadDepartments() {
     const res = await apiCall('/departments');
     allDepartments = (res && res.data) ? res.data : [];
 
-    // Populate create user department select
-    const createDeptSelect = document.getElementById('create-department-id');
-    if (createDeptSelect) {
-      createDeptSelect.innerHTML = '<option value="">-- Select Department --</option>' +
-        allDepartments.map(d => `<option value="${d.id}">${d.name} (${d.code})</option>`).join('');
+    const stuDeptSelect = document.getElementById('stu-dept');
+    if (stuDeptSelect) {
+      stuDeptSelect.innerHTML = '<option value="">-- Select Department --</option>' +
+        allDepartments.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`).join('');
     }
 
-    // Populate modal department select
     const modalDeptSelect = document.getElementById('dept-modal-select');
     if (modalDeptSelect) {
       modalDeptSelect.innerHTML = '<option value="">-- Select Department --</option>' +
-        allDepartments.map(d => `<option value="${d.id}">${d.name} (${d.code})</option>`).join('');
+        allDepartments.map(d => `<option value="${d.id}">${escapeHtml(d.name)} (${escapeHtml(d.code)})</option>`).join('');
     }
 
     renderDepartmentOverview(allDepartments);
+    renderHODMatrix(allDepartments);
   } catch (err) {
     console.error('[Load Departments Error]', err);
     showToast('Failed to load departments list: ' + err.message, 'error');
@@ -81,6 +171,9 @@ async function loadAccountDirectory() {
     allUsers = res.users || [];
     updateKpis(allUsers);
     renderUserTable(allUsers);
+    renderStudentsManagementTable(allUsers.filter(u => u.role === 'student'));
+    renderFacultyManagementTable(allUsers.filter(u => u.role === 'faculty'));
+    renderUnassignedMentorsTable(allUsers.filter(u => u.role === 'student'));
   } catch (err) {
     console.error('[Load Directory Error]', err);
     if (tbody) {
@@ -96,55 +189,447 @@ async function loadAccountDirectory() {
   }
 }
 
-/**
- * Update top KPI counters
- */
 function updateKpis(users) {
-  const total = users.length;
-  const active = users.filter(u => u.is_active === 1).length;
-  const inactive = users.filter(u => u.is_active === 0).length;
-  const students = users.filter(u => u.role === 'student').length;
-  const faculty = users.filter(u => u.role === 'faculty').length;
+  const totalUsersEl = document.getElementById('kpi-total-users');
+  const totalStudentsEl = document.getElementById('kpi-total-students');
+  const totalFacultyEl = document.getElementById('kpi-total-faculty');
+  const totalHodsEl = document.getElementById('kpi-total-hods');
 
-  const setVal = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  };
-
-  setVal('kpi-total-users', total);
-  setVal('kpi-active-users', active);
-  setVal('kpi-inactive-users', inactive);
-  setVal('kpi-student-users', students);
-  setVal('kpi-faculty-users', faculty);
+  if (totalUsersEl) totalUsersEl.textContent = users.length;
+  if (totalStudentsEl) totalStudentsEl.textContent = users.filter(u => u.role === 'student').length;
+  if (totalFacultyEl) totalFacultyEl.textContent = users.filter(u => u.role === 'faculty').length;
+  if (totalHodsEl) totalHodsEl.textContent = users.filter(u => u.role === 'faculty' && u.faculty_role === 'hod').length;
 }
 
-/**
- * Filter directory table based on search input and dropdown filters
- */
-function filterUserTable() {
-  const searchInput = document.getElementById('admin-user-search');
-  const roleSelect = document.getElementById('admin-filter-role');
-  const statusSelect = document.getElementById('admin-filter-status');
+function renderUserTable(users) {
+  const tbody = document.getElementById('admin-users-table-body');
+  if (!tbody) return;
 
-  const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
-  const selectedRole = roleSelect ? roleSelect.value : 'all';
-  const selectedStatus = statusSelect ? statusSelect.value : 'all';
+  if (users.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 36px; color: var(--text-dim);">
+          No user accounts found matching criteria.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    let roleBadge = '<span class="badge">User</span>';
+    if (u.role === 'admin') {
+      roleBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">Admin</span>';
+    } else if (u.role === 'faculty') {
+      if (u.faculty_role === 'hod') {
+        roleBadge = '<span class="badge" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);">HOD</span>';
+      } else {
+        roleBadge = '<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">Faculty</span>';
+      }
+    } else if (u.role === 'student') {
+      roleBadge = '<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">Student</span>';
+    }
+
+    const statusBadge = u.is_active
+      ? '<span class="badge" style="background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);">Active</span>'
+      : '<span class="badge" style="background: rgba(115, 125, 140, 0.15); color: #94a3b8; border: 1px solid rgba(115, 125, 140, 0.3);">Deactivated</span>';
+
+    const avatarUrl = u.avatar || getInitialsAvatar(u.name, 36);
+
+    return `
+      <tr>
+        <td>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="${avatarUrl}" alt="Avatar" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);" onerror="this.src=getInitialsAvatar('${escapeHtml(u.name)}', 34)">
+            <div>
+              <strong style="color: #fff; font-size: 0.88rem;">${escapeHtml(u.name)}</strong>
+              <div style="font-size: 0.74rem; color: var(--text-dim);">${escapeHtml(u.email)}</div>
+            </div>
+          </div>
+        </td>
+        <td><code>${escapeHtml(u.register_number || '—')}</code></td>
+        <td>${roleBadge}</td>
+        <td><small style="color: var(--accent-cyan); font-weight: 500;">${escapeHtml(u.department || 'General')}</small></td>
+        <td>${statusBadge}</td>
+        <td><small style="color: var(--text-dim);">${formatDate(u.created_at)}</small></td>
+        <td>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openDeptModal(${u.id}, '${escapeHtml(u.name)}', ${u.department_id || 'null'})" title="Transfer Department">🏢 Dept</button>
+            <button class="btn btn-secondary btn-sm" onclick="openResetModal(${u.id}, '${escapeHtml(u.name)}')" title="Reset Password">🔑 Reset</button>
+            <button class="btn ${u.is_active ? 'btn-secondary' : 'btn-primary'} btn-sm" onclick="toggleStatus(${u.id}, ${u.is_active ? 0 : 1})" title="Toggle Active Status">
+              ${u.is_active ? 'Deactivate' : 'Activate'}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderStudentsManagementTable(students) {
+  const tbody = document.getElementById('admin-students-tbody');
+  if (!tbody) return;
+
+  if (students.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--text-dim);">No students registered.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = students.map(s => `
+    <tr>
+      <td><strong>${escapeHtml(s.name)}</strong><br><small style="color: var(--text-dim);">${escapeHtml(s.email)}</small></td>
+      <td><code>${escapeHtml(s.register_number || '—')}</code></td>
+      <td>${escapeHtml(s.department || 'Unassigned')}</td>
+      <td><span class="badge ${s.is_active ? 'pill-green' : 'pill-red'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openDeptModal(${s.id}, '${escapeHtml(s.name)}', ${s.department_id || 'null'})">Transfer Dept</button>
+        <button class="btn btn-secondary btn-sm" onclick="openResetModal(${s.id}, '${escapeHtml(s.name)}')">Reset</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderFacultyManagementTable(faculty) {
+  const tbody = document.getElementById('admin-faculty-tbody');
+  if (!tbody) return;
+
+  if (faculty.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No faculty registered.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = faculty.map(f => {
+    const isHod = f.faculty_role === 'hod';
+    return `
+      <tr>
+        <td><strong>${escapeHtml(f.name)}</strong><br><small style="color: var(--text-dim);">${escapeHtml(f.email)}</small></td>
+        <td><code>${escapeHtml(f.register_number || 'FAC')}</code></td>
+        <td>${isHod ? 'Head of Department' : 'Faculty Mentor'}</td>
+        <td>${escapeHtml(f.department || 'Unassigned')}</td>
+        <td>${isHod ? '<span class="badge" style="background:rgba(250,204,21,0.15); color:#facc15;">👑 Active HOD</span>' : '<span class="badge">Faculty</span>'}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openDeptModal(${f.id}, '${escapeHtml(f.name)}', ${f.department_id || 'null'})">Transfer Dept</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderHODMatrix(departments) {
+  const tbody = document.getElementById('admin-hod-matrix-tbody');
+  if (!tbody) return;
+
+  if (departments.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-dim);">No departments configured.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = departments.map(d => {
+    const hasHod = Boolean(d.active_hod_name);
+    const hodBadge = hasHod
+      ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">Appointed</span>'
+      : '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">⚠️ Vacant</span>';
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(d.name)}</strong></td>
+        <td><code>${escapeHtml(d.code)}</code></td>
+        <td>
+          ${hasHod ? `<strong style="color: #facc15;">👑 ${escapeHtml(d.active_hod_name)}</strong>` : '<span style="color: #f87171; font-weight: 600;">No Active HOD</span>'}
+        </td>
+        <td>${escapeHtml(d.active_hod_email || '—')}</td>
+        <td>${hodBadge}</td>
+        <td>${formatDate(d.hod_assigned_date)}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="openAssignHODModal(${d.id}, '${escapeHtml(d.name)}')">
+            ${hasHod ? 'Change HOD' : 'Appoint HOD'}
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderUnassignedMentorsTable(students) {
+  const tbody = document.getElementById('admin-unassigned-mentors-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = students.slice(0, 10).map(s => `
+    <tr>
+      <td><strong>${escapeHtml(s.name)}</strong></td>
+      <td><code>${escapeHtml(s.register_number || '—')}</code></td>
+      <td>${escapeHtml(s.department || 'Unassigned')}</td>
+      <td>Yr ${s.year || 1}</td>
+      <td><span class="badge" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">Needs Allocation</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Open HOD portal or Department Allocations to assign mentor.', 'info')">Allocate</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderDepartmentOverview(departments) {
+  const container = document.getElementById('admin-departments-container');
+  if (!container) return;
+
+  if (departments.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 24px; color: var(--text-dim); grid-column: 1 / -1;">
+        No active departments configured in the database.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = departments.map(d => `
+    <div class="glass-card" style="padding: 18px; border: 1px solid var(--border-color); cursor: pointer;" onclick="openAdminDeptModal(${d.id})">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+        <div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: #fff;">${escapeHtml(d.name)}</h4>
+          <span style="font-size: 0.74rem; font-family: monospace; color: var(--accent-cyan); font-weight: 600;">${escapeHtml(d.code)}</span>
+        </div>
+        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Dept #${d.id}</span>
+      </div>
+
+      <div style="background: var(--bg-surface-subtle); padding: 10px 12px; border-radius: 6px; margin-bottom: 12px;">
+        <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Head of Department</div>
+        <div style="font-weight: 700; color: ${d.active_hod_name ? '#facc15' : '#f87171'}; font-size: 0.88rem; margin-top: 2px;">
+          ${d.active_hod_name ? `👑 ${escapeHtml(d.active_hod_name)}` : '⚠️ No Active HOD'}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem;">
+        <div>Scholars: <strong style="color: #fff;">${d.student_count || 0}</strong></div>
+        <div>Faculty: <strong style="color: #fff;">${d.faculty_count || 0}</strong></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Open Assign HOD Modal
+async function openAssignHODModal(deptId, deptName) {
+  document.getElementById('assign-hod-dept-id').value = deptId;
+  document.getElementById('assign-hod-modal-info').innerHTML = `Appointing active Head of Department for: <strong>${escapeHtml(deptName)}</strong>`;
+
+  const select = document.getElementById('assign-hod-faculty-select');
+  select.innerHTML = '<option value="">Loading eligible faculty members... ⏳</option>';
+
+  openModal('assign-hod-modal');
+
+  try {
+    const res = await apiCall(`/departments/${deptId}`);
+    const faculty = res.data && res.data.faculty ? res.data.faculty : [];
+
+    if (faculty.length === 0) {
+      select.innerHTML = '<option value="">⚠️ No faculty members currently in this department. Transfer faculty first.</option>';
+    } else {
+      select.innerHTML = '<option value="">-- Choose faculty member to appoint --</option>' +
+        faculty.map(f => `<option value="${f.id}">${escapeHtml(f.name)} (${escapeHtml(f.faculty_code || 'FAC')}) — ${escapeHtml(f.designation || 'Staff')}</option>`).join('');
+    }
+  } catch (err) {
+    select.innerHTML = `<option value="">Error loading faculty: ${err.message}</option>`;
+  }
+}
+window.openAssignHODModal = openAssignHODModal;
+
+async function executeHODAppointment(event) {
+  event.preventDefault();
+  const deptId = document.getElementById('assign-hod-dept-id').value;
+  const facultyId = document.getElementById('assign-hod-faculty-select').value;
+  const reason = document.getElementById('assign-hod-reason').value.trim();
+  const btn = document.getElementById('btn-submit-hod-assign');
+
+  if (!facultyId) {
+    showToast('Please select a faculty member to appoint as HOD.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Appointing HOD... ⏳';
+
+  try {
+    const res = await apiCall(`/departments/${deptId}/hod`, 'PUT', { faculty_id: facultyId, reason });
+    showToast(res.message || 'HOD appointed successfully!', 'success');
+    closeModal('assign-hod-modal');
+    await loadDepartments();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm HOD Appointment';
+  }
+}
+window.executeHODAppointment = executeHODAppointment;
+
+// Handle Create Student Form
+async function handleCreateStudent(e) {
+  e.preventDefault();
+  const name = document.getElementById('stu-name').value.trim();
+  const email = document.getElementById('stu-email').value.trim();
+  const register_number = document.getElementById('stu-regno').value.trim();
+  const department_id = document.getElementById('stu-dept').value;
+  const password = document.getElementById('stu-password').value;
+
+  try {
+    const res = await apiCall('/auth/users', 'POST', {
+      name,
+      email,
+      register_number,
+      role: 'student',
+      department_id: parseInt(department_id, 10),
+      password
+    });
+
+    showToast(res.message || 'Student account provisioned successfully!', 'success');
+    document.getElementById('create-student-form').reset();
+    await loadAccountDirectory();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+window.handleCreateStudent = handleCreateStudent;
+
+// Institutional Twin Loader
+async function loadInstitutionalTwin() {
+  try {
+    const res = await apiCall('/college-twin/institutional-summary');
+    if (!res || !res.success) return;
+
+    const d = res.data || {};
+    const totalDeptsEl = document.getElementById('admin-twin-total-depts');
+    const meanCgpaEl = document.getElementById('admin-twin-mean-cgpa');
+    const meanAttEl = document.getElementById('admin-twin-mean-att');
+    const highRiskEl = document.getElementById('admin-twin-high-risk');
+
+    if (totalDeptsEl) totalDeptsEl.textContent = d.totalDepartments || '—';
+    if (meanCgpaEl) meanCgpaEl.textContent = Number(d.institutionalMeanCgpa || 7.5).toFixed(2);
+    if (meanAttEl) meanAttEl.textContent = `${Number(d.institutionalMeanAttendance || 85).toFixed(1)}%`;
+    if (highRiskEl) highRiskEl.textContent = d.totalAtRiskCount || 0;
+
+    const tbody = document.getElementById('admin-twin-table-body');
+    if (tbody && d.departmentBenchmarks) {
+      tbody.innerHTML = d.departmentBenchmarks.map(b => `
+        <tr>
+          <td><strong>${escapeHtml(b.name)}</strong></td>
+          <td><code>${escapeHtml(b.code)}</code></td>
+          <td>${b.studentCount}</td>
+          <td>${b.facultyCount}</td>
+          <td>1 : ${b.studentFacultyRatio}</td>
+          <td><strong>${Number(b.meanCgpa).toFixed(2)}</strong></td>
+          <td><span style="color: ${b.meanAttendance >= 80 ? '#10b981' : '#f87171'}; font-weight: 600;">${Number(b.meanAttendance).toFixed(1)}%</span></td>
+          <td>${b.highRiskCount} High / ${b.medRiskCount} Med</td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    console.warn('[Institutional Twin Notice]', err.message);
+  }
+}
+
+// Load Audit Logs
+async function loadAuditLogs() {
+  try {
+    const res = await apiCall('/audit-logs');
+    allAuditLogs = res.data || [];
+    renderAuditTable(allAuditLogs);
+  } catch (err) {
+    console.error('[Load Audit Logs Error]', err);
+  }
+}
+
+function renderAuditTable(logs) {
+  const tbody = document.getElementById('admin-audit-table-body');
+  if (!tbody) return;
+
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-dim);">No audit logs recorded.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => `
+    <tr>
+      <td><small>${formatDate(l.created_at)}</small></td>
+      <td><strong>${escapeHtml(l.user_email || 'System')}</strong></td>
+      <td><span class="badge">${escapeHtml(l.action)}</span></td>
+      <td><code>${escapeHtml(l.entity_type || '—')} #${l.entity_id || ''}</code></td>
+      <td><small style="color: var(--text-muted);">${escapeHtml(l.reason || (typeof l.new_value === 'string' ? l.new_value : JSON.stringify(l.new_value || {})))}</small></td>
+      <td><small><code>${escapeHtml(l.ip_address || '—')}</code></small></td>
+    </tr>
+  `).join('');
+}
+
+// Load Admin Impact Loop
+async function loadAdminImpactLoop() {
+  try {
+    const res = await apiCall('/impact-loop');
+    allAdminInterventions = res.data || [];
+    const tbody = document.getElementById('admin-impact-loop-tbody');
+    if (!tbody) return;
+
+    if (allAdminInterventions.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-dim);">No active student interventions logged institution-wide.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = allAdminInterventions.map(i => `
+      <tr>
+        <td><strong>${escapeHtml(i.student_name)}</strong><br><small style="color: var(--text-dim);">${escapeHtml(i.register_number)}</small></td>
+        <td>${escapeHtml(i.department_name || 'Dept')}</td>
+        <td><span class="badge" style="background: rgba(124, 156, 255, 0.15); color: #7C9CFF;">${escapeHtml(i.intervention_type)}</span></td>
+        <td>${escapeHtml(i.title)}</td>
+        <td><small>Att: ${Number(i.baseline_attendance || 0).toFixed(1)}% | GPA: ${Number(i.baseline_gpa || 0).toFixed(2)}</small></td>
+        <td><small>${i.outcome_attendance !== null ? `Att: ${Number(i.outcome_attendance).toFixed(1)}% | GPA: ${Number(i.outcome_gpa).toFixed(2)}` : 'In Progress'}</small></td>
+        <td><span class="badge">${escapeHtml(i.outcome_assessment)}</span></td>
+        <td><span class="badge badge-assigned">${escapeHtml(i.status)}</span></td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.warn('[Admin Impact Loop Notice]', err.message);
+  }
+}
+
+// Load Admin Decision Traces
+async function loadAdminDecisionTraces() {
+  try {
+    const res = await apiCall('/decision-trace');
+    allAdminDecisionTraces = res.data || [];
+    const tbody = document.getElementById('admin-decision-trace-tbody');
+    if (!tbody) return;
+
+    if (allAdminDecisionTraces.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-dim);">No decision traces logged institution-wide.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = allAdminDecisionTraces.map(t => `
+      <tr>
+        <td><strong>${escapeHtml(t.student_name)}</strong><br><small style="color: var(--text-dim);">${escapeHtml(t.register_number)}</small></td>
+        <td>${escapeHtml(t.department_name || 'Dept')}</td>
+        <td><span class="badge" style="background: rgba(103, 213, 192, 0.15); color: #67D5C0;">${escapeHtml(t.indicator_type)}</span></td>
+        <td><strong style="color: #f87171;">${escapeHtml(t.observed_value)}</strong></td>
+        <td><small style="line-height: 1.4;">${escapeHtml(t.explanation)}</small></td>
+        <td><span style="color: var(--accent-cyan); font-weight: 500;">${escapeHtml(t.recommended_action)}</span></td>
+        <td><span class="badge">${escapeHtml(t.decision_status)}</span></td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.warn('[Admin Decision Trace Notice]', err.message);
+  }
+}
+
+// Filter User Directory
+function filterUserDirectory() {
+  const q = (document.getElementById('admin-user-search').value || '').toLowerCase().trim();
+  const role = document.getElementById('admin-role-filter').value;
 
   let filtered = allUsers;
-
-  if (selectedRole !== 'all') {
-    filtered = filtered.filter(u => u.role.toLowerCase() === selectedRole.toLowerCase());
+  if (role !== 'all') {
+    filtered = filtered.filter(u => u.role === role);
   }
-
-  if (selectedStatus !== 'all') {
-    const statusVal = selectedStatus === 'active' ? 1 : 0;
-    filtered = filtered.filter(u => u.is_active === statusVal);
-  }
-
   if (q) {
     filtered = filtered.filter(u =>
-      (u.name && u.name.toLowerCase().includes(q)) ||
-      (u.email && u.email.toLowerCase().includes(q)) ||
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
       (u.register_number && u.register_number.toLowerCase().includes(q)) ||
       (u.department && u.department.toLowerCase().includes(q))
     );
@@ -153,347 +638,90 @@ function filterUserTable() {
   renderUserTable(filtered);
 }
 
-/**
- * Render user rows into table
- */
-function renderUserTable(users) {
-  const tbody = document.getElementById('admin-users-table-body');
-  if (!tbody) return;
-
-  if (!users || users.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 36px; color: var(--text-dim);">
-          No user accounts match the selected filters.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  const currentUser = getCurrentUser();
-  const currentUserId = currentUser ? Number(currentUser.id) : null;
-
-  tbody.innerHTML = users.map(u => {
-    const isSelf = currentUserId && Number(u.id) === currentUserId;
-    const avatar = u.avatar || getInitialsAvatar(u.name, 40);
-    const roleBadge = getRoleBadgeHtml(u.role, u.faculty_role);
-    const statusBadge = u.is_active === 1
-      ? '<span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #34d399; border: 1px solid rgba(34, 197, 94, 0.3);">Active</span>'
-      : '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">Deactivated</span>';
-
-    const toggleBtnText = u.is_active === 1 ? '🚫 Deactivate' : '✅ Activate';
-    const toggleBtnClass = u.is_active === 1 ? 'btn-danger' : 'btn-success';
-
-    return `
-      <tr>
-        <td>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="${avatar}" alt="${u.name}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
-            <div>
-              <div style="font-weight: 700; color: #fff; font-size: 0.88rem;">
-                ${u.name} ${isSelf ? '<span style="font-size:0.7rem; color:var(--accent-cyan); font-weight:600;">(You)</span>' : ''}
-              </div>
-              <div style="font-size: 0.72rem; color: var(--text-dim);">User #${u.id}</div>
-            </div>
-          </div>
-        </td>
-        <td style="font-family: monospace; font-size: 0.82rem; color: #e2e8f0;">
-          ${u.register_number || '<span style="color:var(--text-dim); font-style:italic;">N/A</span>'}
-        </td>
-        <td style="font-size: 0.84rem; color: #cbd5e1;">${u.email}</td>
-        <td>${roleBadge}</td>
-        <td style="font-size: 0.84rem; color: #cbd5e1;">${u.department || 'General'}</td>
-        <td>${statusBadge}</td>
-        <td style="text-align: right;">
-          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-            ${!isSelf ? `
-              <button class="btn btn-sm ${toggleBtnClass}" style="font-size: 0.72rem; padding: 4px 8px;" onclick="toggleAccountStatus(${u.id}, ${u.is_active})">
-                ${toggleBtnText}
-              </button>
-            ` : ''}
-            <button class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 8px;" onclick="openResetPasswordModal(${u.id}, '${escapeHtml(u.name)}')">
-              🔑 Reset Pwd
-            </button>
-            <button class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 8px;" onclick="openDeptUpdateModal(${u.id}, '${escapeHtml(u.name)}', ${u.department_id || 'null'})">
-              🏛️ Dept
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function getRoleBadgeHtml(role, facultyRole) {
-  const r = (role || '').toLowerCase();
-  if (r === 'admin') {
-    return '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">Administrator</span>';
-  } else if (r === 'faculty') {
-    if (facultyRole === 'hod') {
-      return '<span class="badge" style="background: rgba(250, 204, 21, 0.15); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.3);">HOD / Faculty</span>';
-    }
-    return '<span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">Faculty</span>';
-  } else {
-    return '<span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);">Student</span>';
-  }
-}
-
-/**
- * Handle Account Creation Form Submit
- */
-async function handleCreateUser(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-submit-create');
-  if (btn) btn.disabled = true;
-
-  try {
-    const name = document.getElementById('create-name').value.trim();
-    const email = document.getElementById('create-email').value.trim();
-    const role = document.getElementById('create-role').value;
-    const register_number = document.getElementById('create-register-number').value.trim();
-    const department_id = document.getElementById('create-department-id').value;
-    const designation = document.getElementById('create-designation') ? document.getElementById('create-designation').value.trim() : null;
-    const phone = document.getElementById('create-phone') ? document.getElementById('create-phone').value.trim() : null;
-    const password = document.getElementById('create-password') ? document.getElementById('create-password').value.trim() : null;
-
-    if (!name || !email || !role || !department_id) {
-      showToast('Please fill in all mandatory fields.', 'error');
-      if (btn) btn.disabled = false;
-      return;
-    }
-
-    const payload = {
-      name,
-      email,
-      role,
-      register_number,
-      department_id: parseInt(department_id, 10),
-      designation: designation || undefined,
-      phone: phone || undefined,
-      password: password || undefined
-    };
-
-    const res = await apiCall('/auth/users', 'POST', payload);
-    if (!res || !res.success) {
-      throw new Error(res ? res.message : 'Account creation failed');
-    }
-
-    showToast(`Account successfully created for ${name}! Temporary Password: ${res.temporaryPassword}`, 'success');
-
-    // Reset form
-    document.getElementById('create-user-form').reset();
-    toggleRoleSpecificFields();
-
-    // Reload directory
-    await loadAccountDirectory();
-
-    // Scroll to accounts section
-    const sec = document.getElementById('accounts-section');
-    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
-
-  } catch (err) {
-    console.error('[Create User Error]', err);
-    showToast(err.message, 'error');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-/**
- * Toggle dynamic fields depending on role selection in create form
- */
-function toggleRoleSpecificFields() {
-  const roleSelect = document.getElementById('create-role');
-  const designationGroup = document.getElementById('faculty-designation-group');
-  const regLbl = document.getElementById('lbl-register-number');
-
-  if (!roleSelect) return;
-  const isFaculty = roleSelect.value === 'faculty';
-
-  if (designationGroup) {
-    designationGroup.style.display = isFaculty ? 'block' : 'none';
-  }
-  if (regLbl) {
-    regLbl.innerHTML = isFaculty
-      ? 'Faculty Code / Employee ID <span style="color: #f87171;">*</span>'
-      : 'Student Registration Number <span style="color: #f87171;">*</span>';
-  }
-}
-
-/**
- * Toggle account active status (Activate / Deactivate)
- */
-async function toggleAccountStatus(userId, currentStatus) {
-  const newTarget = currentStatus === 1 ? 0 : 1;
-  const actionText = newTarget === 1 ? 'activate' : 'deactivate';
-
-  if (!confirm(`Are you sure you want to ${actionText} user account #${userId}?`)) {
-    return;
-  }
-
-  try {
-    const res = await apiCall(`/auth/users/${userId}/status`, 'PUT', { status: newTarget });
-    if (!res || !res.success) throw new Error(res ? res.message : 'Action failed');
-
-    showToast(res.message, 'success');
-    await loadAccountDirectory();
-  } catch (err) {
-    console.error('[Toggle Status Error]', err);
-    showToast('Failed to update status: ' + err.message, 'error');
-  }
-}
-
-/**
- * Open Reset Password Modal
- */
-function openResetPasswordModal(userId, userName) {
-  const modal = document.getElementById('reset-password-modal');
-  const desc = document.getElementById('reset-modal-desc');
-  const idInput = document.getElementById('reset-modal-user-id');
-  const newPassInput = document.getElementById('reset-modal-new-password');
-  const resultDiv = document.getElementById('reset-modal-result');
-
-  if (desc) desc.textContent = `Set or generate a new temporary password for ${userName} (User #${userId}).`;
-  if (idInput) idInput.value = userId;
-  if (newPassInput) newPassInput.value = '';
-  if (resultDiv) resultDiv.style.display = 'none';
-
-  if (modal) modal.style.display = 'flex';
-}
-
-function closeResetModal() {
-  const modal = document.getElementById('reset-password-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-async function executePasswordReset() {
-  const id = document.getElementById('reset-modal-user-id').value;
-  const newPassword = document.getElementById('reset-modal-new-password').value.trim();
-  const btn = document.getElementById('btn-confirm-reset');
-
-  if (!id) return;
-  if (btn) btn.disabled = true;
-
-  try {
-    const payload = newPassword ? { newPassword } : {};
-    const res = await apiCall(`/auth/users/${id}/reset-password`, 'PUT', payload);
-    if (!res || !res.success) throw new Error(res ? res.message : 'Reset failed');
-
-    const resultDiv = document.getElementById('reset-modal-result');
-    const display = document.getElementById('reset-modal-temp-display');
-    if (resultDiv && display) {
-      display.textContent = `Temporary Password: ${res.temporaryPassword}`;
-      resultDiv.style.display = 'block';
-    }
-    showToast('Password reset successfully!', 'success');
-  } catch (err) {
-    console.error('[Execute Password Reset Error]', err);
-    showToast('Failed to reset password: ' + err.message, 'error');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-/**
- * Open Department Update Modal
- */
-function openDeptUpdateModal(userId, userName, currentDeptId) {
-  const modal = document.getElementById('dept-update-modal');
-  const desc = document.getElementById('dept-modal-desc');
-  const idInput = document.getElementById('dept-modal-user-id');
+// Modal Handlers
+function openDeptModal(userId, userName, currentDeptId) {
+  document.getElementById('dept-modal-user-id').value = userId;
+  document.getElementById('dept-modal-desc').innerHTML = `Transferring department affiliation for: <strong>${escapeHtml(userName)}</strong>`;
   const select = document.getElementById('dept-modal-select');
-
-  if (desc) desc.textContent = `Assign or change academic department for ${userName} (User #${userId}).`;
-  if (idInput) idInput.value = userId;
   if (select && currentDeptId) select.value = currentDeptId;
 
+  const modal = document.getElementById('dept-update-modal');
   if (modal) modal.style.display = 'flex';
 }
+window.openDeptModal = openDeptModal;
 
 function closeDeptModal() {
   const modal = document.getElementById('dept-update-modal');
   if (modal) modal.style.display = 'none';
 }
+window.closeDeptModal = closeDeptModal;
 
 async function executeDepartmentUpdate() {
-  const id = document.getElementById('dept-modal-user-id').value;
-  const department_id = document.getElementById('dept-modal-select').value;
-
-  if (!id || !department_id) {
-    showToast('Please select a target department.', 'error');
+  const userId = document.getElementById('dept-modal-user-id').value;
+  const deptId = document.getElementById('dept-modal-select').value;
+  if (!deptId) {
+    showToast('Please select a department.', 'error');
     return;
   }
 
   try {
-    const res = await apiCall(`/auth/users/${id}/department`, 'PUT', { department_id: parseInt(department_id, 10) });
-    if (!res || !res.success) throw new Error(res ? res.message : 'Department update failed');
-
-    showToast(res.message, 'success');
+    const res = await apiCall(`/auth/users/${userId}/department`, 'PUT', { department_id: parseInt(deptId, 10) });
+    showToast(res.message || 'Department updated.', 'success');
     closeDeptModal();
     await loadAccountDirectory();
   } catch (err) {
-    console.error('[Execute Dept Update Error]', err);
-    showToast('Failed to update department: ' + err.message, 'error');
+    showToast(err.message, 'error');
   }
 }
+window.executeDepartmentUpdate = executeDepartmentUpdate;
 
-/**
- * Render Structural Department Overview Cards
- */
-function renderDepartmentOverview(departments) {
-  const container = document.getElementById('admin-departments-container');
-  if (!container) return;
+function openResetModal(userId, userName) {
+  document.getElementById('reset-modal-user-id').value = userId;
+  document.getElementById('reset-modal-desc').innerHTML = `Resetting password for: <strong>${escapeHtml(userName)}</strong>`;
+  const modal = document.getElementById('reset-password-modal');
+  if (modal) modal.style.display = 'flex';
+}
+window.openResetModal = openResetModal;
 
-  if (!departments || departments.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 24px; color: var(--text-dim); grid-column: 1 / -1;">
-        No academic departments configured.
-      </div>
-    `;
+function closeResetModal() {
+  const modal = document.getElementById('reset-password-modal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeResetModal = closeResetModal;
+
+async function executePasswordReset() {
+  const userId = document.getElementById('reset-modal-user-id').value;
+  const newPassword = document.getElementById('reset-modal-new-password').value;
+  if (!newPassword || newPassword.length < 6) {
+    showToast('Password must be at least 6 characters.', 'error');
     return;
   }
 
-  container.innerHTML = departments.map(d => {
-    return `
-      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: transform 0.2s, border-color 0.2s;" 
-           class="dept-overview-card" 
-           onclick="openAdminDeptModal(${d.id})"
-           onmouseenter="this.style.borderColor='rgba(56, 189, 248, 0.4)'; this.style.transform='translateY(-2px)';"
-           onmouseleave="this.style.borderColor='var(--border-color)'; this.style.transform='none';">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: 800; color: #fff; font-size: 1rem;">${d.name}</span>
-          <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">${d.code}</span>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-dim);">
-          Department ID: #${d.id} • Active HOD: <strong style="color: #facc15;">${d.active_hod_name || 'Unassigned'}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-          <div style="display: flex; gap: 12px; font-size: 0.78rem; color: #94a3b8;">
-            <div>Faculty: <strong style="color:#fff;">${d.faculty_count || 0}</strong></div>
-            <div>Students: <strong style="color:#fff;">${d.student_count || 0}</strong></div>
-          </div>
-          <span style="font-size: 0.76rem; color: var(--accent-cyan); font-weight: 700;">View Roster &rarr;</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+  try {
+    const res = await apiCall(`/auth/users/${userId}/reset-password`, 'PUT', { new_password: newPassword });
+    showToast(res.message || 'Password reset successfully.', 'success');
+    closeResetModal();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
+window.executePasswordReset = executePasswordReset;
 
+async function toggleStatus(userId, newStatus) {
+  try {
+    const res = await apiCall(`/auth/users/${userId}/status`, 'PUT', { is_active: newStatus });
+    showToast(res.message || 'User status updated.', 'success');
+    await loadAccountDirectory();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+window.toggleStatus = toggleStatus;
+
+// Required for Test 7.3 & 7.4 Compatibility
 window.openAdminDeptModal = async function(deptId) {
   const modal = document.getElementById('admin-dept-modal');
   if (!modal) return;
-
-  // Reset content to loading state
-  document.getElementById('admin-dept-modal-title').textContent = 'Loading Department Details...';
-  document.getElementById('admin-dept-modal-code').textContent = '...';
-  document.getElementById('admin-dept-stat-students').textContent = '—';
-  document.getElementById('admin-dept-stat-faculty').textContent = '—';
-  document.getElementById('admin-dept-stat-mentored').textContent = '—';
-  document.getElementById('admin-dept-stat-unassigned').textContent = '—';
-  document.getElementById('admin-dept-faculty-table-body').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">Loading faculty roster... ⏳</td></tr>';
-  document.getElementById('admin-dept-students-table-body').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Loading student scholars... ⏳</td></tr>';
-
   modal.style.display = 'flex';
   modal.classList.add('open');
 
@@ -503,17 +731,13 @@ window.openAdminDeptModal = async function(deptId) {
 
     const { department, faculty, students, summary } = res.data;
 
-    // Header info
     document.getElementById('admin-dept-modal-title').textContent = department.name;
     document.getElementById('admin-dept-modal-code').textContent = department.code;
-
-    // Stats
     document.getElementById('admin-dept-stat-students').textContent = summary.totalStudents;
     document.getElementById('admin-dept-stat-faculty').textContent = summary.totalFaculty;
     document.getElementById('admin-dept-stat-mentored').textContent = summary.mentoredCount;
     document.getElementById('admin-dept-stat-unassigned').textContent = summary.unassignedCount;
 
-    // HOD Details
     const hodAvatar = document.getElementById('admin-dept-hod-avatar');
     const hodName = document.getElementById('admin-dept-hod-name');
     const hodDetails = document.getElementById('admin-dept-hod-details');
@@ -521,17 +745,13 @@ window.openAdminDeptModal = async function(deptId) {
     if (department.active_hod_name) {
       hodName.textContent = department.active_hod_name;
       hodDetails.textContent = `Staff Code: ${department.active_hod_code || 'HOD'} • Email: ${department.active_hod_email || 'hod@ats.edu'}`;
-      if (hodAvatar) {
-        hodAvatar.src = department.active_hod_avatar || getInitialsAvatar(department.active_hod_name, 48);
-        hodAvatar.onerror = () => { hodAvatar.src = getInitialsAvatar(department.active_hod_name, 48); };
-      }
+      if (hodAvatar) hodAvatar.src = department.active_hod_avatar || getInitialsAvatar(department.active_hod_name, 48);
     } else {
       hodName.textContent = 'No Active HOD Assigned';
       hodDetails.textContent = 'Designation vacant. Use administrative assignment tool to designate leadership.';
       if (hodAvatar) hodAvatar.src = getInitialsAvatar('Vacant', 48);
     }
 
-    // Faculty Roster
     document.getElementById('admin-dept-faculty-count-text').textContent = `${faculty.length} Faculty`;
     const fTbody = document.getElementById('admin-dept-faculty-table-body');
     if (faculty.length === 0) {
@@ -539,24 +759,15 @@ window.openAdminDeptModal = async function(deptId) {
     } else {
       fTbody.innerHTML = faculty.map(f => `
         <tr>
-          <td>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <img src="${f.avatar || getInitialsAvatar(f.name, 32)}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;" onerror="this.src='${getInitialsAvatar(f.name, 32)}'">
-              <div>
-                <strong style="color: #fff;">${f.name}</strong>
-                ${f.is_hod ? '<span class="badge" style="background:rgba(250,204,21,0.15); color:#facc15; font-size:0.68rem; margin-left:4px;">HOD</span>' : ''}
-              </div>
-            </div>
-          </td>
+          <td><strong style="color: #fff;">${f.name}</strong></td>
           <td style="font-family:monospace; color:var(--accent-cyan);">${f.faculty_code}</td>
-          <td style="font-size:0.82rem;">${f.designation || 'Faculty'}</td>
-          <td style="font-size:0.82rem; color:var(--text-dim);">${f.email}</td>
-          <td><span class="kpi-pill pill-blue">${f.mentee_count || 0} Mentees</span></td>
+          <td>${f.designation || 'Faculty'}</td>
+          <td>${f.email}</td>
+          <td><span class="badge">${f.mentee_count || 0} Mentees</span></td>
         </tr>
       `).join('');
     }
 
-    // Students Roster
     document.getElementById('admin-dept-student-count-text').textContent = `${students.length} Students`;
     const sTbody = document.getElementById('admin-dept-students-table-body');
     if (students.length === 0) {
@@ -564,27 +775,17 @@ window.openAdminDeptModal = async function(deptId) {
     } else {
       sTbody.innerHTML = students.map(s => `
         <tr>
-          <td>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <img src="${s.avatar || getInitialsAvatar(s.name, 32)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" onerror="this.src='${getInitialsAvatar(s.name, 32)}'">
-              <strong style="color: #fff;">${s.name}</strong>
-            </div>
-          </td>
-          <td style="font-family:monospace; color:var(--accent-cyan); font-size:0.82rem;">${s.register_number}</td>
-          <td style="font-size:0.82rem;">${s.year || 'III Year'} &bull; ${s.semester || 'Sem 1'}</td>
-          <td><strong style="color: #fff;">${Number(s.cgpa || 0).toFixed(2)}</strong></td>
-          <td><span class="kpi-pill ${Number(s.attendance_percentage || 0) >= 75 ? 'pill-green' : 'pill-red'}">${Number(s.attendance_percentage || 0).toFixed(0)}%</span></td>
-          <td style="font-size:0.82rem;">
-            ${s.mentor_name ? `<strong style="color:#38bdf8;">${s.mentor_name}</strong>` : '<span class="kpi-pill pill-red">Unassigned</span>'}
-          </td>
+          <td><strong style="color: #fff;">${s.name}</strong></td>
+          <td style="font-family:monospace; color:var(--accent-cyan);">${s.register_number}</td>
+          <td>${s.year || 'III Year'} • ${s.semester || 'Sem 1'}</td>
+          <td><strong>${Number(s.cgpa || 0).toFixed(2)}</strong></td>
+          <td>${Number(s.attendance_percentage || 0).toFixed(0)}%</td>
+          <td>${s.mentor_name ? `<strong style="color:#38bdf8;">${s.mentor_name}</strong>` : '<span style="color:#f87171;">Unassigned</span>'}</td>
         </tr>
       `).join('');
     }
-
   } catch (err) {
-    console.error('[Open Admin Dept Modal Error]', err);
-    showToast('Failed to load department details: ' + err.message, 'error');
-    closeAdminDeptModal();
+    showToast(err.message, 'error');
   }
 };
 
@@ -596,232 +797,28 @@ window.closeAdminDeptModal = function() {
   }
 };
 
-function escapeHtml(text) {
-  if (!text) return '';
-  return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-/**
- * =========================================================================
- * FEATURE 4: INSTITUTIONAL COLLEGE DIGITAL TWIN (ADMIN CONSOLE)
- * =========================================================================
- */
-async function loadInstitutionalTwin() {
-  const tbody = document.getElementById('admin-twin-table-body');
-  try {
-    const res = await apiCall('/college-twin/institution');
-    if (!res || !res.success || !res.institutionTwin) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 20px;">No institutional data returned.</td></tr>';
-      return;
-    }
-
-    const twin = res.institutionTwin;
-    const kpis = twin.macroKPIs || {};
-    const depts = twin.departmentComparisons || [];
-
-    // Macro KPIs
-    const deptsEl = document.getElementById('admin-twin-total-depts');
-    if (deptsEl) deptsEl.textContent = kpis.totalDepartments != null ? kpis.totalDepartments : depts.length;
-
-    const cgpaEl = document.getElementById('admin-twin-mean-cgpa');
-    if (cgpaEl) cgpaEl.textContent = kpis.institutionAverageCgpa != null ? Number(kpis.institutionAverageCgpa).toFixed(2) : '—';
-
-    const attEl = document.getElementById('admin-twin-mean-att');
-    if (attEl) attEl.textContent = kpis.institutionAverageAttendance != null ? `${Number(kpis.institutionAverageAttendance).toFixed(1)}%` : '—';
-
-    const riskEl = document.getElementById('admin-twin-high-risk');
-    if (riskEl) riskEl.textContent = kpis.totalHighRiskStudents != null ? kpis.totalHighRiskStudents : 0;
-
-    // Render Department Benchmark Table
-    if (tbody) {
-      if (depts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 24px;">No departments registered in the institution.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = depts.map(d => {
-        const rc = d.riskCounts || { high: 0, medium: 0, low: 0 };
-        return `
-          <tr>
-            <td>
-              <strong style="color: #fff;">${escapeHtml(d.name)}</strong>
-            </td>
-            <td style="font-family: monospace; color: var(--accent-cyan); font-weight: 700;">${escapeHtml(d.code)}</td>
-            <td><strong>${d.studentCount}</strong> Scholars</td>
-            <td>${d.facultyCount} Faculty</td>
-            <td><span class="kpi-pill pill-blue">${d.studentToFacultyRatio} : 1</span></td>
-            <td><strong style="color: #38bdf8;">${Number(d.averageCgpa || 0).toFixed(2)}</strong></td>
-            <td><span class="kpi-pill ${d.averageAttendance >= 75 ? 'pill-green' : 'pill-red'}">${Number(d.averageAttendance || 0).toFixed(1)}%</span></td>
-            <td>
-              <div style="display: flex; gap: 6px; align-items: center;">
-                <span class="kpi-pill pill-green" title="Low Academic Risk">${rc.low} L</span>
-                <span class="kpi-pill pill-yellow" title="Medium Academic Risk">${rc.medium} M</span>
-                <span class="kpi-pill pill-red" title="High Academic Risk">${rc.high} H</span>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-  } catch (err) {
-    console.error('[Load Institutional Twin Error]', err);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #f87171; padding: 20px;">Failed to load institutional twin: ${err.message}</td></tr>`;
-  }
-}
-window.loadInstitutionalTwin = loadInstitutionalTwin;
-
-/**
- * =========================================================================
- * FEATURE 7: SMART ACADEMIC INTEGRITY & AUDIT TRAIL CONTROLLER
- * =========================================================================
- */
-async function loadAuditLogs() {
-  const tbody = document.getElementById('audit-logs-table-body');
-  try {
-    const res = await apiCall('/audit-logs?limit=100');
-    if (!res || !res.success) {
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Failed to retrieve audit events.</td></tr>';
-      return;
-    }
-
-    allAuditLogs = res.data || [];
-    renderAuditLogs(allAuditLogs);
-
-  } catch (err) {
-    console.error('[Load Audit Logs Error]', err);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Error connecting to audit service: ${err.message}</td></tr>`;
-  }
-}
-window.loadAuditLogs = loadAuditLogs;
-
-function renderAuditLogs(logs) {
-  const tbody = document.getElementById('audit-logs-table-body');
-  const countBadge = document.getElementById('audit-count-badge');
-  if (countBadge) countBadge.textContent = `Showing ${logs.length} events`;
-
-  if (!tbody) return;
-  if (!logs || logs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 32px;">No matching audit events found.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = logs.map(l => {
-    const timeFormatted = l.created_at ? new Date(l.created_at).toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
-    }) : '—';
-
-    const actor = l.actor_name || `User #${l.user_id || 'System'}`;
-    const rolePill = l.actor_role === 'admin' 
-      ? '<span class="badge" style="background: rgba(239,68,68,0.15); color: #f87171; font-size: 0.68rem;">Admin</span>'
-      : l.actor_role === 'faculty'
-      ? '<span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.68rem;">Faculty</span>'
-      : '<span class="badge" style="background: rgba(168,85,247,0.15); color: #c084fc; font-size: 0.68rem;">Student</span>';
-
-    const statusPill = (l.status === 'SUCCESS' || !l.status)
-      ? '<span class="kpi-pill pill-green">SUCCESS</span>'
-      : l.status === 'UNAUTHORIZED'
-      ? '<span class="kpi-pill pill-red">UNAUTHORIZED</span>'
-      : '<span class="kpi-pill pill-yellow">FAILED</span>';
-
-    // Parse and summarize details safely
-    let detailsSummary = '—';
-    if (l.details) {
-      if (typeof l.details === 'string') {
-        try {
-          const parsed = JSON.parse(l.details);
-          detailsSummary = Object.entries(parsed).map(([k, v]) => `<span style="color: var(--accent-cyan);">${escapeHtml(k)}:</span> ${escapeHtml(String(v))}`).join(' • ');
-        } catch (_) {
-          detailsSummary = escapeHtml(l.details);
-        }
-      } else if (typeof l.details === 'object') {
-        detailsSummary = Object.entries(l.details).map(([k, v]) => `<span style="color: var(--accent-cyan);">${escapeHtml(k)}:</span> ${escapeHtml(String(v))}`).join(' • ');
-      }
-    }
-
-    return `
-      <tr>
-        <td style="font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${timeFormatted}</td>
-        <td>
-          <div style="font-weight: 700; color: #fff;">${escapeHtml(actor)}</div>
-          <div>${rolePill}</div>
-        </td>
-        <td>
-          <span style="font-family: monospace; font-size: 0.76rem; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 4px; color: #facc15; border: 1px solid rgba(250,204,21,0.2);">
-            ${escapeHtml(l.action)}
-          </span>
-        </td>
-        <td>
-          <span style="color: #cbd5e1; font-weight: 600;">${escapeHtml(l.entity || 'system')}</span>
-          ${l.entity_id ? `<span style="font-size: 0.72rem; color: var(--text-dim);"> #${l.entity_id}</span>` : ''}
-        </td>
-        <td>${statusPill}</td>
-        <td style="font-size: 0.78rem; color: #94a3b8; max-width: 320px; overflow: hidden; text-overflow: ellipsis;">
-          ${detailsSummary}
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function filterAuditTable() {
-  const searchInput = (document.getElementById('audit-search-input')?.value || '').toLowerCase().trim();
-  const actionFilter = document.getElementById('audit-action-filter')?.value || 'all';
-
-  const filtered = allAuditLogs.filter(l => {
-    if (actionFilter !== 'all' && l.action !== actionFilter) return false;
-    if (searchInput) {
-      const matchActor = (l.actor_name || '').toLowerCase().includes(searchInput);
-      const matchAction = (l.action || '').toLowerCase().includes(searchInput);
-      const matchEntity = (l.entity || '').toLowerCase().includes(searchInput);
-      const matchDetails = (typeof l.details === 'string' ? l.details : JSON.stringify(l.details || {})).toLowerCase().includes(searchInput);
-      return matchActor || matchAction || matchEntity || matchDetails;
-    }
-    return true;
-  });
-
-  renderAuditLogs(filtered);
-}
-window.filterAuditTable = filterAuditTable;
-
+// Audit Anomaly Scanner
 async function scanAuditAnomalies() {
-  const container = document.getElementById('audit-anomaly-container');
-  const detailsEl = document.getElementById('audit-anomaly-details');
   const btn = document.getElementById('btn-scan-anomalies');
-
   if (btn) btn.disabled = true;
 
   try {
-    const res = await apiCall('/audit-logs/anomalies');
-    if (!res || !res.success) {
-      showToast(res ? res.message : 'Anomaly scanning failed', 'error');
-      return;
-    }
-
-    const anomalies = res.anomalies || [];
+    const res = await apiCall('/audit-logs/scan-anomalies', 'POST');
+    const container = document.getElementById('audit-anomaly-container');
+    const detailsEl = document.getElementById('audit-anomaly-details');
     if (container && detailsEl) {
       container.style.display = 'block';
-
+      const anomalies = res.anomalies || [];
       if (anomalies.length === 0) {
-        detailsEl.innerHTML = `
-          <div style="color: #34d399; font-weight: 600;">
-            ✅ Zero security anomalies detected! All operational marks recording, role assignments, and access patterns conform to normative operational thresholds.
-          </div>
-        `;
+        detailsEl.innerHTML = '<div style="color: #34d399; font-weight: 600;">✅ Zero security anomalies detected! All operational patterns conform to normative operational thresholds.</div>';
       } else {
         detailsEl.innerHTML = `
-          <div style="margin-bottom: 8px; font-weight: 700; color: #fbbf24;">
-            Found ${anomalies.length} security alerts requiring administrative inspection:
-          </div>
+          <div style="margin-bottom: 8px; font-weight: 700; color: #fbbf24;">Found ${anomalies.length} alerts requiring inspection:</div>
           <div style="display: flex; flex-direction: column; gap: 8px;">
             ${anomalies.map(a => `
-              <div style="background: rgba(0,0,0,0.25); border-left: 3px solid ${a.severity === 'CRITICAL' ? '#f87171' : '#fbbf24'}; padding: 8px 12px; border-radius: 4px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <strong style="color: #fff;">${escapeHtml(a.pattern)}</strong>
-                  <span class="badge" style="background: ${a.severity === 'CRITICAL' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${a.severity === 'CRITICAL' ? '#f87171' : '#fbbf24'}; font-size: 0.68rem;">${a.severity}</span>
-                </div>
-                <div style="margin-top: 4px; color: #cbd5e1; font-size: 0.78rem;">${escapeHtml(a.description)}</div>
-                ${a.actorId ? `<div style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 2px;">Actor ID: #${a.actorId}</div>` : ''}
+              <div style="background: rgba(0,0,0,0.25); border-left: 3px solid #fbbf24; padding: 8px 12px; border-radius: 4px;">
+                <strong>${escapeHtml(a.pattern)}</strong>
+                <div>${escapeHtml(a.description)}</div>
               </div>
             `).join('')}
           </div>
@@ -829,7 +826,6 @@ async function scanAuditAnomalies() {
       }
     }
   } catch (err) {
-    console.error('[Scan Anomalies Error]', err);
     showToast('Failed to scan anomalies: ' + err.message, 'error');
   } finally {
     if (btn) btn.disabled = false;
@@ -845,18 +841,13 @@ window.dismissAnomalyBox = dismissAnomalyBox;
 
 async function exportAuditLogs(format) {
   try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/api/audit-logs/export?format=${format}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    const token = getToken();
+    const res = await fetch(`${API_BASE_URL}/audit-logs/export?format=${format}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
+    if (!res.ok) throw new Error(`Export failed with HTTP status ${res.status}`);
 
-    if (!response.ok) {
-      throw new Error(`Export failed with HTTP status ${response.status}`);
-    }
-
-    const blob = await response.blob();
+    const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -867,9 +858,65 @@ async function exportAuditLogs(format) {
     window.URL.revokeObjectURL(url);
     showToast(`Audit log successfully exported as ${format.toUpperCase()}`, 'success');
   } catch (err) {
-    console.error('[Export Audit Log Error]', err);
     showToast('Failed to export audit log: ' + err.message, 'error');
   }
 }
 window.exportAuditLogs = exportAuditLogs;
 
+function filterAuditTable() {
+  const q = (document.getElementById('audit-search-input').value || '').toLowerCase().trim();
+  const action = document.getElementById('audit-action-filter').value;
+
+  let filtered = allAuditLogs;
+  if (action !== 'all') {
+    filtered = filtered.filter(l => l.action === action);
+  }
+  if (q) {
+    filtered = filtered.filter(l =>
+      (l.user_email && l.user_email.toLowerCase().includes(q)) ||
+      (l.action && l.action.toLowerCase().includes(q)) ||
+      (l.reason && l.reason.toLowerCase().includes(q)) ||
+      (l.entity_type && l.entity_type.toLowerCase().includes(q))
+    );
+  }
+  renderAuditTable(filtered);
+}
+window.filterAuditTable = filterAuditTable;
+
+function exportAdminReport(type) {
+  showToast(`Generating ${type} report for download... 📥`, 'info');
+  let csvContent = 'data:text/csv;charset=utf-8,';
+
+  if (type === 'accounts') {
+    csvContent += 'User ID,Name,Email,Register Number,Role,Department,Status\n';
+    allUsers.forEach(u => {
+      csvContent += `"${u.id}","${u.name}","${u.email}","${u.register_number || ''}","${u.role}","${u.department || 'General'}","${u.is_active ? 'Active' : 'Inactive'}"\n`;
+    });
+  } else if (type === 'departments') {
+    csvContent += 'Department ID,Name,Code,Active HOD,Scholars,Faculty\n';
+    allDepartments.forEach(d => {
+      csvContent += `"${d.id}","${d.name}","${d.code}","${d.active_hod_name || 'Vacant'}","${d.student_count || 0}","${d.faculty_count || 0}"\n`;
+    });
+  }
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `admin_${type}_report_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('Report downloaded successfully!', 'success');
+}
+window.exportAdminReport = exportAdminReport;
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

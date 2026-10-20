@@ -346,10 +346,17 @@ async function getMe(req, res) {
     else if (user.role === 'student') dashboardUrl = 'dashboard.html';
     else if (user.role === 'faculty') dashboardUrl = isVerifiedHod ? 'hod-dashboard.html' : 'mentor-dashboard.html';
 
+    const resolvedStudentId = user.role === 'student' && student ? student.id : null;
+    const resolvedFacultyId = user.role === 'faculty' && faculty ? faculty.id : null;
+    const resolvedDepartmentId = user.role === 'admin' ? null : (student ? student.department_id : (faculty ? faculty.department_id : (user.department_id || null)));
+
     return res.status(200).json({
       success: true,
       user: {
         ...user,
+        studentId: resolvedStudentId,
+        facultyId: resolvedFacultyId,
+        departmentId: resolvedDepartmentId,
         facultyRole: finalFacultyRole,
         isHOD: isVerifiedHod,
         canMentor: isCanMentor,

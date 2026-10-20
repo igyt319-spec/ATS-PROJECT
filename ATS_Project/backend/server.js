@@ -41,6 +41,8 @@ const careerRoutes = require('./routes/careerRoutes');
 const simulatorRoutes = require('./routes/simulatorRoutes');
 const collegeTwinRoutes = require('./routes/collegeTwinRoutes');
 const docsRoutes = require('./routes/docsRoutes');
+const impactLoopRoutes = require('./routes/impactLoopRoutes');
+const decisionTraceRoutes = require('./routes/decisionTraceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -74,6 +76,8 @@ app.use('/api/career', careerRoutes);
 app.use('/api/simulator', simulatorRoutes);
 app.use('/api/college-twin', collegeTwinRoutes);
 app.use('/api/docs', docsRoutes);
+app.use('/api/impact-loop', impactLoopRoutes);
+app.use('/api/decision-trace', decisionTraceRoutes);
 app.use('/api/results', academicResultsRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/leave', leaveRoutes);

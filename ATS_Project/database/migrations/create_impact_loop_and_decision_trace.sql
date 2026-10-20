@@ -1,0 +1,57 @@
+-- Migration: Create ATS Impact Loop & Academic Decision Trace Tables
+-- Safe, idempotent, non-destructive migration
+
+CREATE TABLE IF NOT EXISTS impact_loop_interventions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  assigned_by INT NOT NULL,
+  assigned_to INT NULL,
+  risk_alert_id INT NULL,
+  recommendation_id INT NULL,
+  intervention_type VARCHAR(100) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  contributing_factors JSON NULL,
+  action_plan TEXT NOT NULL,
+  status ENUM('Assigned', 'In Progress', 'Follow-up Due', 'Completed', 'Closed', 'Dismissed') NOT NULL DEFAULT 'Assigned',
+  baseline_attendance DECIMAL(5,2) NULL,
+  baseline_gpa DECIMAL(4,2) NULL,
+  outcome_attendance DECIMAL(5,2) NULL,
+  outcome_gpa DECIMAL(4,2) NULL,
+  outcome_assessment ENUM('Significant Improvement', 'Moderate Improvement', 'Neutral / No Change', 'Limited Improvement / Needs Revision', 'Pending Evaluation') NOT NULL DEFAULT 'Pending Evaluation',
+  private_mentor_notes TEXT NULL,
+  student_guidance_notes TEXT NULL,
+  target_date DATE NULL,
+  follow_up_date DATE NULL,
+  completed_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_ili_student (student_id),
+  KEY idx_ili_assigned_by (assigned_by),
+  KEY idx_ili_assigned_to (assigned_to),
+  KEY idx_ili_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS academic_decision_traces (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_id INT NOT NULL,
+  alert_id INT NULL,
+  intervention_id INT NULL,
+  indicator_type VARCHAR(100) NOT NULL,
+  trigger_condition VARCHAR(255) NOT NULL,
+  observed_value VARCHAR(100) NOT NULL,
+  threshold_applied VARCHAR(150) NOT NULL,
+  rule_engine_type VARCHAR(100) NOT NULL DEFAULT 'Rule-Based Deterministic Engine v2.1',
+  model_version VARCHAR(50) NOT NULL DEFAULT 'RuleSet-Academic-2026.1',
+  evidence_summary TEXT NOT NULL,
+  explanation TEXT NOT NULL,
+  recommended_action TEXT NOT NULL,
+  decision_status ENUM('Pending Review', 'Accepted', 'Modified', 'Dismissed', 'Action Taken') NOT NULL DEFAULT 'Pending Review',
+  reviewed_by INT NULL,
+  reviewer_action TEXT NULL,
+  action_timestamp DATETIME NULL,
+  follow_up_result TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_adt_student (student_id),
+  KEY idx_adt_status (decision_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

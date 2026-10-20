@@ -10,7 +10,8 @@
 <body>
 
 <div class="app-layout">
-  <aside class="sidebar">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="app-sidebar">
     <div class="sidebar-header">
       <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 4px;">
         <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 26px; height: 26px;">
@@ -22,26 +23,41 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a href="hod-dashboard.html" class="nav-item active">
-        <span class="icon">🏛️</span> Department Overview
+      <a href="javascript:void(0)" class="nav-item active" id="nav-dashboard" onclick="switchHODTab('dashboard')">
+        <span class="icon">🏛️</span> My Dashboard
       </a>
-      <a href="#section-dept-twin" class="nav-item" onclick="scrollToSection('section-dept-twin')">
-        <span class="icon">🌐</span> Department Twin
+      <a href="javascript:void(0)" class="nav-item" id="nav-overview" onclick="switchHODTab('overview')">
+        <span class="icon">📊</span> Department Overview
       </a>
-      <a href="#section-allocations" class="nav-item" onclick="scrollToSection('section-allocations')">
-        <span class="icon">🧭</span> Mentor Allocations
+      <a href="javascript:void(0)" class="nav-item" id="nav-faculty" onclick="switchHODTab('faculty')">
+        <span class="icon">👨‍🏫</span> Faculty Management
       </a>
-      <a href="#section-results" class="nav-item" onclick="scrollToSection('section-results')">
-        <span class="icon">📊</span> Department Results
+      <a href="javascript:void(0)" class="nav-item" id="nav-students" onclick="switchHODTab('students')">
+        <span class="icon">🎓</span> Student Management
       </a>
-      <a href="#section-leaves" class="nav-item" onclick="scrollToSection('section-leaves')">
-        <span class="icon">📝</span> Department Leaves
+      <a href="javascript:void(0)" class="nav-item" id="nav-allocations" onclick="switchHODTab('allocations')">
+        <span class="icon">🧭</span> Mentor Assignments
       </a>
-      <a href="#section-fees" class="nav-item" onclick="scrollToSection('section-fees')">
-        <span class="icon">💳</span> Fee Overviews
+      <a href="javascript:void(0)" class="nav-item" id="nav-performance" onclick="switchHODTab('performance')">
+        <span class="icon">📈</span> Academic Performance
       </a>
-      <a href="profile.html" class="nav-item">
-        <span class="icon">👤</span> HOD Profile
+      <a href="javascript:void(0)" class="nav-item" id="nav-risk-radar" onclick="switchHODTab('risk-radar')">
+        <span class="icon">📡</span> Academic Risk Radar
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchHODTab('activities')">
+        <span class="icon">🏆</span> Activity Verification
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-impact-loop" onclick="switchHODTab('impact-loop')">
+        <span class="icon">🔄</span> Impact Loop
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-decision-trace" onclick="switchHODTab('decision-trace')">
+        <span class="icon">🔍</span> Decision Trace
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-reports" onclick="switchHODTab('reports')">
+        <span class="icon">📑</span> Reports
+      </a>
+      <a href="profile.html" class="nav-item" id="nav-profile">
+        <span class="icon">👤</span> My Profile
       </a>
     </nav>
 
@@ -52,10 +68,11 @@
     </div>
   </aside>
 
+  <!-- Main Content Area -->
   <div class="main-wrapper">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebarDrawer()">☰</button>
         <div>
           <h1 class="page-title" id="page-dept-title">Department Executive Console</h1>
           <span style="font-size: 0.76rem; color: var(--text-dim);" id="page-dept-subtitle">Head of Department Academic Supervision & Governance</span>
@@ -76,384 +93,493 @@
     <main class="page-container">
 
       <!-- =========================================================================
-           SECTOR 1: HOD / DEPARTMENT LEADERSHIP
+           VIEW 1: MY DASHBOARD (Executive Profile & Quick Metrics)
            ========================================================================= -->
-      <section class="glass-card" id="section-hod-leadership" style="margin-bottom: 24px; padding: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="" alt="HOD Avatar" id="hod-leader-avatar" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #facc15; box-shadow: 0 0 12px rgba(250,204,21,0.3);">
+      <div class="content-view active" id="view-dashboard">
+        <!-- HOD Leadership Profile Card -->
+        <section class="glass-card" style="margin-bottom: 24px; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <img src="" alt="HOD Avatar" id="hod-leader-avatar" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #facc15; box-shadow: 0 0 12px rgba(250,204,21,0.3);">
+              <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h2 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #fff;" id="hod-leader-name">Department Head</h2>
+                  <span class="badge" style="background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.3); font-size: 0.72rem; padding: 3px 8px;">
+                    👑 HEAD OF DEPARTMENT
+                  </span>
+                </div>
+                <p style="margin: 4px 0 0; color: var(--accent-cyan); font-size: 0.86rem; font-weight: 600;" id="hod-leader-dept">
+                  Department Executive Governance
+                </p>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="hod-leader-meta">
+                  Verified institutional credentials • Department Authority
+                </div>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-secondary btn-sm" onclick="openCurrentHODDetails()" style="font-size: 0.8rem; padding: 7px 14px;">
+                👤 View HOD Profile Details
+              </button>
+            </div>
+          </div>
+
+          <!-- HOD Department Stats KPI -->
+          <div class="kpi-grid">
+            <div class="kpi-card" style="cursor: pointer;" onclick="switchHODTab('students')">
+              <div class="kpi-header">
+                <span class="kpi-title">Department Scholars</span>
+                <span class="kpi-icon">🎓</span>
+              </div>
+              <div class="kpi-value" id="kpi-dept-students">0</div>
+              <div class="kpi-footer"><span style="color: var(--accent-cyan);">Active In Department</span></div>
+            </div>
+
+            <div class="kpi-card" style="cursor: pointer;" onclick="switchHODTab('faculty')">
+              <div class="kpi-header">
+                <span class="kpi-title">Faculty Staff</span>
+                <span class="kpi-icon">👨‍🏫</span>
+              </div>
+              <div class="kpi-value" id="kpi-dept-faculty">0</div>
+              <div class="kpi-footer"><span style="color: var(--text-dim);">Teaching & Advisory Team</span></div>
+            </div>
+
+            <div class="kpi-card" style="cursor: pointer;" onclick="switchHODTab('overview')">
+              <div class="kpi-header">
+                <span class="kpi-title">Department CGPA</span>
+                <span class="kpi-icon">📊</span>
+              </div>
+              <div class="kpi-value" id="kpi-dept-cgpa" style="color: #67D5C0;">0.00</div>
+              <div class="kpi-footer"><span style="color: var(--text-dim);">Cohort Academic Average</span></div>
+            </div>
+
+            <div class="kpi-card" style="cursor: pointer;" onclick="switchHODTab('risk-radar')">
+              <div class="kpi-header">
+                <span class="kpi-title">At-Risk Scholars</span>
+                <span class="kpi-icon">⚠️</span>
+              </div>
+              <div class="kpi-value" id="kpi-dept-risk" style="color: #f87171;">0</div>
+              <div class="kpi-footer"><span style="color: var(--text-dim);">Attendance &lt; 75% or GPA &lt; 6.0</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Executive Quick Actions Grid -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3>Department Executive Overview</h3>
+                <p>Real-time department health and quick monitoring signals</p>
+              </div>
+            </div>
+            <div style="padding: 10px 0;">
+              <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.6;">
+                Welcome to the <strong>Head of Department (HOD) Academic Governance Console</strong>. All data rendered across this dashboard is strictly isolated to your authorized academic department.
+              </p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px;">
+                <div style="background: var(--bg-surface-subtle); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Mentor Allocation Coverage</div>
+                  <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; margin: 4px 0;" id="dept-mentor-coverage-stat">100%</div>
+                  <small style="color: var(--text-muted);">Scholars with active mentor assignments</small>
+                </div>
+                <div style="background: var(--bg-surface-subtle); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Average Attendance</div>
+                  <div style="font-size: 1.4rem; font-weight: 800; color: #38bdf8; margin: 4px 0;" id="dept-avg-attendance-stat">85.0%</div>
+                  <small style="color: var(--text-muted);">Institutional target: 85% safe zone</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3>Executive Shortcuts</h3>
+                <p>Jump to operational modules</p>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button class="btn btn-primary" style="justify-content: flex-start;" onclick="switchHODTab('allocations')">
+                <span>🧭</span> Manage Mentor Allocations
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="switchHODTab('risk-radar')">
+                <span>📡</span> Review Academic Risk Radar
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="switchHODTab('impact-loop')">
+                <span>🔄</span> Department Impact Loop
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="switchHODTab('decision-trace')">
+                <span>🔍</span> Review Decision Traces
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start;" onclick="switchHODTab('reports')">
+                <span>📑</span> Export Department Reports
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 2: DEPARTMENT OVERVIEW (Digital Twin & Macro Trends)
+           ========================================================================= -->
+      <div class="content-view" id="view-overview">
+        <div class="glass-card" style="margin-bottom: 24px;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3 id="dept-twin-heading">Department Intelligence & Academic Analytics</h3>
+              <p>Continuous assessment distribution, pass rate metrics, and faculty workload</p>
+            </div>
+          </div>
+          <div id="dept-twin-body" style="padding: 10px 0;">
+            <p style="color: var(--text-dim); text-align: center; padding: 24px;">Loading department intelligence... ⏳</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 3: FACULTY MANAGEMENT
+           ========================================================================= -->
+      <div class="content-view" id="view-faculty">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Faculty & Mentors Roster</h3>
+              <p>Staff members assigned to this academic department</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Faculty Member</th>
+                  <th>Faculty Code</th>
+                  <th>Designation</th>
+                  <th>Official Email</th>
+                  <th>Mentee Count</th>
+                  <th>Role Scope</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dept-faculty-table-body">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading department faculty... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 4: STUDENT MANAGEMENT
+           ========================================================================= -->
+      <div class="content-view" id="view-students">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Student Scholars</h3>
+              <p>Scholars enrolled in this academic department</p>
+            </div>
+            <input type="text" id="dept-student-search" class="form-control" placeholder="Search by name or reg no..." style="max-width: 260px;" oninput="filterDeptStudents()">
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Register No</th>
+                  <th>Year & Semester</th>
+                  <th>Current SGPA</th>
+                  <th>Attendance %</th>
+                  <th>Assigned Mentor</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dept-students-table-body">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading department students... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 5: MENTOR ASSIGNMENTS
+           ========================================================================= -->
+      <div class="content-view" id="view-allocations">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Mentor Allocation Roster</h3>
+              <p>Manage and reassign mentors for all scholars within your department</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="triggerAutoAllocation()">
+              <span>⚡</span> Deterministic Auto-Allocation
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student Scholar</th>
+                  <th>Register No</th>
+                  <th>Year & Sem</th>
+                  <th>Assigned Mentor</th>
+                  <th>Mentor Email</th>
+                  <th>Assignment Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dept-allocations-table-body">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading mentor allocations... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 6: ACADEMIC PERFORMANCE
+           ========================================================================= -->
+      <div class="content-view" id="view-performance">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Academic Assessment Records</h3>
+              <p>Continuous internal exams, laboratory practical assessments, and semester scores</p>
+            </div>
+            <div class="tab-pills" id="dept-results-filter-pills">
+              <button class="tab-pill active" onclick="filterDeptResults('all')">All Results</button>
+              <button class="tab-pill" onclick="filterDeptResults('internal')">CIA Exams</button>
+              <button class="tab-pill" onclick="filterDeptResults('lab')">Lab Practicals</button>
+              <button class="tab-pill" onclick="filterDeptResults('semester')">Semester Results</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Type</th>
+                  <th>Subject</th>
+                  <th>Assessment</th>
+                  <th>Marks Obtained</th>
+                  <th>Max Marks</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="dept-results-table-body">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading department academic results... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 7: ACADEMIC RISK RADAR
+           ========================================================================= -->
+      <div class="content-view" id="view-risk-radar">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Academic Risk Radar</h3>
+              <p>Scholars breaching examination attendance thresholds (&lt; 75%) or good standing GPA (&lt; 6.0)</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Register No</th>
+                  <th>Attendance %</th>
+                  <th>CGPA</th>
+                  <th>Risk Level</th>
+                  <th>Assigned Mentor</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dept-risk-radar-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Evaluating department risk radar... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 8: ACTIVITY VERIFICATION
+           ========================================================================= -->
+      <div class="content-view" id="view-activities">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Co-Curricular Activity Submissions</h3>
+              <p>Department-wide verification oversight of hackathons, publications, and certifications</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Category</th>
+                  <th>Activity Title</th>
+                  <th>Event Date</th>
+                  <th>Participation</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="dept-activities-tbody">
+                <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading department activities... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 9: ATS IMPACT LOOP
+           ========================================================================= -->
+      <div class="content-view" id="view-impact-loop">
+        <div class="glass-card" style="margin-bottom: 20px; padding: 18px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <h2 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #fff;" id="hod-leader-name">Department Head</h2>
-                <span class="badge" style="background: rgba(250,204,21,0.15); color: #facc15; border: 1px solid rgba(250,204,21,0.3); font-size: 0.72rem; padding: 3px 8px;">
-                  👑 HEAD OF DEPARTMENT
-                </span>
+                <span style="font-size: 1.1rem;">🔄</span>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Department Impact Loop Governance</h3>
               </div>
-              <p style="margin: 4px 0 0; color: var(--accent-cyan); font-size: 0.86rem; font-weight: 600;" id="hod-leader-dept">
-                Department Executive Governance
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                Department-level oversight of assigned student interventions, mentor owners, and measured outcome efficacy.
               </p>
-              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;" id="hod-leader-meta">
-                Verified institutional credentials • Department Authority
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Support Plans Roster</h3>
+              <p>Active and completed academic interventions across all department mentors</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Type & Title</th>
+                  <th>Assigned Mentor</th>
+                  <th>Baseline</th>
+                  <th>Measured Outcome</th>
+                  <th>Assessment</th>
+                  <th>Status</th>
+                  <th>Target Date</th>
+                </tr>
+              </thead>
+              <tbody id="dept-impact-loop-tbody">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading department interventions... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 10: DECISION TRACE
+           ========================================================================= -->
+      <div class="content-view" id="view-decision-trace">
+        <div class="glass-card" style="margin-bottom: 20px; padding: 18px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.1rem;">🔍</span>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Department Decision Trace Governance</h3>
+                <span class="rule-engine-tag">Rule-Based Deterministic Engine v2.1</span>
+              </div>
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                Audit trail of triggered academic indicators, policy rules applied, and mentor acceptance/modification status.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Decision Traces Roster</h3>
+              <p>Traceable evidence backing every academic alert and recommendation</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Indicator Type</th>
+                  <th>Observed Deficit vs Rule Policy</th>
+                  <th>Explanation & Evidence</th>
+                  <th>Recommended Action</th>
+                  <th>Decision Status</th>
+                  <th>Mentor Action / Result</th>
+                </tr>
+              </thead>
+              <tbody id="dept-decision-trace-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading department decision traces... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW 11: REPORTS
+           ========================================================================= -->
+      <div class="content-view" id="view-reports">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Department Executive Academic Reports</h3>
+              <p>Generate and export department performance, attendance compliance, and intervention outcomes</p>
+            </div>
+          </div>
+          <div style="padding: 16px 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              <div style="background: var(--bg-surface-subtle); padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <h4 style="color: #fff; margin-bottom: 6px;">Academic Standing Summary</h4>
+                <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 14px;">Complete student roster with CGPA, attendance %, and risk classification.</p>
+                <button class="btn btn-secondary btn-sm" onclick="exportDeptReport('academic')">📥 Export CSV Report</button>
+              </div>
+              <div style="background: var(--bg-surface-subtle); padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <h4 style="color: #fff; margin-bottom: 6px;">Impact Loop Intervention Efficacy</h4>
+                <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 14px;">Summary of assigned interventions, before vs after metrics, and evaluation.</p>
+                <button class="btn btn-secondary btn-sm" onclick="exportDeptReport('interventions')">📥 Export CSV Report</button>
+              </div>
+              <div style="background: var(--bg-surface-subtle); padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <h4 style="color: #fff; margin-bottom: 6px;">Mentor Allocations Matrix</h4>
+                <p style="color: var(--text-dim); font-size: 0.82rem; margin-bottom: 14px;">Complete department mentor-mentee mapping and workload distribution.</p>
+                <button class="btn btn-secondary btn-sm" onclick="exportDeptReport('mentors')">📥 Export CSV Report</button>
               </div>
             </div>
           </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" onclick="openCurrentHODDetails()" style="font-size: 0.8rem; padding: 7px 14px;">
-              👤 View HOD Profile Details
-            </button>
-          </div>
-        </div>
-
-        <!-- HOD Department Stats KPI -->
-        <div class="kpi-grid" style="margin-bottom: 0;">
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Department Scholars</span>
-              <span class="kpi-icon">🎓</span>
-            </div>
-            <div class="kpi-value" id="kpi-dept-students">0</div>
-            <div class="kpi-footer">
-              <span style="color: var(--accent-cyan);">Active In Department</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Department Faculty</span>
-              <span class="kpi-icon">👨‍🏫</span>
-            </div>
-            <div class="kpi-value" id="kpi-dept-faculty">0</div>
-            <div class="kpi-footer">
-              <span style="color: #34d399;" id="kpi-dept-mentors-sub">0 Mentors</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Pending Leave Requests</span>
-              <span class="kpi-icon">📝</span>
-            </div>
-            <div class="kpi-value" id="kpi-dept-leaves" style="color: #fbbf24;">0</div>
-            <div class="kpi-footer">
-              <span style="color: var(--text-dim);">Awaiting Mentor Review</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-header">
-              <span class="kpi-title">Outstanding Department Dues</span>
-              <span class="kpi-icon">💳</span>
-            </div>
-            <div class="kpi-value" id="kpi-dept-fees" style="color: #f87171;">₹0</div>
-            <div class="kpi-footer">
-              <span style="color: var(--text-dim);">Total Student Balances</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- =========================================================================
-           SECTOR 1B: COLLEGE DIGITAL TWIN — DEPARTMENT INTELLIGENCE
-           ========================================================================= -->
-      <section class="glass-card" id="section-dept-twin" style="margin-bottom: 28px; padding: 24px;">
-        <div class="card-header" style="flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
-          <div class="card-title-group">
-            <h3 style="display: flex; align-items: center; gap: 8px;">
-              <span>🌐</span> Department College Digital Twin
-            </h3>
-            <p>Macro-level academic trajectories, cohort risk telemetry, subject pass-rates, and faculty mentoring bandwidth</p>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="loadDepartmentTwin()" style="font-size: 0.8rem; padding: 6px 14px;">
-            🔄 Refresh Intelligence
-          </button>
-        </div>
-
-        <!-- Twin KPI Grid -->
-        <div class="kpi-grid" style="margin-bottom: 24px;">
-          <div class="kpi-card" style="border-top: 3px solid #38bdf8;">
-            <div class="kpi-header">
-              <span class="kpi-title">Cohort Mean CGPA</span>
-              <span class="kpi-icon">📈</span>
-            </div>
-            <div class="kpi-value" id="twin-dept-cgpa">—</div>
-            <div class="kpi-footer"><span style="color: #38bdf8;">Official Academic Average</span></div>
-          </div>
-
-          <div class="kpi-card" style="border-top: 3px solid #34d399;">
-            <div class="kpi-header">
-              <span class="kpi-title">Average Attendance</span>
-              <span class="kpi-icon">📅</span>
-            </div>
-            <div class="kpi-value" id="twin-dept-att">—</div>
-            <div class="kpi-footer"><span style="color: #34d399;">Cohort-wide Compliance</span></div>
-          </div>
-
-          <div class="kpi-card" style="border-top: 3px solid #f87171;">
-            <div class="kpi-header">
-              <span class="kpi-title">Attendance Risk (&lt;75%)</span>
-              <span class="kpi-icon">⚠️</span>
-            </div>
-            <div class="kpi-value" id="twin-dept-att-risk" style="color: #f87171;">—</div>
-            <div class="kpi-footer"><span style="color: var(--text-dim);">Immediate Intervention Needed</span></div>
-          </div>
-
-          <div class="kpi-card" style="border-top: 3px solid #a855f7;">
-            <div class="kpi-header">
-              <span class="kpi-title">Verified Achievements</span>
-              <span class="kpi-icon">🏆</span>
-            </div>
-            <div class="kpi-value" id="twin-dept-act-verified" style="color: #a855f7;">—</div>
-            <div class="kpi-footer"><span style="color: var(--text-dim);" id="twin-dept-act-pending">0 Pending Review</span></div>
-          </div>
-        </div>
-
-        <!-- Attendance & Academic Risk Distribution Breakdown -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
-          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
-            <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>📊</span> Attendance Compliance Distribution
-            </h4>
-            <div id="twin-att-distribution-container" style="display: flex; flex-direction: column; gap: 10px;">
-              <div>Loading distribution telemetry... ⏳</div>
-            </div>
-          </div>
-
-          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
-            <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-              <span>🛡️</span> Academic Risk Cohort Stratification
-            </h4>
-            <div id="twin-risk-distribution-container" style="display: flex; flex-direction: column; gap: 10px;">
-              <div>Loading risk stratification... ⏳</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Semester GPA Trajectory -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px; margin-bottom: 24px;">
-          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <span>📉</span> Multi-Semester GPA Performance Trajectory
-          </h4>
-          <div class="table-container" style="margin: 0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Academic Semester</th>
-                  <th>Student Cohort Size</th>
-                  <th>Cohort Mean Marks</th>
-                  <th>Mean GPA Equivalent</th>
-                </tr>
-              </thead>
-              <tbody id="twin-sem-trends-tbody">
-                <tr><td colspan="4" style="text-align: center; padding: 16px; color: var(--text-dim);">No semester trend records available.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Subject Pass / Fail & Scoring Analysis -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px; margin-bottom: 24px;">
-          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <span>📚</span> Subject-Level Mastery &amp; Pass-Rate Telemetry
-          </h4>
-          <div class="table-container" style="margin: 0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Subject Code</th>
-                  <th>Subject Name</th>
-                  <th>Credits</th>
-                  <th>Enrolled</th>
-                  <th>Cohort Avg Mark</th>
-                  <th>Pass Rate (%)</th>
-                  <th>Distinctions (&gt;=80%)</th>
-                </tr>
-              </thead>
-              <tbody id="twin-subjects-tbody">
-                <tr><td colspan="7" style="text-align: center; padding: 16px; color: var(--text-dim);">No subject performance records available.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Faculty Mentorship Bandwidth -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
-          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-            <span>👨‍🏫</span> Faculty Mentorship Workload &amp; Verification Pipeline
-          </h4>
-          <div class="table-container" style="margin: 0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Faculty Advisor</th>
-                  <th>Designation</th>
-                  <th>Assigned Mentees</th>
-                  <th>Pending Verifications</th>
-                  <th>Workload Status</th>
-                </tr>
-              </thead>
-              <tbody id="twin-faculty-workload-tbody">
-                <tr><td colspan="5" style="text-align: center; padding: 16px; color: var(--text-dim);">Loading faculty workload... ⏳</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- =========================================================================
-           SECTOR 2: DEPARTMENT FACULTY ROSTER
-           ========================================================================= -->
-      <section class="glass-card" id="section-faculty" style="margin-bottom: 24px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>👨‍🏫 Department Faculty Roster</h3>
-            <p>Authorized faculty members assigned to your department with advisory and teaching scope</p>
-          </div>
-          <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.76rem;" id="faculty-count-badge">0 Faculty</span>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 4px 0;" id="dept-faculty-cards-container">
-          <div style="text-align: center; padding: 24px; color: var(--text-dim); grid-column: 1 / -1;">
-            Loading department faculty members... ⏳
-          </div>
-        </div>
-      </section>
-
-      <!-- =========================================================================
-           SECTOR 3: DEPARTMENT STUDENTS ROSTER & MENTOR ALLOCATION
-           ========================================================================= -->
-      <section class="glass-card" id="section-students" style="margin-bottom: 28px;">
-        <div class="card-header" style="flex-wrap: wrap; gap: 16px;">
-          <div class="card-title-group">
-            <h3>🎓 Department Students Roster & Advisory Allocation</h3>
-            <p>Every student has an individual academic record and designated department mentor</p>
-          </div>
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="student-search-input" placeholder="🔍 Search student name or ID..." oninput="filterDepartmentStudents()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.8rem; width: 220px;">
-            <button class="btn btn-primary btn-sm" onclick="triggerAutoAssign()" id="btn-auto-assign">
-              ⚡ Deterministic Auto-Assign
-            </button>
-          </div>
-        </div>
-
-        <!-- Students Allocation Table -->
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Scholar</th>
-                <th>Register No</th>
-                <th>Year & Class</th>
-                <th>Assigned Mentor</th>
-                <th>Allocation Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="allocations-table-body">
-              <tr><td colspan="6" style="text-align: center; padding: 24px;">Loading student records... ⏳</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Department Academic Results -->
-      <div class="glass-card" id="section-results" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Department Academic Results & Marks</h3>
-            <p>Complete department view of internal marks, practicals, and semester examinations</p>
-          </div>
-          <div class="tab-pills" id="results-filter-pills">
-            <button class="tab-pill active" onclick="filterDepartmentResults('all')">All Results</button>
-            <button class="tab-pill" onclick="filterDepartmentResults('internal')">Internal Exams</button>
-            <button class="tab-pill" onclick="filterDepartmentResults('lab')">Lab Practicals</button>
-            <button class="tab-pill" onclick="filterDepartmentResults('semester')">Semester Results</button>
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Type</th>
-                <th>Subject</th>
-                <th>Assessment</th>
-                <th>Marks</th>
-                <th>Max</th>
-                <th>Grade</th>
-                <th>Status</th>
-                <th>Published</th>
-              </tr>
-            </thead>
-            <tbody id="dept-results-table-body">
-              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading department academic results... ⏳</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Department Leave Oversight -->
-      <div class="glass-card" id="section-leaves" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Department Leave Requests Oversight</h3>
-            <p>Monitor leaves requested by department students and mentoring remarks</p>
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Leave Type</th>
-                <th>Dates</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Reviewed By</th>
-                <th>Remarks</th>
-              </tr>
-            </thead>
-            <tbody id="dept-leaves-table-body">
-              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading department leave records... ⏳</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Department Fee Summary -->
-      <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Department Student Fee Obligations</h3>
-            <p>Department-level fee collections, partial payments, and pending student balances</p>
-          </div>
-        </div>
-
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Fee Category</th>
-                <th>Academic Period</th>
-                <th>Total Due</th>
-                <th>Paid Amount</th>
-                <th>Remaining Balance</th>
-                <th>Status</th>
-                <th>Due Date</th>
-              </tr>
-            </thead>
-            <tbody id="dept-fees-table-body">
-              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading department fee summaries... ⏳</td></tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
     </main>
   </div>
 </div>
+
+<!-- =========================================================================
+     MODALS
+     ========================================================================= -->
 
 <!-- Manual Mentor Reassignment Modal -->
 <div class="modal-backdrop" id="reassign-modal">

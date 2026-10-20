@@ -78,7 +78,15 @@ function getToken() {
 function getCurrentUser() {
   const userStr = localStorage.getItem('ats_user');
   try {
-    return userStr ? JSON.parse(userStr) : null;
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user) {
+      if (!user.studentId && user.student && user.student.id) user.studentId = user.student.id;
+      if (!user.facultyId && user.faculty && user.faculty.id) user.facultyId = user.faculty.id;
+      if (!user.departmentId) {
+        user.departmentId = (user.student && user.student.department_id) || (user.faculty && user.faculty.department_id) || null;
+      }
+    }
+    return user;
   } catch (e) {
     return null;
   }

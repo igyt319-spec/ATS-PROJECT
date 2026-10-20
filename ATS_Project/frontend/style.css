@@ -1285,3 +1285,112 @@ a:hover {
     display: none !important;
   }
 }
+
+/* ============================================================
+   ATS DEDICATED VIEW ROUTER & FEATURE MODULE SYSTEM
+   ============================================================ */
+
+.content-view {
+  display: none;
+  width: 100%;
+}
+
+.content-view.active {
+  display: block;
+  animation: viewFadeIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Impact Loop & Decision Trace Specific Elements */
+.badge-assigned {
+  background: rgba(124, 156, 255, 0.15);
+  color: #7C9CFF;
+  border: 1px solid rgba(124, 156, 255, 0.3);
+}
+
+.badge-in-progress {
+  background: rgba(233, 180, 91, 0.15);
+  color: #E9B45B;
+  border: 1px solid rgba(233, 180, 91, 0.3);
+}
+
+.badge-completed {
+  background: rgba(70, 199, 139, 0.15);
+  color: #46C78B;
+  border: 1px solid rgba(70, 199, 139, 0.3);
+}
+
+.badge-follow-up {
+  background: rgba(240, 120, 120, 0.15);
+  color: #F07878;
+  border: 1px solid rgba(240, 120, 120, 0.3);
+}
+
+.delta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta-pill.positive {
+  background: rgba(70, 199, 139, 0.15);
+  color: #46C78B;
+  border: 1px solid rgba(70, 199, 139, 0.3);
+}
+
+.delta-pill.negative {
+  background: rgba(240, 120, 120, 0.15);
+  color: #F07878;
+  border: 1px solid rgba(240, 120, 120, 0.3);
+}
+
+.delta-pill.neutral {
+  background: rgba(115, 125, 140, 0.15);
+  color: #9BA4B1;
+  border: 1px solid rgba(115, 125, 140, 0.3);
+}
+
+.rule-evidence-box {
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.rule-evidence-box strong {
+  color: var(--text-main);
+}
+
+.rule-engine-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(103, 213, 192, 0.1);
+  color: var(--accent-gold);
+  border: 1px solid rgba(103, 213, 192, 0.25);
+  letter-spacing: 0.3px;
+}
+

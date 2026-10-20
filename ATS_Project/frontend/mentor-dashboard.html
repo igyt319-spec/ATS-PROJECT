@@ -11,7 +11,7 @@
 
 <div class="app-layout">
   <!-- Sidebar Navigation -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="app-sidebar">
     <div class="sidebar-header">
       <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 4px;">
         <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 26px; height: 26px;">
@@ -41,6 +41,15 @@
       <a href="javascript:void(0)" class="nav-item" id="nav-fees" onclick="switchFacultyTab('fees')">
         <span class="icon">💳</span> Fee Tracking
       </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-risk-radar" onclick="switchFacultyTab('risk-radar')">
+        <span class="icon">📡</span> Academic Risk Radar
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-impact-loop" onclick="switchFacultyTab('impact-loop')">
+        <span class="icon">🔄</span> Impact Loop
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-decision-trace" onclick="switchFacultyTab('decision-trace')">
+        <span class="icon">🔍</span> Decision Trace
+      </a>
       <a href="profile.html" class="nav-item" id="nav-profile">
         <span class="icon">👤</span> My Profile
       </a>
@@ -57,10 +66,10 @@
   <div class="main-wrapper">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebarDrawer()">☰</button>
         <div>
-          <h1 class="page-title">Faculty Mentorship & Advisory Console</h1>
-          <span style="font-size: 0.76rem; color: var(--text-dim);">Authorized Mentee Group Academic Progress & Approvals</span>
+          <h1 class="page-title" id="page-view-title">Faculty Mentorship & Advisory Console</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);" id="page-view-subtitle">Authorized Mentee Group Academic Progress & Approvals</span>
         </div>
       </div>
       <div class="topbar-right">
@@ -77,213 +86,476 @@
 
     <main class="page-container">
 
-      <!-- Mentor KPI Cards (My Dashboard Overview) -->
-      <div class="kpi-grid" id="faculty-sec-overview" style="margin-bottom: 24px;">
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Assigned Mentees</span>
-            <span class="kpi-icon">👥</span>
+      <!-- =====================================================================
+           VIEW 1: MY DASHBOARD (Overview)
+           ===================================================================== -->
+      <div class="content-view active" id="view-dashboard">
+        <!-- Mentor KPI Cards -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card" style="cursor: pointer;" onclick="switchFacultyTab('mentees')">
+            <div class="kpi-header">
+              <span class="kpi-title">Assigned Mentees</span>
+              <span class="kpi-icon">👥</span>
+            </div>
+            <div class="kpi-value" id="kpi-mentee-count">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--accent-cyan); font-weight: 600;">Active Advisory Cohort</span>
+            </div>
           </div>
-          <div class="kpi-value" id="kpi-mentee-count">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--accent-cyan); font-weight: 600;">Active Advisory Cohort</span>
+
+          <div class="kpi-card" style="cursor: pointer;" onclick="switchFacultyTab('leaves')">
+            <div class="kpi-header">
+              <span class="kpi-title">Pending Leave Requests</span>
+              <span class="kpi-icon">📝</span>
+            </div>
+            <div class="kpi-value" id="kpi-pending-leaves" style="color: #fbbf24;">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--text-dim);">Awaiting your review</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="cursor: pointer;" onclick="switchFacultyTab('activities')">
+            <div class="kpi-header">
+              <span class="kpi-title">Pending Activities</span>
+              <span class="kpi-icon">🏆</span>
+            </div>
+            <div class="kpi-value" id="kpi-pending-activities" style="color: var(--accent-purple);">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--text-dim);">Awaiting certificate check</span>
+            </div>
+          </div>
+
+          <div class="kpi-card" style="cursor: pointer;" onclick="switchFacultyTab('fees')">
+            <div class="kpi-header">
+              <span class="kpi-title">Fee Alert Count</span>
+              <span class="kpi-icon">💳</span>
+            </div>
+            <div class="kpi-value" id="kpi-fee-alerts" style="color: #f87171;">0</div>
+            <div class="kpi-footer">
+              <span style="color: var(--text-dim);">Mentees with dues</span>
+            </div>
           </div>
         </div>
 
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Pending Leave Requests</span>
-            <span class="kpi-icon">📝</span>
+        <!-- Quick Actions & Priority Mentee Alerts -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px;">
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3>Priority Mentee Action Radar</h3>
+                <p>Scholars requiring immediate attendance, academic, or approval follow-up</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="switchFacultyTab('risk-radar')">Full Risk Radar 📡</button>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Scholar</th>
+                    <th>Attendance</th>
+                    <th>CGPA</th>
+                    <th>Risk Factor</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-priority-tbody">
+                  <tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-dim);">Scanning mentee records... ⏳</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div class="kpi-value" id="kpi-pending-leaves" style="color: #fbbf24;">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--text-dim);">Awaiting your review</span>
+
+          <div class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h3>Quick Navigation</h3>
+                <p>One-click direct console actions</p>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button class="btn btn-primary" style="justify-content: flex-start; text-align: left;" onclick="openNewInterventionModal()">
+                <span>➕</span> Assign New Intervention
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start; text-align: left;" onclick="switchFacultyTab('activities')">
+                <span>🏆</span> Verify Activity Submissions
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start; text-align: left;" onclick="switchFacultyTab('leaves')">
+                <span>📝</span> Review Pending Leaves
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start; text-align: left;" onclick="switchFacultyTab('results')">
+                <span>📈</span> Record & Publish Results
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start; text-align: left;" onclick="switchFacultyTab('impact-loop')">
+                <span>🔄</span> ATS Impact Loop Outcomes
+              </button>
+              <button class="btn btn-secondary" style="justify-content: flex-start; text-align: left;" onclick="switchFacultyTab('decision-trace')">
+                <span>🔍</span> Inspect Decision Traces
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Pending Activities</span>
-            <span class="kpi-icon">🏆</span>
+      <!-- =====================================================================
+           VIEW 2: MENTEE MANAGEMENT
+           ===================================================================== -->
+      <div class="content-view" id="view-mentees">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Assigned Mentees Roster</h3>
+              <p>Students assigned under your official mentorship authority</p>
+            </div>
+            <input type="text" id="mentee-search" class="form-control" placeholder="Search by name or register no..." style="max-width: 260px;" oninput="filterMentees()">
           </div>
-          <div class="kpi-value" id="kpi-pending-activities" style="color: var(--accent-purple);">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--text-dim);">Awaiting certificate check</span>
-          </div>
-        </div>
 
-        <div class="kpi-card">
-          <div class="kpi-header">
-            <span class="kpi-title">Fee Alert Count</span>
-            <span class="kpi-icon">💳</span>
-          </div>
-          <div class="kpi-value" id="kpi-fee-alerts" style="color: #f87171;">0</div>
-          <div class="kpi-footer">
-            <span style="color: var(--text-dim);">Mentees with dues</span>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Register No</th>
+                  <th>Dept & Year</th>
+                  <th>CGPA</th>
+                  <th>Attendance</th>
+                  <th>Risk Standing</th>
+                  <th>Pending Work</th>
+                  <th>Outstanding Fee</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mentees-table-body">
+                <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading assigned mentees... ⏳</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      <!-- Mentees Directory (Mentee Management) -->
-      <div class="glass-card" id="faculty-sec-mentees" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Assigned Mentees Roster</h3>
-            <p>Students assigned under your official mentorship</p>
+      <!-- =====================================================================
+           VIEW 3: LEAVE APPROVALS
+           ===================================================================== -->
+      <div class="content-view" id="view-leaves">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Mentee Leave Requests</h3>
+              <p>Authorize or decline leave applications submitted by your assigned mentees</p>
+            </div>
           </div>
-          <input type="text" id="mentee-search" class="form-control" placeholder="Search by name or register no..." style="max-width: 260px;" oninput="filterMentees()">
-        </div>
 
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Scholar</th>
-                <th>Register No</th>
-                <th>Dept & Year</th>
-                <th>CGPA</th>
-                <th>Attendance</th>
-                <th>Risk Standing</th>
-                <th>Pending Work</th>
-                <th>Outstanding Fee</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="mentees-table-body">
-              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading assigned mentees... ⏳</td></tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Leave Type</th>
+                  <th>Duration</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Review Remarks</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="leaves-table-body">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading leave requests... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Leave Requests Section -->
-      <div class="glass-card" id="section-leaves" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Mentee Leave Requests</h3>
-            <p>Authorize or decline leave applications submitted by your assigned mentees</p>
+      <!-- =====================================================================
+           VIEW 4: ACTIVITY VERIFICATION
+           ===================================================================== -->
+      <div class="content-view" id="view-activities">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Mentee Activity & Achievement Submissions</h3>
+              <p>Review proof documents and verify hackathons, NPTEL courses, paper presentations, etc.</p>
+            </div>
           </div>
-        </div>
 
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Leave Type</th>
-                <th>Duration</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Review Remarks</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="leaves-table-body">
-              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading leave requests... ⏳</td></tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Category</th>
+                  <th>Title & Provider</th>
+                  <th>Event Date</th>
+                  <th>Participation</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="activities-table-body">
+                <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading mentee activity submissions... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Student Activities Section -->
-      <div class="glass-card" id="section-activities" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Mentee Activity & Achievement Submissions</h3>
-            <p>Review proof documents and verify hackathons, NPTEL courses, paper presentations, etc.</p>
+      <!-- =====================================================================
+           VIEW 5: MENTEE RESULTS
+           ===================================================================== -->
+      <div class="content-view" id="view-results">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Mentee Examination & Practical Results</h3>
+              <p>Multi-tier results: Internal exams, lab practicals, and semester examinations</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <div class="tab-pills" id="results-filter-pills">
+                <button class="tab-pill active" onclick="filterResultsType('all')">All Results</button>
+                <button class="tab-pill" onclick="filterResultsType('internal')">Internal Exams</button>
+                <button class="tab-pill" onclick="filterResultsType('lab')">Lab Practicals</button>
+                <button class="tab-pill" onclick="filterResultsType('semester')">Semester Results</button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Category</th>
-                <th>Title & Provider</th>
-                <th>Event Date</th>
-                <th>Participation</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="activities-table-body">
-              <tr><td colspan="7" style="text-align: center; padding: 24px;">Loading mentee activity submissions... ⏳</td></tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Type</th>
+                  <th>Subject</th>
+                  <th>Assessment</th>
+                  <th>Marks Obtained</th>
+                  <th>Max Marks</th>
+                  <th>Grade</th>
+                  <th>Status</th>
+                  <th>Published</th>
+                </tr>
+              </thead>
+              <tbody id="results-table-body">
+                <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading mentee academic results... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Mentee Academic Results -->
-      <div class="glass-card" id="section-results" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Mentee Examination & Practical Results</h3>
-            <p>Multi-tier results: Internal exams, lab practicals, and semester examinations</p>
+      <!-- =====================================================================
+           VIEW 6: FEE TRACKING
+           ===================================================================== -->
+      <div class="content-view" id="view-fees">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Mentee Fee Status Tracking</h3>
+              <p>Institutional advisory view of mentee fee obligations and pending balances</p>
+            </div>
           </div>
-          <div class="tab-pills" id="results-filter-pills">
-            <button class="tab-pill active" onclick="filterResultsType('all')">All Results</button>
-            <button class="tab-pill" onclick="filterResultsType('internal')">Internal Exams</button>
-            <button class="tab-pill" onclick="filterResultsType('lab')">Lab Practicals</button>
-            <button class="tab-pill" onclick="filterResultsType('semester')">Semester Results</button>
-          </div>
-        </div>
 
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Type</th>
-                <th>Subject</th>
-                <th>Assessment</th>
-                <th>Marks Obtained</th>
-                <th>Max Marks</th>
-                <th>Grade</th>
-                <th>Status</th>
-                <th>Published</th>
-              </tr>
-            </thead>
-            <tbody id="results-table-body">
-              <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading mentee academic results... ⏳</td></tr>
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Fee Category</th>
+                  <th>Academic Period</th>
+                  <th>Total Due</th>
+                  <th>Amount Paid</th>
+                  <th>Balance Due</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
+                </tr>
+              </thead>
+              <tbody id="fees-table-body">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading mentee fee records... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Mentee Fee Tracking -->
-      <div class="glass-card" id="section-fees" style="margin-bottom: 28px;">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h3>Mentee Fee Status Tracking</h3>
-            <p>Institutional advisory view of mentee fee obligations and pending balances</p>
+      <!-- =====================================================================
+           VIEW 7: ACADEMIC RISK RADAR
+           ===================================================================== -->
+      <div class="content-view" id="view-risk-radar">
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Academic Risk Radar</h3>
+              <p>Proactive detection of academic risk: Attendance &lt; 75%, GPA &lt; 6.0, and continuous assessment deficits</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openNewInterventionModal()">➕ Initiate Intervention</button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Scholar</th>
+                  <th>Register No</th>
+                  <th>Attendance %</th>
+                  <th>Current SGPA</th>
+                  <th>Risk Standing</th>
+                  <th>Contributing Factors</th>
+                  <th>Recommended Support</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="risk-radar-table-body">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Evaluating academic risk signals... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 8: ATS IMPACT LOOP (Interventions & Outcome Tracking)
+           ===================================================================== -->
+      <div class="content-view" id="view-impact-loop">
+        <!-- Impact Loop Workflow Banner -->
+        <div class="glass-card" style="margin-bottom: 20px; padding: 18px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.1rem;">🔄</span>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">ATS Impact Loop: Student Intervention & Outcome Tracking</h3>
+              </div>
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                Workflow: Academic Signals → Risk Assessment → Recommended Intervention → Assigned Owner → Follow-up → Outcome Measurement → Evaluation.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="openNewInterventionModal()">
+              <span>➕</span> Assign New Intervention
+            </button>
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Fee Category</th>
-                <th>Academic Period</th>
-                <th>Total Due</th>
-                <th>Amount Paid</th>
-                <th>Balance Due</th>
-                <th>Status</th>
-                <th>Due Date</th>
-              </tr>
-            </thead>
-            <tbody id="fees-table-body">
-              <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading mentee fee records... ⏳</td></tr>
-            </tbody>
-          </table>
+        <!-- Impact Loop Summary Cards -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Interventions</span>
+              <span class="kpi-icon">📋</span>
+            </div>
+            <div class="kpi-value" id="impact-kpi-total">0</div>
+            <div class="kpi-footer"><span style="color: var(--accent-cyan);">Recorded Support Plans</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Active / Follow-Up</span>
+              <span class="kpi-icon">⏳</span>
+            </div>
+            <div class="kpi-value" id="impact-kpi-active" style="color: #fbbf24;">0</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Ongoing interventions</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Completed Cycles</span>
+              <span class="kpi-icon">✅</span>
+            </div>
+            <div class="kpi-value" id="impact-kpi-completed" style="color: #46C78B;">0</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Outcomes measured</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Measured Improvement</span>
+              <span class="kpi-icon">📈</span>
+            </div>
+            <div class="kpi-value" id="impact-kpi-rate" style="color: #67D5C0;">0%</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Demonstrated progress</span></div>
+          </div>
+        </div>
+
+        <!-- Interventions Roster -->
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Intervention Support Plans Roster</h3>
+              <p>Compare baseline vs measured academic indicators before and after intervention</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Type & Title</th>
+                  <th>Action Plan</th>
+                  <th>Baseline</th>
+                  <th>Measured Outcome</th>
+                  <th>Outcome Assessment</th>
+                  <th>Status</th>
+                  <th>Follow-up Due</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="impact-loop-table-body">
+                <tr><td colspan="9" style="text-align: center; padding: 24px;">Loading intervention records... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 9: DECISION TRACE (Explainable Recommendations)
+           ===================================================================== -->
+      <div class="content-view" id="view-decision-trace">
+        <div class="glass-card" style="margin-bottom: 20px; padding: 18px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.1rem;">🔍</span>
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">Academic Decision Trace: Explainable Recommendations</h3>
+                <span class="rule-engine-tag">Rule-Based Deterministic Engine v2.1</span>
+              </div>
+              <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 0.82rem;">
+                Audit log of triggering academic indicators, policy thresholds, explanations, and decisions. All recommendations are generated by validated institutional rules.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>Decision Traces Roster</h3>
+              <p>Review evidence behind alerts and record mentor actions (Accept, Modify, Dismiss)</p>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Indicator Type</th>
+                  <th>Observed Value vs Policy Threshold</th>
+                  <th>Evidence & Explanation</th>
+                  <th>Recommended Action</th>
+                  <th>Decision Status</th>
+                  <th>Action Taken / Result</th>
+                  <th>Review Action</th>
+                </tr>
+              </thead>
+              <tbody id="decision-trace-table-body">
+                <tr><td colspan="8" style="text-align: center; padding: 24px;">Loading decision traces... ⏳</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
     </main>
   </div>
 </div>
+
+<!-- =====================================================================
+     MODALS
+     ===================================================================== -->
 
 <!-- Leave Decision Modal -->
 <div class="modal-backdrop" id="leave-modal">
@@ -344,7 +616,7 @@
   </div>
 </div>
 
-<!-- Modal: Upload Examination & Lab Practical Results (Phase 5) -->
+<!-- Modal: Upload Examination & Lab Practical Results -->
 <div class="modal-backdrop" id="exam-lab-upload-modal">
   <div class="modal-card">
     <div class="modal-header">
@@ -358,7 +630,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
         <div class="form-group">
           <label class="form-label">Assessment Type *</label>
-          <select id="exam-lab-type" class="form-control" required onchange="handleAssessmentTypeChange()">
+          <select id="exam-lab-type" class="form-control" required>
             <option value="internal">Internal Examination (IAT)</option>
             <option value="lab">Laboratory Practical Assessment</option>
             <option value="semester">End Semester Examination</option>
@@ -403,6 +675,147 @@
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
         <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
         <button type="submit" class="btn btn-primary" id="btn-submit-exam-lab">💾 Record & Publish</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Create New Impact Loop Intervention -->
+<div class="modal-backdrop" id="create-intervention-modal">
+  <div class="modal-card" style="max-width: 580px;">
+    <div class="modal-header">
+      <h3 class="modal-title">🔄 Assign New Academic Intervention</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <form id="create-intervention-form">
+      <div class="form-group">
+        <label class="form-label">Select Mentee *</label>
+        <select id="int-student-select" class="form-control" required>
+          <option value="">-- Choose Assigned Mentee --</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Intervention Type *</label>
+          <select id="int-type" class="form-control" required>
+            <option value="Mentor Meeting">Mentor Meeting</option>
+            <option value="Subject Revision Plan">Subject Revision Plan</option>
+            <option value="Assignment Recovery Plan">Assignment Recovery Plan</option>
+            <option value="Attendance Follow-up">Attendance Follow-up</option>
+            <option value="Peer Tutoring">Peer Tutoring</option>
+            <option value="Academic Counseling">Academic Counseling</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Target Completion Date *</label>
+          <input type="date" id="int-target-date" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Title / Focus Area *</label>
+        <input type="text" id="int-title" class="form-control" placeholder="e.g. Attendance Recovery & Math Tutorial Clinic" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Action Plan & Milestones *</label>
+        <textarea id="int-action-plan" class="form-control" rows="3" placeholder="Outline specific recovery steps (e.g. attend 8 consecutive classes, submit CIA remedial problem set 2)..." required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Student Guidance Notes (Visible to Student)</label>
+        <textarea id="int-student-notes" class="form-control" rows="2" placeholder="Clear supportive instructions visible to student on their portal..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Private Mentor Notes (Hidden from Student)</label>
+        <textarea id="int-private-notes" class="form-control" rows="2" placeholder="Confidential observation notes (only visible to mentor & HOD)..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-intervention">🚀 Assign Intervention</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Update Impact Loop Intervention Outcome -->
+<div class="modal-backdrop" id="update-intervention-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">📊 Update Intervention & Record Outcome</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div id="update-int-info" style="margin-bottom: 16px; font-size: 0.88rem; color: var(--accent-cyan);"></div>
+    <form id="update-intervention-form">
+      <input type="hidden" id="update-int-id">
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select id="update-int-status" class="form-control" required>
+            <option value="In Progress">In Progress</option>
+            <option value="Follow-up Due">Follow-up Due</option>
+            <option value="Completed">Completed (Record Outcome)</option>
+            <option value="Closed">Closed</option>
+            <option value="Dismissed">Dismissed</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Outcome Evaluation</label>
+          <select id="update-int-assessment" class="form-control">
+            <option value="Pending Evaluation">Pending Evaluation</option>
+            <option value="Significant Improvement">Significant Improvement</option>
+            <option value="Moderate Improvement">Moderate Improvement</option>
+            <option value="Neutral / No Change">Neutral / No Change</option>
+            <option value="Limited Improvement / Needs Revision">Limited Improvement / Needs Revision</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Outcome Notes / Follow-Up Evidence</label>
+        <textarea id="update-int-notes" class="form-control" rows="3" placeholder="Enter post-intervention observations, measured improvements, or next steps..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-save-update-int">Save Outcome Evaluation</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Review Decision Trace -->
+<div class="modal-backdrop" id="decision-trace-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">🔍 Decision Trace Review</h3>
+      <button class="modal-close" data-modal-close>&times;</button>
+    </div>
+    <div id="decision-trace-modal-info" style="margin-bottom: 16px; font-size: 0.88rem; color: var(--text-muted);"></div>
+    <form id="decision-trace-review-form">
+      <input type="hidden" id="trace-review-id">
+      <div class="form-group">
+        <label class="form-label">Decision Status *</label>
+        <select id="trace-review-status" class="form-control" required>
+          <option value="Accepted">Accept Recommendation</option>
+          <option value="Action Taken">Action Taken (Intervention Created)</option>
+          <option value="Modified">Modified Recommendation</option>
+          <option value="Dismissed">Dismiss Alert</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mentor Review Action / Justification *</label>
+        <textarea id="trace-review-action" class="form-control" rows="3" placeholder="Record reason for action taken..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-trace-review">Confirm Decision</button>
       </div>
     </form>
   </div>

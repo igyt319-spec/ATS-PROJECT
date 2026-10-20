@@ -40,7 +40,7 @@ async function loadChatHistory() {
     } else {
       // Welcome bubble
       box.innerHTML = '';
-      appendMessageBubble('bot', `Hello! I am your AI Academic Assistant 🤖. I have real-time access to your semester marks, subject attendance compliance, institutional fee status, faculty mentor details, and verified achievements.\n\nClick any of the suggested prompt chips below or type a custom question to get started!`);
+      appendMessageBubble('bot', `Hello! I am your AI Academic Mentor 2.0 🤖.\n\nI have authorized access to your academic trajectory, including:\n• **Performance & Digital Twin**: Diagnostics on weak subjects and semester GPA trajectories\n• **7-Day Study Plans**: Daily prioritized revision and practice schedules\n• **Career Readiness**: Competency gap assessments across tech engineering tracks\n• **What-If Simulations**: Mark and attendance sensitivity forecasting\n• **Official Records**: Verified achievements, fees, and faculty advisor contact\n\nClick any suggested chip below or ask any question to get started!`);
       scrollToBottom();
     }
   } catch (err) {

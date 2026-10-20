@@ -316,6 +316,15 @@ async function verifyActivity(req, res) {
             ]
           );
         }
+
+        // Generate verification token if not present
+        const crypto = require('crypto');
+        const token = crypto.randomBytes(16).toString('hex');
+        await db.query(
+          'UPDATE student_activities SET verification_token = COALESCE(verification_token, ?) WHERE id = ?',
+          [token, id]
+        );
+
         await db.query(
           `INSERT INTO notifications (student_id, type, title, message)
            VALUES (?, 'achievement', 'Activity Verified', ?)`,
@@ -346,11 +355,178 @@ async function verifyActivity(req, res) {
   }
 }
 
+// GET /api/activities/passport/:studentId (Feature 3: Verified Achievement Passport Portfolio)
+async function getAchievementPassport(req, res) {
+  try {
+    const studentId = parseInt(req.params.studentId, 10);
+    const crypto = require('crypto');
+
+    // 1. Fetch student basics
+    const [students] = await db.query(
+      `SELECT st.id, st.name, st.register_number, st.year, st.semester, st.avatar,
+              d.name AS department_name, p.name AS program_name,
+              c.name AS college_name
+       FROM students st
+       LEFT JOIN departments d ON d.id = st.department_id
+       LEFT JOIN programs p ON p.id = st.program_id
+       LEFT JOIN colleges c ON c.id = d.college_id
+       WHERE st.id = ?`,
+      [studentId]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+    const student = students[0];
+
+    // 2. Fetch all verified activities
+    const [activities] = await db.query(
+      `SELECT sa.*, u.name AS verified_by_name, u.role AS verified_by_role
+       FROM student_activities sa
+       LEFT JOIN users u ON u.id = sa.verified_by
+       WHERE sa.student_id = ? AND sa.status = 'Verified'
+       ORDER BY sa.event_date DESC`,
+      [studentId]
+    );
+
+    // Ensure all verified activities have verification tokens
+    for (const act of activities) {
+      if (!act.verification_token) {
+        const token = crypto.randomBytes(16).toString('hex');
+        act.verification_token = token;
+        await db.query('UPDATE student_activities SET verification_token = ? WHERE id = ?', [token, act.id]);
+      }
+    }
+
+    // 3. Category Breakdown
+    const categoryStats = {};
+    activities.forEach(a => {
+      categoryStats[a.category] = (categoryStats[a.category] || 0) + 1;
+    });
+
+    const passportData = {
+      student: {
+        id: student.id,
+        name: student.name,
+        registerNumber: student.register_number,
+        department: student.department_name,
+        program: student.program_name,
+        year: student.year,
+        semester: student.semester,
+        institution: student.college_name || 'Autonomous Engineering College',
+        avatar: student.avatar
+      },
+      summary: {
+        totalVerifiedAchievements: activities.length,
+        categoriesRepresented: Object.keys(categoryStats).length,
+        categoryBreakdown: categoryStats,
+        passportIssuedDate: new Date().toISOString()
+      },
+      verifiedAchievements: activities.map(a => ({
+        id: a.id,
+        title: a.title,
+        category: a.category,
+        description: a.description,
+        organizingInstitution: a.organizing_institution,
+        eventDate: a.event_date,
+        participationLevel: a.participation_level,
+        certificateUrl: a.certificate_url,
+        verifiedByName: a.verified_by_name || 'Department Faculty Advisor',
+        verifiedAt: a.verified_at,
+        verificationToken: a.verification_token,
+        verificationUrl: `/verify-passport.html?token=${a.verification_token}`
+      }))
+    };
+
+    return res.status(200).json({
+      success: true,
+      passport: passportData
+    });
+
+  } catch (error) {
+    console.error('[Get Achievement Passport Error]', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// GET /api/activities/passport/verify/:token (Feature 3: Public QR Verification)
+// Strictly exposes only public non-sensitive verification facts (NO student ID, NO phone/email, NO marks)
+async function verifyPublicPassport(req, res) {
+  try {
+    const token = (req.params.token || '').trim();
+
+    if (!token || token.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'A valid verification token is required.'
+      });
+    }
+
+    const [rows] = await db.query(
+      `SELECT sa.id, sa.title, sa.category, sa.description, sa.organizing_institution,
+              sa.event_date, sa.participation_level, sa.verified_at, sa.status, sa.verification_token,
+              st.name AS student_full_name,
+              d.name AS department_name,
+              c.name AS college_name,
+              u.name AS verified_by_name
+       FROM student_activities sa
+       JOIN students st ON st.id = sa.student_id
+       LEFT JOIN departments d ON d.id = st.department_id
+       LEFT JOIN colleges c ON c.id = d.college_id
+       LEFT JOIN users u ON u.id = sa.verified_by
+       WHERE sa.verification_token = ? AND sa.status = 'Verified'`,
+      [token]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        verified: false,
+        message: 'No verified achievement certificate matches this verification code. The certificate may be invalid, unapproved, or revoked.'
+      });
+    }
+
+    const record = rows[0];
+
+    // Privacy mask: Show First name and Last initial only (e.g., "Kavitha M.")
+    const nameParts = (record.student_full_name || 'Student').trim().split(/\s+/);
+    const maskedName = nameParts.length > 1 
+      ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}.`
+      : nameParts[0];
+
+    return res.status(200).json({
+      success: true,
+      verified: true,
+      verificationNotice: 'OFFICIAL ATS INTEGRITY RECORD — VERIFIED BY INSTITUTIONAL MENTOR',
+      data: {
+        achievementTitle: record.title,
+        category: record.category,
+        organizingInstitution: record.organizing_institution,
+        eventDate: record.event_date,
+        participationLevel: record.participation_level || 'Participant',
+        recipientDisplayName: maskedName,
+        academicDepartment: record.department_name,
+        institutionName: record.college_name || 'Autonomous Engineering College',
+        verificationTimestamp: record.verified_at,
+        verifyingAuthority: 'Faculty Mentor & Academic Advisory Board',
+        verificationCode: record.verification_token
+      }
+    });
+
+  } catch (error) {
+    console.error('[Verify Public Passport Error]', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   getStudentActivities,
   getMentorMenteeActivities,
   getDepartmentActivities,
   getInstitutionActivities,
   submitActivity,
-  verifyActivity
+  verifyActivity,
+  getAchievementPassport,
+  verifyPublicPassport
 };
+

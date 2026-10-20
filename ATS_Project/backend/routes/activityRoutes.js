@@ -3,6 +3,12 @@ const router = express.Router();
 const activityController = require('../controllers/activityController');
 const { verifyToken, isFaculty, isHOD, isMentor, ownsStudentOrAssigned } = require('../middleware/authMiddleware');
 
+// Public QR verification endpoint (No auth required, privacy-safe)
+router.get('/passport/verify/:token', activityController.verifyPublicPassport);
+
+// Student Placement-Ready Achievement Passport (Requires authorization)
+router.get('/passport/:studentId', verifyToken, ownsStudentOrAssigned, activityController.getAchievementPassport);
+
 router.get('/student/:studentId', verifyToken, ownsStudentOrAssigned, activityController.getStudentActivities);
 router.get('/mentor/mentees', verifyToken, isMentor, activityController.getMentorMenteeActivities);
 router.get('/department', verifyToken, isHOD, activityController.getDepartmentActivities);

@@ -37,6 +37,14 @@
         <span class="icon">🏛️</span> Department Overview
       </a>
 
+      <div class="nav-section-title" style="margin-top: 18px;">Intelligence & Audit</div>
+      <a href="#institutional-twin-section" class="nav-item" id="nav-twin">
+        <span class="icon">🌐</span> College Digital Twin
+      </a>
+      <a href="#audit-integrity-section" class="nav-item" id="nav-audit">
+        <span class="icon">🛡️</span> Integrity & Audit Trail
+      </a>
+
       <div class="nav-section-title" style="margin-top: 18px;">Account Settings</div>
       <a href="profile.html" class="nav-item">
         <span class="icon">👤</span> My Profile
@@ -288,6 +296,170 @@
           <div style="text-align: center; padding: 24px; color: var(--text-dim); grid-column: 1 / -1;">
             Loading department rosters... ⏳
           </div>
+        </div>
+      </section>
+
+      <!-- =========================================================================
+           SECTION 4: INSTITUTIONAL COLLEGE DIGITAL TWIN OVERVIEW
+           ========================================================================= -->
+      <section id="institutional-twin-section" class="glass-card" style="margin-bottom: 28px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+          <div class="card-title-group">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <span>🌐</span> Institutional College Digital Twin
+            </h3>
+            <p>Macro-level cross-departmental benchmarks, institutional academic trends, and risk telemetry</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadInstitutionalTwin()" style="font-size: 0.8rem; padding: 6px 14px;">
+            🔄 Refresh Macro Analytics
+          </button>
+        </div>
+
+        <!-- Institutional Twin KPI Cards -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card" style="border-top: 3px solid #38bdf8;">
+            <div class="kpi-top">
+              <span class="kpi-title">Active Academic Departments</span>
+              <div class="kpi-icon" style="color: #38bdf8;">🏛️</div>
+            </div>
+            <div class="kpi-value" id="admin-twin-total-depts">—</div>
+            <div class="kpi-subtitle">Configured Institutional Units</div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #34d399;">
+            <div class="kpi-header">
+              <span class="kpi-title">Institutional Mean CGPA</span>
+              <span class="kpi-icon" style="color: #34d399;">📈</span>
+            </div>
+            <div class="kpi-value" id="admin-twin-mean-cgpa" style="color: #34d399;">—</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Across all verified records</span></div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #fbbf24;">
+            <div class="kpi-header">
+              <span class="kpi-title">Institutional Attendance</span>
+              <span class="kpi-icon" style="color: #fbbf24;">📅</span>
+            </div>
+            <div class="kpi-value" id="admin-twin-mean-att" style="color: #fbbf24;">—</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Institution-wide Compliance</span></div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #f87171;">
+            <div class="kpi-header">
+              <span class="kpi-title">High Risk Scholars</span>
+              <span class="kpi-icon" style="color: #f87171;">⚠️</span>
+            </div>
+            <div class="kpi-value" id="admin-twin-high-risk" style="color: #f87171;">—</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Require Faculty Advisory Support</span></div>
+          </div>
+        </div>
+
+        <!-- Comparative Department Benchmark Table -->
+        <div class="table-responsive">
+          <table class="ats-table">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Code</th>
+                <th>Active Scholars</th>
+                <th>Faculty</th>
+                <th>S : F Ratio</th>
+                <th>Mean CGPA</th>
+                <th>Mean Attendance</th>
+                <th>Risk Cohort (High / Med / Low)</th>
+              </tr>
+            </thead>
+            <tbody id="admin-twin-table-body">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 28px; color: var(--text-dim);">
+                  Aggregating institutional department intelligence... ⏳
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- =========================================================================
+           SECTION 5: SMART ACADEMIC INTEGRITY & AUDIT TRAIL
+           ========================================================================= -->
+      <section id="audit-integrity-section" class="glass-card" style="margin-bottom: 28px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 14px;">
+          <div class="card-title-group">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <span>🛡️</span> Smart Academic Integrity &amp; Audit Trail
+            </h3>
+            <p>Tamper-evident audit logging of marks entries, attendance records, role allocations, and security anomaly detection</p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button class="btn btn-secondary btn-sm" onclick="scanAuditAnomalies()" id="btn-scan-anomalies" style="font-size: 0.78rem; padding: 6px 12px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+              🔍 Anomaly Scanner
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportAuditLogs('csv')" style="font-size: 0.78rem; padding: 6px 12px;">
+              📥 Export CSV
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportAuditLogs('json')" style="font-size: 0.78rem; padding: 6px 12px;">
+              📥 Export JSON
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()" style="font-size: 0.78rem; padding: 6px 12px;">
+              🔄 Refresh Logs
+            </button>
+          </div>
+        </div>
+
+        <!-- Anomaly Scanner Alert Card (Shown when anomalies detected or scanned) -->
+        <div id="audit-anomaly-container" style="display: none; margin-bottom: 20px; padding: 16px; border-radius: 8px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.1rem;">⚠️</span>
+              <strong style="color: #fbbf24; font-size: 0.92rem;">Audit Anomaly &amp; Integrity Analysis</strong>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="dismissAnomalyBox()" style="font-size: 0.7rem; padding: 2px 8px;">Dismiss</button>
+          </div>
+          <div id="audit-anomaly-details" style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;"></div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 14px; background: rgba(15, 23, 42, 0.5); border-radius: 8px; border: 1px solid var(--border-color);">
+          <input type="text" id="audit-search-input" placeholder="🔍 Search actor, action, details..." oninput="filterAuditTable()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.82rem; min-width: 240px;">
+          <select id="audit-action-filter" onchange="filterAuditTable()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.82rem;">
+            <option value="all">All Actions</option>
+            <option value="RECORD_MARKS">Record Marks</option>
+            <option value="UPDATE_MARKS">Update Marks</option>
+            <option value="DELETE_MARKS">Delete Marks</option>
+            <option value="RECORD_ATTENDANCE">Record Attendance</option>
+            <option value="UPDATE_ATTENDANCE">Update Attendance</option>
+            <option value="CREATE_USER">Create User</option>
+            <option value="STATUS_CHANGE">User Status Change</option>
+            <option value="ASSIGN_MENTOR">Assign Mentor</option>
+            <option value="VERIFY_ACTIVITY">Verify Activity</option>
+            <option value="UPDATE_FEE">Update Fee</option>
+            <option value="REVIEW_LEAVE">Review Leave</option>
+          </select>
+          <span style="font-size: 0.78rem; color: var(--text-dim); margin-left: auto;" id="audit-count-badge">Showing 0 events</span>
+        </div>
+
+        <!-- Audit Log Table -->
+        <div class="table-responsive">
+          <table class="ats-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target Entity</th>
+                <th>Status / Outcome</th>
+                <th>Operation Details</th>
+              </tr>
+            </thead>
+            <tbody id="audit-logs-table-body">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 32px; color: var(--text-dim);">
+                  Loading immutable audit events... ⏳
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 

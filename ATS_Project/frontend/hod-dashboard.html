@@ -25,6 +25,9 @@
       <a href="hod-dashboard.html" class="nav-item active">
         <span class="icon">🏛️</span> Department Overview
       </a>
+      <a href="#section-dept-twin" class="nav-item" onclick="scrollToSection('section-dept-twin')">
+        <span class="icon">🌐</span> Department Twin
+      </a>
       <a href="#section-allocations" class="nav-item" onclick="scrollToSection('section-allocations')">
         <span class="icon">🧭</span> Mentor Allocations
       </a>
@@ -145,6 +148,153 @@
             <div class="kpi-footer">
               <span style="color: var(--text-dim);">Total Student Balances</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================================
+           SECTOR 1B: COLLEGE DIGITAL TWIN — DEPARTMENT INTELLIGENCE
+           ========================================================================= -->
+      <section class="glass-card" id="section-dept-twin" style="margin-bottom: 28px; padding: 24px;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
+          <div class="card-title-group">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+              <span>🌐</span> Department College Digital Twin
+            </h3>
+            <p>Macro-level academic trajectories, cohort risk telemetry, subject pass-rates, and faculty mentoring bandwidth</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="loadDepartmentTwin()" style="font-size: 0.8rem; padding: 6px 14px;">
+            🔄 Refresh Intelligence
+          </button>
+        </div>
+
+        <!-- Twin KPI Grid -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card" style="border-top: 3px solid #38bdf8;">
+            <div class="kpi-header">
+              <span class="kpi-title">Cohort Mean CGPA</span>
+              <span class="kpi-icon">📈</span>
+            </div>
+            <div class="kpi-value" id="twin-dept-cgpa">—</div>
+            <div class="kpi-footer"><span style="color: #38bdf8;">Official Academic Average</span></div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #34d399;">
+            <div class="kpi-header">
+              <span class="kpi-title">Average Attendance</span>
+              <span class="kpi-icon">📅</span>
+            </div>
+            <div class="kpi-value" id="twin-dept-att">—</div>
+            <div class="kpi-footer"><span style="color: #34d399;">Cohort-wide Compliance</span></div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #f87171;">
+            <div class="kpi-header">
+              <span class="kpi-title">Attendance Risk (&lt;75%)</span>
+              <span class="kpi-icon">⚠️</span>
+            </div>
+            <div class="kpi-value" id="twin-dept-att-risk" style="color: #f87171;">—</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);">Immediate Intervention Needed</span></div>
+          </div>
+
+          <div class="kpi-card" style="border-top: 3px solid #a855f7;">
+            <div class="kpi-header">
+              <span class="kpi-title">Verified Achievements</span>
+              <span class="kpi-icon">🏆</span>
+            </div>
+            <div class="kpi-value" id="twin-dept-act-verified" style="color: #a855f7;">—</div>
+            <div class="kpi-footer"><span style="color: var(--text-dim);" id="twin-dept-act-pending">0 Pending Review</span></div>
+          </div>
+        </div>
+
+        <!-- Attendance & Academic Risk Distribution Breakdown -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
+            <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>📊</span> Attendance Compliance Distribution
+            </h4>
+            <div id="twin-att-distribution-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <div>Loading distribution telemetry... ⏳</div>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
+            <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+              <span>🛡️</span> Academic Risk Cohort Stratification
+            </h4>
+            <div id="twin-risk-distribution-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <div>Loading risk stratification... ⏳</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Semester GPA Trajectory -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <span>📉</span> Multi-Semester GPA Performance Trajectory
+          </h4>
+          <div class="table-container" style="margin: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Academic Semester</th>
+                  <th>Student Cohort Size</th>
+                  <th>Cohort Mean Marks</th>
+                  <th>Mean GPA Equivalent</th>
+                </tr>
+              </thead>
+              <tbody id="twin-sem-trends-tbody">
+                <tr><td colspan="4" style="text-align: center; padding: 16px; color: var(--text-dim);">No semester trend records available.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Subject Pass / Fail & Scoring Analysis -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <span>📚</span> Subject-Level Mastery &amp; Pass-Rate Telemetry
+          </h4>
+          <div class="table-container" style="margin: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Subject Code</th>
+                  <th>Subject Name</th>
+                  <th>Credits</th>
+                  <th>Enrolled</th>
+                  <th>Cohort Avg Mark</th>
+                  <th>Pass Rate (%)</th>
+                  <th>Distinctions (&gt;=80%)</th>
+                </tr>
+              </thead>
+              <tbody id="twin-subjects-tbody">
+                <tr><td colspan="7" style="text-align: center; padding: 16px; color: var(--text-dim);">No subject performance records available.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Faculty Mentorship Bandwidth -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm, 10px); padding: 18px;">
+          <h4 style="margin: 0 0 14px; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <span>👨‍🏫</span> Faculty Mentorship Workload &amp; Verification Pipeline
+          </h4>
+          <div class="table-container" style="margin: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Faculty Advisor</th>
+                  <th>Designation</th>
+                  <th>Assigned Mentees</th>
+                  <th>Pending Verifications</th>
+                  <th>Workload Status</th>
+                </tr>
+              </thead>
+              <tbody id="twin-faculty-workload-tbody">
+                <tr><td colspan="5" style="text-align: center; padding: 16px; color: var(--text-dim);">Loading faculty workload... ⏳</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

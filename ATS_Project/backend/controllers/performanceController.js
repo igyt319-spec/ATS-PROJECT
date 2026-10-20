@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { logAuditEvent } = require('../utils/auditLogger');
 
 function calculateGradeAndStatus(total) {
   let grade = 'F';
@@ -118,6 +119,17 @@ async function addMarks(req, res) {
       [student_id, subject_id, student.current_semester_id, internal, assignment, exam, total, grade, gradePoint, status, status, semester || student.semester]
     );
 
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      userEmail: req.user?.email || null,
+      action: 'RECORD_MARKS',
+      entityType: 'marks',
+      entityId: result.insertId,
+      newValue: { student_id, subject_id, internal, assignment, exam, total, grade },
+      reason: 'Continuous assessment and semester marks recording',
+      ipAddress: req.ip
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Marks recorded successfully',
@@ -145,10 +157,32 @@ async function updateMarks(req, res) {
     const gradeRules = await getGradeRules();
     const { grade, status, gradePoint } = gradeFromRules(total, gradeRules);
 
+    // Fetch previous marks for audit history
+    const [prevMarks] = await db.query('SELECT * FROM marks WHERE id = ?', [id]);
+    const previousValue = prevMarks.length > 0 ? {
+      internal: prevMarks[0].internal_marks,
+      assignment: prevMarks[0].assignment_marks,
+      exam: prevMarks[0].exam_marks,
+      total: prevMarks[0].total_marks,
+      grade: prevMarks[0].grade
+    } : null;
+
     await db.query(
       `UPDATE marks SET internal_marks = ?, assignment_marks = ?, exam_marks = ?, total_marks = ?, grade = ?, grade_point = ?, performance_status = ?, status = ? WHERE id = ?`,
       [internal, assignment, exam, total, grade, gradePoint, status, status, id]
     );
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      userEmail: req.user?.email || null,
+      action: 'UPDATE_MARKS',
+      entityType: 'marks',
+      entityId: id,
+      previousValue,
+      newValue: { internal, assignment, exam, total, grade },
+      reason: req.body?.reason || 'Marks revised by faculty evaluator',
+      ipAddress: req.ip
+    });
 
     return res.status(200).json({
       success: true,
@@ -166,6 +200,17 @@ async function deleteMarks(req, res) {
   try {
     const id = parseInt(req.params.id, 10);
     await db.query('DELETE FROM marks WHERE id = ?', [id]);
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      userEmail: req.user?.email || null,
+      action: 'DELETE_MARKS',
+      entityType: 'marks',
+      entityId: id,
+      reason: req.body?.reason || 'Marks record removed',
+      ipAddress: req.ip
+    });
+
     return res.status(200).json({ success: true, message: 'Marks record deleted successfully.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

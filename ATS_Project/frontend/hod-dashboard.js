@@ -5,10 +5,12 @@ let departmentFaculty = [];
 let allDeptResults = [];
 let currentResultFilter = 'all';
 let currentHODData = null;
+let currentDepartmentId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth('hod');
   if (!user) return;
+  if (user.departmentId) currentDepartmentId = user.departmentId;
 
   initLayout();
 
@@ -105,6 +107,7 @@ async function loadAllHODData() {
     loadDepartmentLeaves(),
     loadDepartmentFees()
   ]);
+  await loadDepartmentTwin();
 }
 
 async function loadAllocations() {
@@ -113,6 +116,7 @@ async function loadAllocations() {
     departmentStudents = res.students || [];
     departmentMentors = res.mentors || [];
     departmentFaculty = res.faculty || res.mentors || [];
+    if (res.departmentId) currentDepartmentId = res.departmentId;
 
     // Sector 1 KPIs
     document.getElementById('kpi-dept-students').textContent = departmentStudents.length;
@@ -431,3 +435,197 @@ function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+async function loadDepartmentTwin() {
+  const deptId = currentDepartmentId || (currentHODData && currentHODData.department_id) || (JSON.parse(localStorage.getItem('user') || '{}').departmentId);
+  if (!deptId) return;
+
+  try {
+    const res = await apiCall(`/college-twin/department/${deptId}`);
+    if (!res.success || !res.departmentTwin) return;
+
+    const twin = res.departmentTwin;
+    const metrics = twin.metrics || {};
+    const attDist = twin.attendanceDistribution || { good: 0, monitor: 0, risk: 0 };
+    const riskDist = twin.riskDistribution || { LOW: 0, MEDIUM: 0, HIGH: 0 };
+    const actStats = twin.activityVerificationStats || { verified: 0, pending: 0, rejected: 0 };
+
+    // Update KPI values
+    const cgpaEl = document.getElementById('twin-dept-cgpa');
+    if (cgpaEl) cgpaEl.textContent = metrics.averageCgpa != null ? Number(metrics.averageCgpa).toFixed(2) : '—';
+
+    const attEl = document.getElementById('twin-dept-att');
+    if (attEl) attEl.textContent = metrics.averageAttendance != null ? `${Number(metrics.averageAttendance).toFixed(1)}%` : '—';
+
+    const riskEl = document.getElementById('twin-dept-att-risk');
+    if (riskEl) riskEl.textContent = attDist.risk || 0;
+
+    const actEl = document.getElementById('twin-dept-act-verified');
+    if (actEl) actEl.textContent = actStats.verified || 0;
+
+    const actPendingEl = document.getElementById('twin-dept-act-pending');
+    if (actPendingEl) actPendingEl.textContent = `${actStats.pending || 0} Pending Review`;
+
+    // Render Attendance Distribution Bars
+    const totalStudents = (attDist.good + attDist.monitor + attDist.risk) || 1;
+    const goodPct = Math.round((attDist.good / totalStudents) * 100);
+    const monPct = Math.round((attDist.monitor / totalStudents) * 100);
+    const riskPct = Math.round((attDist.risk / totalStudents) * 100);
+
+    const attContainer = document.getElementById('twin-att-distribution-container');
+    if (attContainer) {
+      attContainer.innerHTML = `
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #34d399;">Good Compliance (&ge; 85%)</span>
+            <strong style="color: #fff;">${attDist.good} (${goodPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${goodPct}%; height: 100%; background: #34d399; border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #fbbf24;">Monitor Zone (75% - 84%)</span>
+            <strong style="color: #fff;">${attDist.monitor} (${monPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${monPct}%; height: 100%; background: #fbbf24; border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #f87171;">Critical Attendance Risk (&lt; 75%)</span>
+            <strong style="color: #fff;">${attDist.risk} (${riskPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${riskPct}%; height: 100%; background: #f87171; border-radius: 4px;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Academic Risk Distribution
+    const totalRisk = (riskDist.LOW + riskDist.MEDIUM + riskDist.HIGH) || 1;
+    const lowPct = Math.round((riskDist.LOW / totalRisk) * 100);
+    const medPct = Math.round((riskDist.MEDIUM / totalRisk) * 100);
+    const highPct = Math.round((riskDist.HIGH / totalRisk) * 100);
+
+    const riskContainer = document.getElementById('twin-risk-distribution-container');
+    if (riskContainer) {
+      riskContainer.innerHTML = `
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #38bdf8;">Low Risk (Stable Academic Trajectory)</span>
+            <strong style="color: #fff;">${riskDist.LOW} (${lowPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${lowPct}%; height: 100%; background: #38bdf8; border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #fbbf24;">Medium Risk (Targeted Mentorship Advisable)</span>
+            <strong style="color: #fff;">${riskDist.MEDIUM} (${medPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${medPct}%; height: 100%; background: #fbbf24; border-radius: 4px;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: #f87171;">High Academic Risk (Critical Remedial Focus)</span>
+            <strong style="color: #fff;">${riskDist.HIGH} (${highPct}%)</strong>
+          </div>
+          <div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden;">
+            <div style="width: ${highPct}%; height: 100%; background: #f87171; border-radius: 4px;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render Multi-Semester GPA Trajectory
+    const semTbody = document.getElementById('twin-sem-trends-tbody');
+    if (semTbody) {
+      const semTrends = twin.semesterTrends || [];
+      if (semTrends.length === 0) {
+        semTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 16px; color: var(--text-dim);">No historical semester records found for this cohort.</td></tr>';
+      } else {
+        semTbody.innerHTML = semTrends.map(st => `
+          <tr>
+            <td><strong>Semester ${st.semester_num}</strong></td>
+            <td>${st.student_count} Scholars</td>
+            <td>${Number(st.mean_marks || 0).toFixed(1)} / 100</td>
+            <td><strong style="color: #38bdf8;">${Number(st.mean_gpa || 0).toFixed(2)}</strong></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Render Subject-Level Analytics
+    const subTbody = document.getElementById('twin-subjects-tbody');
+    if (subTbody) {
+      const subjects = twin.subjectPerformance || [];
+      if (subjects.length === 0) {
+        subTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 16px; color: var(--text-dim);">No subject performance records available.</td></tr>';
+      } else {
+        subTbody.innerHTML = subjects.map(s => `
+          <tr>
+            <td style="font-family: monospace; color: var(--accent-cyan);">${escapeHtml(s.code)}</td>
+            <td><strong>${escapeHtml(s.name)}</strong></td>
+            <td>${s.credits}</td>
+            <td>${s.enrolledCount}</td>
+            <td>${s.averageMark}</td>
+            <td>
+              <span class="kpi-pill ${s.passRate >= 75 ? 'pill-green' : s.passRate >= 50 ? 'pill-yellow' : 'pill-red'}">
+                ${s.passRate}%
+              </span>
+            </td>
+            <td><span style="color: #a855f7; font-weight: 700;">${s.distinctionCount}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Render Faculty Mentorship Workload
+    const facTbody = document.getElementById('twin-faculty-workload-tbody');
+    if (facTbody) {
+      const faculty = twin.facultyWorkload || [];
+      if (faculty.length === 0) {
+        facTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 16px; color: var(--text-dim);">No faculty registered in department.</td></tr>';
+      } else {
+        facTbody.innerHTML = faculty.map(f => {
+          const ratio = f.assignedMentees;
+          const statusPill = ratio > 25 
+            ? '<span class="kpi-pill pill-red">High Bandwidth</span>' 
+            : ratio >= 10 
+            ? '<span class="kpi-pill pill-yellow">Moderate</span>' 
+            : '<span class="kpi-pill pill-green">Optimal</span>';
+
+          return `
+            <tr>
+              <td>
+                <div style="font-weight: 700; color: #fff;">${escapeHtml(f.name)} ${f.isHod ? '<span class="badge" style="background: rgba(250,204,21,0.15); color: #facc15; font-size: 0.65rem;">HOD</span>' : ''}</div>
+                <div style="font-size: 0.72rem; color: var(--text-dim);">${escapeHtml(f.email || '')}</div>
+              </td>
+              <td>${escapeHtml(f.designation || 'Faculty')}</td>
+              <td><strong style="color: #38bdf8;">${f.assignedMentees} Mentees</strong></td>
+              <td><span style="color: ${f.pendingVerifications > 0 ? '#fbbf24' : 'var(--text-dim)'};">${f.pendingVerifications} Pending</span></td>
+              <td>${statusPill}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+  } catch (err) {
+    console.error('[Load Department Twin Error]', err);
+  }
+}
+
+window.loadDepartmentTwin = loadDepartmentTwin;
+

@@ -271,6 +271,188 @@ async function initDB() {
       )
     `, 'Create fee_payments table');
 
+    // Ensure academic_predictions exists for Feature 1 (AI Academic Digital Twin)
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS academic_predictions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        target_semester_number TINYINT NOT NULL,
+        predicted_gpa DECIMAL(4,2) NOT NULL,
+        gpa_range_low DECIMAL(4,2) NOT NULL,
+        gpa_range_high DECIMAL(4,2) NOT NULL,
+        confidence_score DECIMAL(5,2) NOT NULL DEFAULT 85.00,
+        influencing_factors JSON NULL,
+        method_used VARCHAR(80) NOT NULL DEFAULT 'Weighted Linear Trend Regression',
+        actual_gpa DECIMAL(4,2) NULL,
+        mae_estimate DECIMAL(4,2) NULL,
+        rmse_estimate DECIMAL(4,2) NULL,
+        prediction_notes TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        KEY idx_pred_student (student_id),
+        KEY idx_pred_target_sem (target_semester_number)
+      )
+    `, 'Create academic_predictions table');
+
+    // Ensure career_roles exists for Feature 2 (AI Career Readiness Engine)
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS career_roles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(120) NOT NULL UNIQUE,
+        category VARCHAR(80) NOT NULL,
+        description TEXT NOT NULL,
+        required_competencies JSON NOT NULL,
+        is_active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `, 'Create career_roles table');
+
+    // Ensure student_career_targets exists for Feature 2
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS student_career_targets (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        role_id INT NOT NULL,
+        target_proficiency ENUM('Entry', 'Associate', 'Professional') NOT NULL DEFAULT 'Entry',
+        status ENUM('In Progress', 'Achieved', 'Paused') NOT NULL DEFAULT 'In Progress',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_student_role (student_id, role_id),
+        KEY idx_sct_student (student_id),
+        KEY idx_sct_role (role_id)
+      )
+    `, 'Create student_career_targets table');
+
+    // Ensure career_roadmaps exists for Feature 2
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS career_roadmaps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        role_id INT NOT NULL,
+        milestones JSON NOT NULL,
+        overall_progress DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+        recommended_projects JSON NULL,
+        recommended_certifications JSON NULL,
+        interview_prep_modules JSON NULL,
+        last_evaluated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_roadmap_student_role (student_id, role_id),
+        KEY idx_crm_student (student_id)
+      )
+    `, 'Create career_roadmaps table');
+
+    // Ensure student_skills exists for Feature 2 & 3
+    await safeExecuteDDL(connection, `
+      CREATE TABLE IF NOT EXISTS student_skills (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        skill_name VARCHAR(100) NOT NULL,
+        proficiency_level ENUM('Beginner', 'Intermediate', 'Advanced', 'Expert') NOT NULL DEFAULT 'Intermediate',
+        is_verified TINYINT(1) NOT NULL DEFAULT 0,
+        verified_by INT NULL,
+        evidence_type ENUM('Coursework', 'Certification', 'Activity', 'Project', 'Self-Declared') NOT NULL DEFAULT 'Self-Declared',
+        evidence_ref VARCHAR(255) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_student_skill (student_id, skill_name),
+        KEY idx_ss_student (student_id)
+      )
+    `, 'Create student_skills table');
+
+    // Add verification_token to student_activities for Feature 3 (Verified Achievement Passport)
+    try {
+      const [colCheck] = await connection.query(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'student_activities' AND COLUMN_NAME = 'verification_token'",
+        [database]
+      );
+      if (colCheck.length === 0) {
+        await safeExecuteDDL(connection, "ALTER TABLE student_activities ADD COLUMN verification_token VARCHAR(64) NULL", 'Add student_activities.verification_token');
+        await safeExecuteDDL(connection, "ALTER TABLE student_activities ADD UNIQUE KEY uq_act_token (verification_token)", 'Add uq_act_token');
+      }
+    } catch (colErr) {
+      console.warn('[DB] Verification token column check notice:', colErr.message);
+    }
+
+    // Seed initial career roles idempotently if table is empty
+    try {
+      const [[roleCount]] = await connection.query('SELECT COUNT(*) AS total FROM career_roles');
+      if (Number(roleCount.total || 0) === 0) {
+        console.log('[DB] Seeding core technical career roles (VLSI, Embedded, ECE, SWE, AI/ML)...');
+        const defaultRoles = [
+          {
+            title: 'VLSI & Semiconductor Engineering',
+            category: 'Hardware & Core Engineering',
+            description: 'Design, verification, and testing of integrated circuits, System-on-Chip (SoC) architectures, and ASIC digital flows.',
+            required_competencies: JSON.stringify([
+              { name: 'Digital Electronics & Logic Design', category: 'Core Academic', minGrade: 'B', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Verilog / VHDL RTL Modeling', category: 'Hardware Description', minGrade: 'B+', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Static Timing Analysis (STA) & CMOS', category: 'VLSI Fundamentals', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 20 },
+              { name: 'FPGA Prototyping & EDA Tools', category: 'Applied Engineering', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 15 },
+              { name: 'Verified Technical Certifications (NPTEL/IEEE)', category: 'Credentials', minGrade: 'N/A', requiredProficiency: 'Intermediate', weight: 15 }
+            ])
+          },
+          {
+            title: 'Embedded Systems & Firmware Engineering',
+            category: 'Hardware & Systems',
+            description: 'Development of low-level bare-metal firmware, real-time operating systems (RTOS), and peripheral driver integration.',
+            required_competencies: JSON.stringify([
+              { name: 'Embedded C & Modern C++', category: 'Programming', minGrade: 'B+', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'ARM Cortex & Microcontroller Peripherals', category: 'Architecture', minGrade: 'B', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Communication Protocols (I2C, SPI, UART, CAN)', category: 'Protocols', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 20 },
+              { name: 'FreeRTOS & Embedded Multitasking', category: 'Operating Systems', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 15 },
+              { name: 'Hardware Prototyping & Lab Practicals', category: 'Laboratory Practical', minGrade: 'B+', requiredProficiency: 'Intermediate', weight: 15 }
+            ])
+          },
+          {
+            title: 'Electronics & Communication Engineering (ECE)',
+            category: 'Core Telecommunications',
+            description: 'Analysis and development of digital signal processing, wireless communication chains, antenna systems, and network protocols.',
+            required_competencies: JSON.stringify([
+              { name: 'Signals & Systems Analysis', category: 'Mathematical Core', minGrade: 'B', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Digital Signal Processing (DSP)', category: 'Core Discipline', minGrade: 'B+', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Wireless Communication & Cellular Networks', category: 'Telecommunications', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 20 },
+              { name: 'Electromagnetics & RF Fundamentals', category: 'Core Theory', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 15 },
+              { name: 'MATLAB / Python Signal Simulation', category: 'Simulation & Tools', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 15 }
+            ])
+          },
+          {
+            title: 'Software Engineering (Full Stack & Systems)',
+            category: 'Information Technology',
+            description: 'Design and deployment of scalable web systems, distributed APIs, microservices, and high-performance algorithms.',
+            required_competencies: JSON.stringify([
+              { name: 'Data Structures & Algorithms', category: 'Computer Science Core', minGrade: 'A', requiredProficiency: 'Advanced', weight: 30 },
+              { name: 'Modern JavaScript & Backend Engineering (Node.js)', category: 'Full Stack', minGrade: 'B+', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Relational Database Design & SQL Optimization', category: 'Database Systems', minGrade: 'B+', requiredProficiency: 'Intermediate', weight: 20 },
+              { name: 'REST APIs, Git & Web Security', category: 'Software Craftsmanship', minGrade: 'B', requiredProficiency: 'Intermediate', weight: 15 },
+              { name: 'Verified Hackathons & Technical Competitions', category: 'Portfolio Evidence', minGrade: 'N/A', requiredProficiency: 'Intermediate', weight: 10 }
+            ])
+          },
+          {
+            title: 'Data Science & AI/ML Engineering',
+            category: 'Artificial Intelligence',
+            description: 'Applied statistical modeling, predictive machine learning pipelines, deep neural architectures, and intelligent agent systems.',
+            required_competencies: JSON.stringify([
+              { name: 'Applied Mathematics, Statistics & Probability', category: 'Mathematical Foundation', minGrade: 'A', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Python Programming (Scientific Computing)', category: 'Language Skills', minGrade: 'A', requiredProficiency: 'Advanced', weight: 25 },
+              { name: 'Supervised & Unsupervised Machine Learning', category: 'Core AI/ML', minGrade: 'B+', requiredProficiency: 'Advanced', weight: 20 },
+              { name: 'Data Wrangling, Feature Engineering & SQL', category: 'Data Engineering', minGrade: 'B+', requiredProficiency: 'Intermediate', weight: 15 },
+              { name: 'Applied AI Projects & NPTEL/IEEE Credentials', category: 'Verified Portfolio', minGrade: 'N/A', requiredProficiency: 'Intermediate', weight: 15 }
+            ])
+          }
+        ];
+
+        for (const role of defaultRoles) {
+          await connection.query(
+            'INSERT INTO career_roles (title, category, description, required_competencies) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE updated_at = NOW()',
+            [role.title, role.category, role.description, role.required_competencies]
+          );
+        }
+        console.log('[DB] Seeded 5 core technical career tracks.');
+      }
+    } catch (roleErr) {
+      console.warn('[DB] Career roles seed notice:', roleErr.message);
+    }
+
     // Safe, non-destructive demo accounts check
     // Disabled in production and ambiguous environments by default unless ALLOW_DEMO_SEED=true
     const currentEnv = (process.env.NODE_ENV || '').toLowerCase().trim();

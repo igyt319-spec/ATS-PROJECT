@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const studentId = user.studentId || 1;
   await loadDashboardData(studentId);
+  try {
+    await Promise.allSettled([
+      loadDigitalTwinData(),
+      loadCareerReadinessData(),
+      loadLeveragePriorities()
+    ]);
+  } catch (e) {
+    console.warn('[Dashboard Features Init Notice]', e.message);
+  }
 
   // Activity Submission Form
   const actForm = document.getElementById('activity-submit-form');
@@ -674,3 +683,448 @@ function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+/* =========================================================================
+   FEATURE 1: AI ACADEMIC DIGITAL TWIN (FRONTEND CONTROLLER)
+   ========================================================================= */
+async function loadDigitalTwinData() {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  try {
+    const res = await apiCall(`/digital-twin/${user.studentId}`, 'GET');
+    if (!res.success || !res.digitalTwin) return;
+    const twin = res.digitalTwin;
+
+    // Projection KPI Banner
+    if (twin.prediction && twin.prediction.isAvailable) {
+      document.getElementById('twin-predicted-gpa').textContent = twin.prediction.predictedGpa.toFixed(2);
+      document.getElementById('twin-prediction-range').innerHTML = `Uncertainty Band: <strong>${twin.prediction.gpaRange.low.toFixed(2)} — ${twin.prediction.gpaRange.high.toFixed(2)} GPA</strong>`;
+      document.getElementById('twin-confidence-score').textContent = `${twin.prediction.confidenceScore}%`;
+      document.getElementById('twin-method-label').textContent = twin.prediction.methodUsed || 'Weighted Linear Trend Regression';
+    } else {
+      document.getElementById('twin-predicted-gpa').textContent = twin.student?.currentGpa || '—';
+      document.getElementById('twin-prediction-range').innerHTML = `Insufficient baseline completed semesters`;
+      document.getElementById('twin-confidence-score').textContent = 'N/A';
+    }
+
+    // MAE / RMSE Evaluation Metrics
+    if (twin.evaluationMetrics && twin.evaluationMetrics.mae !== null) {
+      document.getElementById('twin-mae-rmse').textContent = `MAE: ${twin.evaluationMetrics.mae} | RMSE: ${twin.evaluationMetrics.rmse}`;
+      document.getElementById('twin-validation-status').textContent = `Evaluated against ${twin.evaluationMetrics.evaluatedSamples} official outcome(s)`;
+    } else {
+      document.getElementById('twin-mae-rmse').textContent = 'MAE: Pending | RMSE: Pending';
+      document.getElementById('twin-validation-status').textContent = 'Awaiting official semester results publish';
+    }
+
+    // Influencing Factors List
+    const factorsList = document.getElementById('twin-influencing-factors-list');
+    if (factorsList) {
+      const factors = twin.prediction?.influencingFactors || [];
+      if (factors.length === 0) {
+        factorsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.82rem;">Baseline continuous assessment data active.</div>`;
+      } else {
+        factorsList.innerHTML = factors.map(f => `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="color: #fff; font-size: 0.88rem;">${escapeHtml(f.factor)}</strong>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem;">${escapeHtml(f.effect)}</span>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.78rem;">${escapeHtml(f.description)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Subject Diagnostics
+    const subDiag = document.getElementById('twin-subject-diagnostics');
+    if (subDiag) {
+      const weak = twin.subjectDiagnostics?.weakSubjects || [];
+      const strong = twin.subjectDiagnostics?.strongSubjects || [];
+      let diagHtml = '';
+
+      if (weak.length > 0) {
+        diagHtml += `<div style="color: #f87171; font-weight: 700; font-size: 0.84rem; margin-bottom: 4px;">⚠️ Recovery Needed (<60%):</div>`;
+        diagHtml += weak.map(w => `
+          <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #f87171; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 6px;">
+            <strong>${escapeHtml(w.name)}</strong>: ${w.total}/100 • CIA ${w.internal}/20, Exam ${w.exam}/60
+          </div>
+        `).join('');
+      } else {
+        diagHtml += `<div style="color: #34d399; font-size: 0.82rem; margin-bottom: 8px;">✅ No subjects in the Weak category!</div>`;
+      }
+
+      if (strong.length > 0) {
+        diagHtml += `<div style="color: #38bdf8; font-weight: 700; font-size: 0.84rem; margin-top: 8px; margin-bottom: 4px;">🌟 Strong Foundations (80%+):</div>`;
+        diagHtml += strong.slice(0, 3).map(s => `
+          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--accent-cyan); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 6px;">
+            <strong>${escapeHtml(s.name)}</strong>: ${s.total}/100 (Grade ${s.grade})
+          </div>
+        `).join('');
+      }
+
+      subDiag.innerHTML = diagHtml;
+    }
+
+    // Prediction Snapshots Table
+    const snapshotsBody = document.getElementById('twin-snapshots-table-body');
+    if (snapshotsBody) {
+      const snapshots = twin.predictionSnapshots || [];
+      if (snapshots.length === 0) {
+        snapshotsBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 18px; color: var(--text-dim);">Historical prediction snapshots are automatically recorded as semesters progress.</td></tr>`;
+      } else {
+        snapshotsBody.innerHTML = snapshots.map(s => {
+          const outcomeLabel = s.actualGpa !== null ? `<strong>${s.actualGpa.toFixed(2)}</strong>` : '<span style="color: var(--text-dim);">Pending Official Outcome</span>';
+          const errorLabel = s.absoluteError !== null ? `Δ ${s.absoluteError.toFixed(2)}` : '—';
+          return `
+            <tr>
+              <td>${formatDate(s.createdAt)}</td>
+              <td>Semester ${s.targetSemester}</td>
+              <td style="font-weight: 700; color: #fff;">${s.predictedGpa.toFixed(2)}</td>
+              <td>${s.gpaRange.low.toFixed(2)} – ${s.gpaRange.high.toFixed(2)}</td>
+              <td><span class="badge" style="background: rgba(56,189,248,0.12); color:#38bdf8;">${s.confidenceScore}%</span></td>
+              <td>${outcomeLabel}</td>
+              <td style="color: #facc15;">${errorLabel}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+  } catch (err) {
+    console.warn('[Digital Twin Load Error]', err.message);
+  }
+}
+
+/* =========================================================================
+   FEATURE 2: AI CAREER READINESS ENGINE (FRONTEND CONTROLLER)
+   ========================================================================= */
+let cachedCareerRoles = [];
+
+async function loadCareerReadinessData(selectedRoleId = null) {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  try {
+    // 1. Fetch available career tracks
+    if (cachedCareerRoles.length === 0) {
+      const rolesRes = await apiCall('/career/roles', 'GET');
+      if (rolesRes.success && Array.isArray(rolesRes.data)) {
+        cachedCareerRoles = rolesRes.data;
+        const select = document.getElementById('career-role-select');
+        if (select) {
+          select.innerHTML = cachedCareerRoles.map(r => `
+            <option value="${r.id}">${escapeHtml(r.title)} (${escapeHtml(r.category)})</option>
+          `).join('');
+        }
+      }
+    }
+
+    // 2. Fetch evaluation
+    const url = `/career/evaluation/${user.studentId}${selectedRoleId ? '?role_id=' + selectedRoleId : ''}`;
+    const evalRes = await apiCall(url, 'GET');
+
+    if (!evalRes.success) return;
+
+    // Update Selector
+    const select = document.getElementById('career-role-select');
+    if (select && evalRes.role) {
+      select.value = evalRes.role.id;
+    }
+
+    // Render Metrics
+    document.getElementById('career-readiness-score').textContent = `${evalRes.readinessIndex}%`;
+    document.getElementById('career-competency-summary').innerHTML = `Demonstrated Competencies: <strong>${evalRes.demonstratedCount} / ${evalRes.competenciesCount}</strong>`;
+    document.getElementById('career-role-title').textContent = evalRes.role?.title || 'Target Track';
+    document.getElementById('career-role-desc').textContent = evalRes.role?.description || '';
+    document.getElementById('badge-demonstrated-count').textContent = `✅ ${evalRes.demonstratedCount} Demonstrated`;
+    document.getElementById('badge-missing-count').textContent = `⚠️ ${evalRes.missingCount} Missing Competencies`;
+
+    // Render Competencies Table
+    const tableBody = document.getElementById('career-competencies-table-body');
+    if (tableBody) {
+      tableBody.innerHTML = (evalRes.evaluatedCompetencies || []).map(c => {
+        const statusBadge = c.status === 'Demonstrated' 
+          ? '<span class="badge" style="background: rgba(16,185,129,0.15); color:#34d399;">✅ Demonstrated</span>'
+          : c.status === 'Developing'
+            ? '<span class="badge" style="background: rgba(250,204,21,0.15); color:#facc15;">🟡 Developing</span>'
+            : '<span class="badge" style="background: rgba(239,68,68,0.15); color:#f87171;">⚠️ Missing</span>';
+
+        const evidenceBadge = c.isVerified
+          ? `<span class="badge" style="background: rgba(56,189,248,0.15); color:#38bdf8;">🛡️ ${escapeHtml(c.evidenceType)}</span>`
+          : `<span class="badge" style="background: rgba(148,163,184,0.15); color:#94a3b8;">${escapeHtml(c.evidenceType)}</span>`;
+
+        return `
+          <tr>
+            <td><strong style="color: #fff;">${escapeHtml(c.name)}</strong></td>
+            <td>${escapeHtml(c.category)}</td>
+            <td>${c.weight}%</td>
+            <td>${statusBadge}</td>
+            <td>${evidenceBadge}</td>
+            <td style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(c.evidenceDetails)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Render Roadmap Steps
+    const roadmapContainer = document.getElementById('career-roadmap-steps-container');
+    if (roadmapContainer) {
+      const milestones = evalRes.roadmap?.milestones || [];
+      if (milestones.length === 0) {
+        roadmapContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #34d399; padding: 14px; background: rgba(16,185,129,0.08); border-radius: 8px;">🎉 Outstanding! All core competencies for this career track are demonstrably satisfied.</div>`;
+      } else {
+        roadmapContainer.innerHTML = milestones.map(m => `
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 700;">MILESTONE ${m.step}</span>
+              <span class="badge" style="background: ${m.priority === 'HIGH' ? 'rgba(239,68,68,0.15); color:#f87171;' : 'rgba(250,204,21,0.15); color:#facc15;'} font-size: 0.7rem;">${m.priority}</span>
+            </div>
+            <strong style="color: #fff; font-size: 0.92rem; display: block; margin-bottom: 4px;">${escapeHtml(m.competency)}</strong>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px;">${escapeHtml(m.action)}</p>
+            <div style="font-size: 0.74rem; color: var(--accent-cyan); font-weight: 600;">📚 ${escapeHtml(m.recommendedResource)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+  } catch (err) {
+    console.warn('[Career Readiness Load Error]', err.message);
+  }
+}
+
+async function changeCareerRoleTarget() {
+  const select = document.getElementById('career-role-select');
+  if (!select) return;
+  const roleId = parseInt(select.value, 10);
+  if (!roleId) return;
+
+  try {
+    const res = await apiCall('/career/target', 'POST', { role_id: roleId });
+    showToast(res.message, 'success');
+    await loadCareerReadinessData(roleId);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+/* =========================================================================
+   FEATURE 6: ACADEMIC WHAT-IF SCENARIO SIMULATOR (FRONTEND CONTROLLER)
+   ========================================================================= */
+async function runTargetGpaSimulation() {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  const targetInput = document.getElementById('sim-target-gpa-input');
+  const targetGpa = parseFloat(targetInput?.value || 8.5);
+  const container = document.getElementById('sim-target-gpa-results');
+
+  container.innerHTML = '<div style="color: var(--accent-cyan); padding: 8px 0;">Solving required marks via official grading constraints... ⏳</div>';
+
+  try {
+    const res = await apiCall('/simulator/target-gpa', 'POST', {
+      student_id: user.studentId,
+      target_gpa: targetGpa
+    });
+
+    if (!res.success) {
+      container.innerHTML = `<div style="color: #f87171; padding: 8px 0;">${escapeHtml(res.message)}</div>`;
+      return;
+    }
+
+    if (!res.isAchievable) {
+      container.innerHTML = `
+        <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 12px; color: #f87171;">
+          <strong>⚠️ Unachievable Target:</strong> ${escapeHtml(res.message)}
+          <div style="margin-top: 4px; font-size: 0.76rem; color: var(--text-muted);">${escapeHtml(res.recommendation)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const items = (res.subjectTargets || []).map(s => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem;">
+        <span><strong>${escapeHtml(s.subjectName)}</strong> (${s.credits} cr)</span>
+        <span style="color: var(--accent-cyan); font-weight: 700;">Need: ${s.requiredExamMarks}/60 in Exam (Total: ${s.projectedTotal} • ${s.projectedGrade})</span>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; padding: 12px; margin-top: 8px;">
+        <div style="color: #34d399; font-weight: 700; margin-bottom: 6px;">Target GPA ${res.targetGpa.toFixed(2)} is Achievable! (Projected: ${res.projectedGpa.toFixed(2)})</div>
+        <div style="color: var(--text-muted); font-size: 0.76rem; margin-bottom: 10px;">${escapeHtml(res.explanation)}</div>
+        ${items}
+      </div>
+    `;
+
+  } catch (err) {
+    container.innerHTML = `<div style="color: #f87171; padding: 8px 0;">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function runAttendanceSimulation() {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  const totalInput = document.getElementById('sim-upcoming-total');
+  const attendedInput = document.getElementById('sim-upcoming-attended');
+  const container = document.getElementById('sim-attendance-results');
+
+  const upcomingTotal = parseInt(totalInput?.value || 20, 10);
+  const upcomingAttended = parseInt(attendedInput?.value || 18, 10);
+
+  container.innerHTML = '<div style="color: var(--accent-cyan); padding: 8px 0;">Calculating projection... ⏳</div>';
+
+  try {
+    const res = await apiCall('/simulator/attendance', 'POST', {
+      student_id: user.studentId,
+      upcoming_classes_total: upcomingTotal,
+      upcoming_classes_attended: upcomingAttended
+    });
+
+    if (!res.success) {
+      container.innerHTML = `<div style="color: #f87171; padding: 8px 0;">${escapeHtml(res.message)}</div>`;
+      return;
+    }
+
+    const p = res.projected;
+    const isGood = p.percentage >= 75;
+    const bannerColor = isGood ? '#34d399' : '#f87171';
+    const bgColor = isGood ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+
+    container.innerHTML = `
+      <div style="background: ${bgColor}; border: 1px solid ${bannerColor}; border-radius: 8px; padding: 12px; margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <strong style="color: #fff;">Projected Attendance: <span style="color: ${bannerColor}; font-size: 1.15rem;">${p.percentage}%</span></strong>
+          <span class="badge" style="background: ${isGood ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; color: ${bannerColor};">${p.standing}</span>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+          ${isGood 
+            ? `✅ Safe! You have a buffer of <strong>${p.safeBunksRemaining}</strong> permissible absence(s) before dropping below the mandatory 75% threshold.` 
+            : `⚠️ Warning: You need to attend <strong>${p.recoveryClassesNeededFor75}</strong> consecutive classes without absence to restore 75% examination eligibility.`}
+        </div>
+      </div>
+    `;
+
+  } catch (err) {
+    container.innerHTML = `<div style="color: #f87171; padding: 8px 0;">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function loadLeveragePriorities() {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  const tableBody = document.getElementById('sim-leverage-table-body');
+  if (!tableBody) return;
+
+  try {
+    const res = await apiCall(`/simulator/leverage-priorities/${user.studentId}`, 'GET');
+    if (!res.success || !Array.isArray(res.priorities)) return;
+
+    if (res.priorities.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 18px; color: var(--text-dim);">No enrolled subjects found for leverage analysis.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = res.priorities.map((p, idx) => `
+      <tr style="${idx === 0 ? 'background: rgba(56, 189, 248, 0.05);' : ''}">
+        <td><strong>${escapeHtml(p.subjectName)}</strong></td>
+        <td>${p.credits}</td>
+        <td>${p.currentMark}/100</td>
+        <td><span class="kpi-pill ${p.currentGrade === 'A+' || p.currentGrade === 'A' ? 'pill-green' : p.currentGrade === 'F' ? 'pill-red' : 'pill-yellow'}">${p.currentGrade}</span></td>
+        <td style="color: #facc15; font-weight: 700;">${p.marksNeededForNextGrade} mark(s)</td>
+        <td style="color: #34d399; font-weight: 600;">+${p.gpaBoostPerGradeJump}</td>
+        <td><span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8;">${p.leverageScore}</span></td>
+        <td style="font-size: 0.78rem; color: var(--text-muted);">${escapeHtml(p.recommendation)}</td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.warn('[Leverage Priorities Load Error]', err.message);
+  }
+}
+
+/* =========================================================================
+   FEATURE 3: PLACEMENT-READY ACHIEVEMENT PASSPORT (FRONTEND CONTROLLER)
+   ========================================================================= */
+async function openPassportModal() {
+  const user = getCurrentUser();
+  if (!user || !user.studentId) return;
+
+  const content = document.getElementById('passport-modal-content');
+  content.innerHTML = '<div style="text-align: center; padding: 30px;">Loading student achievement passport ledger... ⏳</div>';
+  openModal('passport-modal');
+
+  try {
+    const res = await apiCall(`/activities/passport/${user.studentId}`, 'GET');
+    if (!res.success || !res.passport) {
+      content.innerHTML = `<div style="color: #f87171; text-align: center; padding: 20px;">${escapeHtml(res.message || 'Unable to load achievement passport.')}</div>`;
+      return;
+    }
+
+    const p = res.passport;
+    const achievements = p.verifiedAchievements || [];
+
+    const itemsHtml = achievements.length === 0
+      ? `<div style="text-align: center; color: var(--text-dim); padding: 30px;">No verified achievements currently recorded in the official ledger. Submit activities and obtain faculty mentor verification to populate your Placement Passport!</div>`
+      : achievements.map(a => `
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.72rem; margin-bottom: 4px; display: inline-block;">${escapeHtml(a.category)}</span>
+              <h4 style="margin: 0 0 4px 0; font-size: 1.05rem; color: #fff;">${escapeHtml(a.title)}</h4>
+              <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 6px;">
+                ${escapeHtml(a.organizingInstitution)} • Date: ${formatDate(a.eventDate)}
+              </div>
+              <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0 0 8px 0;">${escapeHtml(a.description || 'Verified co-curricular contribution')}</p>
+              <div style="font-size: 0.76rem; color: #34d399;">
+                🛡️ Verified by ${escapeHtml(a.verifiedByName)} on ${formatDate(a.verifiedAt)}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <a href="${a.verificationUrl}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.76rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+                <span>🔗</span> Public QR Verification
+              </a>
+              <div style="font-size: 0.68rem; color: var(--text-dim); margin-top: 4px; font-family: monospace;">
+                Token: ${a.verificationToken.substring(0, 10)}...
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+    content.innerHTML = `
+      <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <span class="kpi-pill pill-blue" style="font-size: 0.72rem; margin-bottom: 4px; display: inline-block;">OFFICIAL PLACEMENT CREDENTIAL</span>
+          <h2 style="margin: 0; font-size: 1.4rem; color: #fff;">${escapeHtml(p.student.name)}</h2>
+          <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
+            ${escapeHtml(p.student.program || p.student.department)} • ${escapeHtml(p.student.institution)}
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Print / Download Portfolio</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Verified Credentials</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 2px;">${p.summary.totalVerifiedAchievements}</div>
+        </div>
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Categories Represented</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${p.summary.categoriesRepresented}</div>
+        </div>
+      </div>
+
+      <h4 style="color: #fff; font-size: 0.98rem; margin-bottom: 14px;">Verified Co-Curricular & Certification Ledger</h4>
+      ${itemsHtml}
+    `;
+
+  } catch (err) {
+    content.innerHTML = `<div style="color: #f87171; text-align: center; padding: 20px;">${escapeHtml(err.message)}</div>`;
+  }
+}
+

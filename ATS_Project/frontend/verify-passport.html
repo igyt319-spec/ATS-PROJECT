@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Achievement Verification Gateway | ATS Intelligence</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 20%, #0f172a 0%, #020617 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+    }
+    .verify-box {
+      max-width: 680px;
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(56, 189, 248, 0.15);
+      overflow: hidden;
+    }
+    .verify-header {
+      padding: 28px 32px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.05));
+    }
+    .verify-body {
+      padding: 32px;
+    }
+    .badge-verified {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    .badge-invalid {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .detail-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .detail-label {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .detail-value {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .privacy-notice {
+      margin-top: 28px;
+      padding: 14px 18px;
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 3px solid var(--accent-cyan);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="verify-box">
+    <!-- Header -->
+    <div class="verify-header">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 6px;">
+          <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 28px; height: 28px;">
+        </div>
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">ATS Intelligence Platform</h2>
+          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 700; letter-spacing: 1px;">VERIFIED ACHIEVEMENT PASSPORT GATEWAY</span>
+        </div>
+      </div>
+      <div id="status-badge-container">
+        <span class="badge-verified" style="display: none;" id="badge-valid">🛡️ OFFICIAL RECORD VERIFIED</span>
+        <span class="badge-invalid" style="display: none;" id="badge-invalid">❌ VERIFICATION FAILED</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="verify-body">
+      <!-- Loading State -->
+      <div id="loading-state" style="text-align: center; padding: 40px 0;">
+        <div class="spinner" style="margin: 0 auto 16px;"></div>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">Cryptographically verifying credential authenticity against institutional ledger...</p>
+      </div>
+
+      <!-- Result Card -->
+      <div id="result-state" style="display: none;">
+        <div style="margin-bottom: 20px;">
+          <span class="kpi-pill pill-blue" style="font-size: 0.72rem; margin-bottom: 8px; display: inline-block;" id="res-category">Hackathon</span>
+          <h1 style="font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0 0 8px 0; line-height: 1.3;" id="res-title">Achievement Title</h1>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0;" id="res-institution">Organizing Institution</p>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">Recipient Display Name</div>
+            <div class="detail-value" id="res-student-name">Student Name</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Academic Department</div>
+            <div class="detail-value" id="res-dept">Department</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Event Date</div>
+            <div class="detail-value" id="res-event-date">Date</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Participation Level</div>
+            <div class="detail-value" id="res-level">First Place / Winner</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Verifying Authority</div>
+            <div class="detail-value" id="res-authority">Faculty Mentor & Advisory Board</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Verification Timestamp</div>
+            <div class="detail-value" id="res-verified-date">Timestamp</div>
+          </div>
+        </div>
+
+        <div class="privacy-notice">
+          <strong>🔒 Public Verification Privacy Protection:</strong> This public record confirms authentic achievement review by institutional faculty. In compliance with student privacy regulations, confidential records (register numbers, private contact information, examination marks, and GPA) are omitted from public verification views.
+        </div>
+      </div>
+
+      <!-- Error Card -->
+      <div id="error-state" style="display: none; text-align: center; padding: 30px 10px;">
+        <div style="font-size: 3rem; margin-bottom: 16px;">⚠️</div>
+        <h3 style="color: #f87171; font-size: 1.25rem; font-weight: 800; margin-bottom: 10px;">Verification Code Invalid or Expired</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 500px; margin: 0 auto 20px;" id="error-message">
+          The requested certificate verification token could not be resolved in the ATS database.
+        </p>
+        <a href="index.html" class="btn btn-secondary btn-sm">Return to ATS Portal</a>
+      </div>
+    </div>
+  </div>
+
+  <footer style="margin-top: 30px; text-align: center; color: var(--text-dim); font-size: 0.78rem;">
+    Academic Tracking System (ATS) • Cryptographic Credential Ledger • Official Institutional Verification
+  </footer>
+
+  <script>
+    async function loadVerification() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || urlParams.get('code') || urlParams.get('id');
+
+      const loadingEl = document.getElementById('loading-state');
+      const resultEl = document.getElementById('result-state');
+      const errorEl = document.getElementById('error-state');
+      const badgeValid = document.getElementById('badge-valid');
+      const badgeInvalid = document.getElementById('badge-invalid');
+
+      if (!token) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        badgeInvalid.style.display = 'inline-flex';
+        document.getElementById('error-message').textContent = 'No verification token was supplied in the verification link.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/activities/passport/verify/${encodeURIComponent(token)}`);
+        const json = await response.json();
+
+        loadingEl.style.display = 'none';
+
+        if (json.success && json.verified && json.data) {
+          resultEl.style.display = 'block';
+          badgeValid.style.display = 'inline-flex';
+
+          const d = json.data;
+          document.getElementById('res-title').textContent = d.achievementTitle;
+          document.getElementById('res-category').textContent = d.category;
+          document.getElementById('res-institution').textContent = `${d.organizingInstitution} • ${d.institutionName}`;
+          document.getElementById('res-student-name').textContent = d.recipientDisplayName;
+          document.getElementById('res-dept').textContent = d.academicDepartment;
+          document.getElementById('res-event-date').textContent = new Date(d.eventDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          document.getElementById('res-level').textContent = d.participationLevel;
+          document.getElementById('res-authority').textContent = d.verifyingAuthority;
+          document.getElementById('res-verified-date').textContent = d.verificationTimestamp ? new Date(d.verificationTimestamp).toLocaleString('en-US') : 'Recorded in Ledger';
+        } else {
+          errorEl.style.display = 'block';
+          badgeInvalid.style.display = 'inline-flex';
+          document.getElementById('error-message').textContent = json.message || 'Unable to verify credential.';
+        }
+      } catch (err) {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        badgeInvalid.style.display = 'inline-flex';
+        document.getElementById('error-message').textContent = 'Network or server communication error. Please try again.';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadVerification);
+  </script>
+</body>
+</html>

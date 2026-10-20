@@ -6,6 +6,7 @@
 
 let allUsers = [];
 let allDepartments = [];
+let allAuditLogs = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   const user = checkAuth('admin');
@@ -21,7 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await Promise.all([
     loadDepartments(),
-    loadAccountDirectory()
+    loadAccountDirectory(),
+    loadInstitutionalTwin(),
+    loadAuditLogs()
   ]);
 });
 
@@ -597,3 +600,276 @@ function escapeHtml(text) {
   if (!text) return '';
   return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
+
+/**
+ * =========================================================================
+ * FEATURE 4: INSTITUTIONAL COLLEGE DIGITAL TWIN (ADMIN CONSOLE)
+ * =========================================================================
+ */
+async function loadInstitutionalTwin() {
+  const tbody = document.getElementById('admin-twin-table-body');
+  try {
+    const res = await apiCall('/college-twin/institution');
+    if (!res || !res.success || !res.institutionTwin) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 20px;">No institutional data returned.</td></tr>';
+      return;
+    }
+
+    const twin = res.institutionTwin;
+    const kpis = twin.macroKPIs || {};
+    const depts = twin.departmentComparisons || [];
+
+    // Macro KPIs
+    const deptsEl = document.getElementById('admin-twin-total-depts');
+    if (deptsEl) deptsEl.textContent = kpis.totalDepartments != null ? kpis.totalDepartments : depts.length;
+
+    const cgpaEl = document.getElementById('admin-twin-mean-cgpa');
+    if (cgpaEl) cgpaEl.textContent = kpis.institutionAverageCgpa != null ? Number(kpis.institutionAverageCgpa).toFixed(2) : '—';
+
+    const attEl = document.getElementById('admin-twin-mean-att');
+    if (attEl) attEl.textContent = kpis.institutionAverageAttendance != null ? `${Number(kpis.institutionAverageAttendance).toFixed(1)}%` : '—';
+
+    const riskEl = document.getElementById('admin-twin-high-risk');
+    if (riskEl) riskEl.textContent = kpis.totalHighRiskStudents != null ? kpis.totalHighRiskStudents : 0;
+
+    // Render Department Benchmark Table
+    if (tbody) {
+      if (depts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 24px;">No departments registered in the institution.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = depts.map(d => {
+        const rc = d.riskCounts || { high: 0, medium: 0, low: 0 };
+        return `
+          <tr>
+            <td>
+              <strong style="color: #fff;">${escapeHtml(d.name)}</strong>
+            </td>
+            <td style="font-family: monospace; color: var(--accent-cyan); font-weight: 700;">${escapeHtml(d.code)}</td>
+            <td><strong>${d.studentCount}</strong> Scholars</td>
+            <td>${d.facultyCount} Faculty</td>
+            <td><span class="kpi-pill pill-blue">${d.studentToFacultyRatio} : 1</span></td>
+            <td><strong style="color: #38bdf8;">${Number(d.averageCgpa || 0).toFixed(2)}</strong></td>
+            <td><span class="kpi-pill ${d.averageAttendance >= 75 ? 'pill-green' : 'pill-red'}">${Number(d.averageAttendance || 0).toFixed(1)}%</span></td>
+            <td>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span class="kpi-pill pill-green" title="Low Academic Risk">${rc.low} L</span>
+                <span class="kpi-pill pill-yellow" title="Medium Academic Risk">${rc.medium} M</span>
+                <span class="kpi-pill pill-red" title="High Academic Risk">${rc.high} H</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+  } catch (err) {
+    console.error('[Load Institutional Twin Error]', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #f87171; padding: 20px;">Failed to load institutional twin: ${err.message}</td></tr>`;
+  }
+}
+window.loadInstitutionalTwin = loadInstitutionalTwin;
+
+/**
+ * =========================================================================
+ * FEATURE 7: SMART ACADEMIC INTEGRITY & AUDIT TRAIL CONTROLLER
+ * =========================================================================
+ */
+async function loadAuditLogs() {
+  const tbody = document.getElementById('audit-logs-table-body');
+  try {
+    const res = await apiCall('/audit-logs?limit=100');
+    if (!res || !res.success) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Failed to retrieve audit events.</td></tr>';
+      return;
+    }
+
+    allAuditLogs = res.data || [];
+    renderAuditLogs(allAuditLogs);
+
+  } catch (err) {
+    console.error('[Load Audit Logs Error]', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #f87171; padding: 24px;">Error connecting to audit service: ${err.message}</td></tr>`;
+  }
+}
+window.loadAuditLogs = loadAuditLogs;
+
+function renderAuditLogs(logs) {
+  const tbody = document.getElementById('audit-logs-table-body');
+  const countBadge = document.getElementById('audit-count-badge');
+  if (countBadge) countBadge.textContent = `Showing ${logs.length} events`;
+
+  if (!tbody) return;
+  if (!logs || logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 32px;">No matching audit events found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = logs.map(l => {
+    const timeFormatted = l.created_at ? new Date(l.created_at).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }) : '—';
+
+    const actor = l.actor_name || `User #${l.user_id || 'System'}`;
+    const rolePill = l.actor_role === 'admin' 
+      ? '<span class="badge" style="background: rgba(239,68,68,0.15); color: #f87171; font-size: 0.68rem;">Admin</span>'
+      : l.actor_role === 'faculty'
+      ? '<span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.68rem;">Faculty</span>'
+      : '<span class="badge" style="background: rgba(168,85,247,0.15); color: #c084fc; font-size: 0.68rem;">Student</span>';
+
+    const statusPill = (l.status === 'SUCCESS' || !l.status)
+      ? '<span class="kpi-pill pill-green">SUCCESS</span>'
+      : l.status === 'UNAUTHORIZED'
+      ? '<span class="kpi-pill pill-red">UNAUTHORIZED</span>'
+      : '<span class="kpi-pill pill-yellow">FAILED</span>';
+
+    // Parse and summarize details safely
+    let detailsSummary = '—';
+    if (l.details) {
+      if (typeof l.details === 'string') {
+        try {
+          const parsed = JSON.parse(l.details);
+          detailsSummary = Object.entries(parsed).map(([k, v]) => `<span style="color: var(--accent-cyan);">${escapeHtml(k)}:</span> ${escapeHtml(String(v))}`).join(' • ');
+        } catch (_) {
+          detailsSummary = escapeHtml(l.details);
+        }
+      } else if (typeof l.details === 'object') {
+        detailsSummary = Object.entries(l.details).map(([k, v]) => `<span style="color: var(--accent-cyan);">${escapeHtml(k)}:</span> ${escapeHtml(String(v))}`).join(' • ');
+      }
+    }
+
+    return `
+      <tr>
+        <td style="font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${timeFormatted}</td>
+        <td>
+          <div style="font-weight: 700; color: #fff;">${escapeHtml(actor)}</div>
+          <div>${rolePill}</div>
+        </td>
+        <td>
+          <span style="font-family: monospace; font-size: 0.76rem; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 4px; color: #facc15; border: 1px solid rgba(250,204,21,0.2);">
+            ${escapeHtml(l.action)}
+          </span>
+        </td>
+        <td>
+          <span style="color: #cbd5e1; font-weight: 600;">${escapeHtml(l.entity || 'system')}</span>
+          ${l.entity_id ? `<span style="font-size: 0.72rem; color: var(--text-dim);"> #${l.entity_id}</span>` : ''}
+        </td>
+        <td>${statusPill}</td>
+        <td style="font-size: 0.78rem; color: #94a3b8; max-width: 320px; overflow: hidden; text-overflow: ellipsis;">
+          ${detailsSummary}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterAuditTable() {
+  const searchInput = (document.getElementById('audit-search-input')?.value || '').toLowerCase().trim();
+  const actionFilter = document.getElementById('audit-action-filter')?.value || 'all';
+
+  const filtered = allAuditLogs.filter(l => {
+    if (actionFilter !== 'all' && l.action !== actionFilter) return false;
+    if (searchInput) {
+      const matchActor = (l.actor_name || '').toLowerCase().includes(searchInput);
+      const matchAction = (l.action || '').toLowerCase().includes(searchInput);
+      const matchEntity = (l.entity || '').toLowerCase().includes(searchInput);
+      const matchDetails = (typeof l.details === 'string' ? l.details : JSON.stringify(l.details || {})).toLowerCase().includes(searchInput);
+      return matchActor || matchAction || matchEntity || matchDetails;
+    }
+    return true;
+  });
+
+  renderAuditLogs(filtered);
+}
+window.filterAuditTable = filterAuditTable;
+
+async function scanAuditAnomalies() {
+  const container = document.getElementById('audit-anomaly-container');
+  const detailsEl = document.getElementById('audit-anomaly-details');
+  const btn = document.getElementById('btn-scan-anomalies');
+
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await apiCall('/audit-logs/anomalies');
+    if (!res || !res.success) {
+      showToast(res ? res.message : 'Anomaly scanning failed', 'error');
+      return;
+    }
+
+    const anomalies = res.anomalies || [];
+    if (container && detailsEl) {
+      container.style.display = 'block';
+
+      if (anomalies.length === 0) {
+        detailsEl.innerHTML = `
+          <div style="color: #34d399; font-weight: 600;">
+            ✅ Zero security anomalies detected! All operational marks recording, role assignments, and access patterns conform to normative operational thresholds.
+          </div>
+        `;
+      } else {
+        detailsEl.innerHTML = `
+          <div style="margin-bottom: 8px; font-weight: 700; color: #fbbf24;">
+            Found ${anomalies.length} security alerts requiring administrative inspection:
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${anomalies.map(a => `
+              <div style="background: rgba(0,0,0,0.25); border-left: 3px solid ${a.severity === 'CRITICAL' ? '#f87171' : '#fbbf24'}; padding: 8px 12px; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="color: #fff;">${escapeHtml(a.pattern)}</strong>
+                  <span class="badge" style="background: ${a.severity === 'CRITICAL' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}; color: ${a.severity === 'CRITICAL' ? '#f87171' : '#fbbf24'}; font-size: 0.68rem;">${a.severity}</span>
+                </div>
+                <div style="margin-top: 4px; color: #cbd5e1; font-size: 0.78rem;">${escapeHtml(a.description)}</div>
+                ${a.actorId ? `<div style="font-size: 0.72rem; color: var(--accent-cyan); margin-top: 2px;">Actor ID: #${a.actorId}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+  } catch (err) {
+    console.error('[Scan Anomalies Error]', err);
+    showToast('Failed to scan anomalies: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.scanAuditAnomalies = scanAuditAnomalies;
+
+function dismissAnomalyBox() {
+  const container = document.getElementById('audit-anomaly-container');
+  if (container) container.style.display = 'none';
+}
+window.dismissAnomalyBox = dismissAnomalyBox;
+
+async function exportAuditLogs(format) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`/api/audit-logs/export?format=${format}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Export failed with HTTP status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ats_academic_integrity_audit_${new Date().toISOString().slice(0,10)}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    showToast(`Audit log successfully exported as ${format.toUpperCase()}`, 'success');
+  } catch (err) {
+    console.error('[Export Audit Log Error]', err);
+    showToast('Failed to export audit log: ' + err.message, 'error');
+  }
+}
+window.exportAuditLogs = exportAuditLogs;
+

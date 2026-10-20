@@ -2,7 +2,7 @@ USE ats_database;
 INSERT IGNORE INTO grading_rules(minimum_mark,grade,grade_point,performance_status) VALUES
 (0,'F',0,'Weak'),(50,'C',6,'Weak'),(60,'B',7,'Average'),(70,'B+',8,'Average'),(80,'A',9,'Strong'),(90,'A+',10,'Strong');
 INSERT IGNORE INTO attendance_thresholds(status,minimum_percentage) VALUES ('RISK',0),('MONITOR',75),('GOOD',85);
--- Publicly listed BIT department names; programs/subjects below are demo catalogue records.
+-- Publicly listed BIT 6department names; programs/subjects below are demo catalogue records.
 INSERT INTO colleges(name,code,city,state,data_notice) VALUES
 ('Bannari Amman Institute of Technology','BIT','Sathyamangalam','Tamil Nadu','Publicly listed institution and departments; all student records are synthetic demo data.')
 ON DUPLICATE KEY UPDATE name=VALUES(name);

@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { logAuditEvent } = require('../utils/auditLogger');
 
 function calculateAttendanceStatus(percentage) {
   if (percentage >= 85) return 'GOOD';
@@ -135,6 +136,17 @@ async function addAttendance(req, res) {
       [student_id, subject_id, total, attended, pct, configuredStatus, total, attended, pct, configuredStatus, month || 'Overall', student_id]
     );
 
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      userEmail: req.user?.email || null,
+      action: 'RECORD_ATTENDANCE',
+      entityType: 'attendance',
+      entityId: result.insertId,
+      newValue: { student_id, subject_id, total_classes: total, attended_classes: attended, percentage: pct, status: configuredStatus },
+      reason: 'Course attendance hours logged',
+      ipAddress: req.ip
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Attendance record created successfully',
@@ -158,10 +170,30 @@ async function updateAttendance(req, res) {
     const thresholds = await getAttendanceRules();
     const status = statusFromRules(pct, thresholds);
 
+    const [prevRows] = await db.query('SELECT * FROM attendance WHERE id = ?', [id]);
+    const previousValue = prevRows.length > 0 ? {
+      total_classes: prevRows[0].total_classes,
+      attended_classes: prevRows[0].attended_classes,
+      percentage: prevRows[0].percentage,
+      status: prevRows[0].status
+    } : null;
+
     await db.query(
       `UPDATE attendance SET classes_conducted = ?, classes_attended = ?, attendance_percentage = ?, attendance_status = ?, total_classes = ?, attended_classes = ?, percentage = ?, status = ? WHERE id = ?`,
       [total, attended, pct, status, total, attended, pct, status, id]
     );
+
+    await logAuditEvent({
+      userId: req.user?.id || null,
+      userEmail: req.user?.email || null,
+      action: 'UPDATE_ATTENDANCE',
+      entityType: 'attendance',
+      entityId: id,
+      previousValue,
+      newValue: { total_classes: total, attended_classes: attended, percentage: pct, status },
+      reason: req.body?.reason || 'Attendance adjustment logged by authorized faculty',
+      ipAddress: req.ip
+    });
 
     return res.status(200).json({
       success: true,

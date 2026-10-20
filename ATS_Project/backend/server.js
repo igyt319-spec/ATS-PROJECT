@@ -36,6 +36,11 @@ const mentorRoutes = require('./routes/mentorRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const auditRoutes = require('./routes/auditRoutes');
+const digitalTwinRoutes = require('./routes/digitalTwinRoutes');
+const careerRoutes = require('./routes/careerRoutes');
+const simulatorRoutes = require('./routes/simulatorRoutes');
+const collegeTwinRoutes = require('./routes/collegeTwinRoutes');
+const docsRoutes = require('./routes/docsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,6 +69,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/digital-twin', digitalTwinRoutes);
+app.use('/api/career', careerRoutes);
+app.use('/api/simulator', simulatorRoutes);
+app.use('/api/college-twin', collegeTwinRoutes);
+app.use('/api/docs', docsRoutes);
 app.use('/api/results', academicResultsRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/leave', leaveRoutes);
@@ -103,8 +113,13 @@ app.get(['/api/health', '/health'], async (req, res) => {
       '/api/dashboard',
       '/api/chatbot',
       '/api/ai',
+      '/api/digital-twin',
+      '/api/career',
+      '/api/simulator',
+      '/api/college-twin',
+      '/api/docs',
       '/api/departments',
-      '/api/subjects'
+      '/api/audit-logs'
     ]
   });
 });

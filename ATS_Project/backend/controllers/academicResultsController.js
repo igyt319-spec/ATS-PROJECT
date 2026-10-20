@@ -104,7 +104,7 @@ async function getDepartmentResults(req, res) {
   try {
     const departmentId = req.user.role === 'admin' && req.query.department_id 
       ? parseInt(req.query.department_id, 10) 
-      : req.user.departmentId;
+      : (req.user.departmentId || req.user.department_id);
 
     if (!departmentId) {
       return res.status(400).json({ success: false, message: 'Department scope could not be determined.' });

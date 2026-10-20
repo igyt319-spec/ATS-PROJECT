@@ -138,19 +138,19 @@ function renderBreakdownChart(marks) {
         {
           label: 'Internal (out of 20)',
           data: internalData,
-          backgroundColor: '#38bdf8',
+          backgroundColor: '#7C9CFF',
           borderRadius: 4
         },
         {
           label: 'Assignment (out of 20)',
           data: assignmentData,
-          backgroundColor: '#818cf8',
+          backgroundColor: '#67D5C0',
           borderRadius: 4
         },
         {
           label: 'Final Exam (out of 60)',
           data: examData,
-          backgroundColor: '#10b981',
+          backgroundColor: '#46C78B',
           borderRadius: 4
         }
       ]
@@ -162,19 +162,19 @@ function renderBreakdownChart(marks) {
         x: {
           stacked: true,
           grid: { display: false },
-          ticks: { color: '#94a3b8' }
+          ticks: { color: '#737D8C' }
         },
         y: {
           stacked: true,
           max: 100,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8' }
+          grid: { color: '#252B35' },
+          ticks: { color: '#737D8C' }
         }
       },
       plugins: {
         legend: {
           position: 'top',
-          labels: { color: '#94a3b8' }
+          labels: { color: '#9BA4B1' }
         }
       }
     }

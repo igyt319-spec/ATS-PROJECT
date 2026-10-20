@@ -524,6 +524,16 @@ function renderSubjectPerformanceChart(chartData) {
   const ctx = document.getElementById('subjectPerformanceChart').getContext('2d');
   if (chartInstances.subjectPerformance) chartInstances.subjectPerformance.destroy();
 
+  // Enhance dataset colors for dark theme if present
+  if (chartData && chartData.datasets) {
+    chartData.datasets.forEach(ds => {
+      ds.backgroundColor = 'rgba(124, 156, 255, 0.7)';
+      ds.borderColor = '#7C9CFF';
+      ds.borderWidth = 1;
+      ds.borderRadius = 4;
+    });
+  }
+
   chartInstances.subjectPerformance = new Chart(ctx, {
     type: 'bar',
     data: chartData,
@@ -533,10 +543,10 @@ function renderSubjectPerformanceChart(chartData) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#243B64',
-          titleColor: '#FFFFFF',
-          bodyColor: '#F7F7F5',
-          borderColor: '#E7E8EB',
+          backgroundColor: '#171B22',
+          titleColor: '#F3F5F7',
+          bodyColor: '#9BA4B1',
+          borderColor: '#252B35',
           borderWidth: 1,
           padding: 10,
           cornerRadius: 6
@@ -546,12 +556,12 @@ function renderSubjectPerformanceChart(chartData) {
         y: {
           beginAtZero: true,
           max: 100,
-          grid: { color: '#E7E8EB' },
-          ticks: { color: '#68707D', font: { family: 'Inter' } }
+          grid: { color: '#252B35' },
+          ticks: { color: '#737D8C', font: { family: 'Inter' } }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#68707D', font: { family: 'Inter' } }
+          ticks: { color: '#737D8C', font: { family: 'Inter' } }
         }
       }
     }
@@ -562,6 +572,16 @@ function renderAcademicTrendChart(chartData) {
   const ctx = document.getElementById('academicTrendChart').getContext('2d');
   if (chartInstances.academicTrend) chartInstances.academicTrend.destroy();
 
+  if (chartData && chartData.datasets) {
+    chartData.datasets.forEach(ds => {
+      ds.borderColor = '#7C9CFF';
+      ds.backgroundColor = 'rgba(124, 156, 255, 0.12)';
+      ds.pointBackgroundColor = '#7C9CFF';
+      ds.pointBorderColor = '#0B0D10';
+      ds.pointBorderWidth = 2;
+    });
+  }
+
   chartInstances.academicTrend = new Chart(ctx, {
     type: 'line',
     data: chartData,
@@ -571,10 +591,10 @@ function renderAcademicTrendChart(chartData) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#243B64',
-          titleColor: '#FFFFFF',
-          bodyColor: '#F7F7F5',
-          borderColor: '#E7E8EB',
+          backgroundColor: '#171B22',
+          titleColor: '#F3F5F7',
+          bodyColor: '#9BA4B1',
+          borderColor: '#252B35',
           borderWidth: 1,
           padding: 10,
           cornerRadius: 6
@@ -584,12 +604,12 @@ function renderAcademicTrendChart(chartData) {
         y: {
           min: 6.0,
           max: 10.0,
-          grid: { color: '#E7E8EB' },
-          ticks: { color: '#68707D', font: { family: 'Inter' } }
+          grid: { color: '#252B35' },
+          ticks: { color: '#737D8C', font: { family: 'Inter' } }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#68707D', font: { family: 'Inter' } }
+          ticks: { color: '#737D8C', font: { family: 'Inter' } }
         }
       }
     }
@@ -600,6 +620,17 @@ function renderAttendanceTrendChart(chartData) {
   const ctx = document.getElementById('attendanceTrendChart').getContext('2d');
   if (chartInstances.attendanceTrend) chartInstances.attendanceTrend.destroy();
 
+  if (chartData && chartData.datasets) {
+    if (chartData.datasets[0]) {
+      chartData.datasets[0].borderColor = '#67D5C0';
+      chartData.datasets[0].backgroundColor = 'rgba(103, 213, 192, 0.12)';
+      chartData.datasets[0].pointBackgroundColor = '#67D5C0';
+    }
+    if (chartData.datasets[1]) {
+      chartData.datasets[1].borderColor = '#F07878';
+    }
+  }
+
   chartInstances.attendanceTrend = new Chart(ctx, {
     type: 'line',
     data: chartData,
@@ -608,13 +639,13 @@ function renderAttendanceTrendChart(chartData) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#68707D', font: { family: 'Inter', size: 11 } }
+          labels: { color: '#9BA4B1', font: { family: 'Inter', size: 11 } }
         },
         tooltip: {
-          backgroundColor: '#243B64',
-          titleColor: '#FFFFFF',
-          bodyColor: '#F7F7F5',
-          borderColor: '#E7E8EB',
+          backgroundColor: '#171B22',
+          titleColor: '#F3F5F7',
+          bodyColor: '#9BA4B1',
+          borderColor: '#252B35',
           borderWidth: 1,
           padding: 10,
           cornerRadius: 6
@@ -624,12 +655,12 @@ function renderAttendanceTrendChart(chartData) {
         y: {
           min: 50,
           max: 100,
-          grid: { color: '#E7E8EB' },
-          ticks: { color: '#68707D', font: { family: 'Inter' }, callback: v => `${v}%` }
+          grid: { color: '#252B35' },
+          ticks: { color: '#737D8C', font: { family: 'Inter' }, callback: v => `${v}%` }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#68707D', font: { family: 'Inter' } }
+          ticks: { color: '#737D8C', font: { family: 'Inter' } }
         }
       }
     }
@@ -640,6 +671,19 @@ function renderAchievementDistributionChart(chartData) {
   const ctx = document.getElementById('achievementDistChart').getContext('2d');
   if (chartInstances.achievementDist) chartInstances.achievementDist.destroy();
 
+  if (chartData && chartData.datasets && chartData.datasets[0]) {
+    chartData.datasets[0].backgroundColor = [
+      '#7C9CFF',
+      '#67D5C0',
+      '#46C78B',
+      '#E9B45B',
+      '#9D7CFF',
+      '#F07878'
+    ];
+    chartData.datasets[0].borderColor = '#111419';
+    chartData.datasets[0].borderWidth = 2;
+  }
+
   chartInstances.achievementDist = new Chart(ctx, {
     type: 'doughnut',
     data: chartData,
@@ -649,19 +693,19 @@ function renderAchievementDistributionChart(chartData) {
       plugins: {
         legend: {
           position: 'right',
-          labels: { color: '#68707D', font: { family: 'Inter', size: 11 }, boxWidth: 12 }
+          labels: { color: '#9BA4B1', font: { family: 'Inter', size: 11 }, boxWidth: 12 }
         },
         tooltip: {
-          backgroundColor: '#243B64',
-          titleColor: '#FFFFFF',
-          bodyColor: '#F7F7F5',
-          borderColor: '#E7E8EB',
+          backgroundColor: '#171B22',
+          titleColor: '#F3F5F7',
+          bodyColor: '#9BA4B1',
+          borderColor: '#252B35',
           borderWidth: 1,
           padding: 10,
           cornerRadius: 6
         }
       },
-      cutout: '65%'
+      cutout: '68%'
     }
   });
 }

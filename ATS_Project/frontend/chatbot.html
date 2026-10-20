@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Academic Assistant | Academic Tracking System (ATS)</title>
+  <title>AI Academic Assistant — Academic Tracking System (ATS)</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
@@ -13,7 +13,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 4px;">
-        <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 26px; height: 26px;">
+        <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 22px; height: 22px;">
       </div>
       <div class="brand-text">
         <h2>Academic ATS</h2>
@@ -61,8 +61,8 @@
       <div class="topbar-left">
         <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
         <div>
-          <h1 class="page-title">AI Academic Assistant 🤖</h1>
-          <span style="font-size: 0.76rem; color: var(--text-dim);">Real-time contextual conversational intelligence powered by ATS data</span>
+          <h1 class="page-title">AI Academic Mentor 2.0</h1>
+          <span style="font-size: 0.76rem; color: var(--text-dim);">Contextual reasoning and study strategy grounded in live academic records</span>
         </div>
       </div>
       <div class="topbar-right">
@@ -83,20 +83,20 @@
         <!-- Chat Header -->
         <div class="chat-header">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 38px; height: 38px; border-radius: var(--radius-sm); background: var(--brand-navy); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
-              🤖
+            <div style="width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--accent-primary); font-size: 0.95rem;">
+              AI
             </div>
             <div>
-              <h3 style="font-size: 0.98rem; font-weight: 700; color: var(--brand-navy);">ATS Academic Mentor Bot</h3>
-              <span style="font-size: 0.72rem; color: var(--status-success); display: flex; align-items: center; gap: 5px;">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--status-success); display: inline-block;"></span>
-                Connected to Student Academic Database
+              <h3 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main);">ATS Advisory Console</h3>
+              <span style="font-size: 0.7rem; color: var(--status-success); display: flex; align-items: center; gap: 5px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--status-success); display: inline-block;"></span>
+                Grounding Engine Active • Isolated Student Context
               </span>
             </div>
           </div>
 
           <button class="btn btn-secondary btn-sm" onclick="clearChat()">
-            🗑️ Clear History
+            Clear History
           </button>
         </div>
 
@@ -106,46 +106,46 @@
         </div>
 
         <!-- Typing Indicator -->
-        <div id="typing-indicator" style="display: none; padding: 0 24px 10px; color: var(--text-dim); font-size: 0.8rem; font-style: italic;">
-          AI Assistant is analyzing your academic records... ⏳
+        <div id="typing-indicator" style="display: none; padding: 0 20px 10px; color: var(--text-dim); font-size: 0.78rem;">
+          Analyzing academic trajectory...
         </div>
 
         <!-- Suggested Prompt Chips (AI Academic Mentor 2.0) -->
         <div class="chat-chips">
           <button class="chip-btn" onclick="sendPrompt('Explain my weak subjects and improvement steps')">
-            ❓ Explain Weak Subjects
+            Weak Subjects
           </button>
           <button class="chip-btn" onclick="sendPrompt('Generate a personalized 7-day study plan')">
-            📅 7-Day Study Plan
+            7-Day Study Plan
           </button>
           <button class="chip-btn" onclick="sendPrompt('Analyze my career readiness and skill gaps')">
-            🚀 Career Gap Analysis
+            Career Gaps
           </button>
           <button class="chip-btn" onclick="sendPrompt('What marks do I need to score 8.5 GPA?')">
-            🎯 What-If 8.5 GPA Target
+            Target 8.5 GPA
           </button>
           <button class="chip-btn" onclick="sendPrompt('Is my attendance safe and compliant?')">
-            📅 Attendance Compliance
+            Attendance Safety
           </button>
           <button class="chip-btn" onclick="sendPrompt('What are my lab and internal marks?')">
-            🧪 Marks Breakdown
+            Internal Marks
           </button>
           <button class="chip-btn" onclick="sendPrompt('What is my fee status?')">
-            💳 Fee Balances
+            Fee Schedule
           </button>
           <button class="chip-btn" onclick="sendPrompt('Who is my mentor and how can I reach them?')">
-            👨‍🏫 Faculty Advisor
+            Faculty Mentor
           </button>
           <button class="chip-btn" onclick="sendPrompt('What achievements are in my verified passport?')">
-            🏆 Achievement Passport
+            Achievement Passport
           </button>
         </div>
 
         <!-- Chat Input Form -->
         <form class="chat-input-area" id="chat-input-form">
-          <input type="text" id="chat-user-input" class="form-control" placeholder="Ask anything about your marks, attendance, study strategy..." required autocomplete="off">
-          <button type="submit" class="btn btn-primary" id="btn-chat-send" style="padding: 0 22px;">
-            Send ➔
+          <input type="text" id="chat-user-input" class="form-control" placeholder="Ask about weak subjects, study strategy, attendance buffer, target marks..." required autocomplete="off">
+          <button type="submit" class="btn btn-primary" id="btn-chat-send" style="padding: 0 20px;">
+            Send
           </button>
         </form>
       </div>

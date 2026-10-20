@@ -3,31 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In | AI-Based Academic Tracking System (ATS)</title>
+  <title>Sign In — Academic Tracking System (ATS)</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body class="login-page">
 
-  <div class="login-card" style="max-width: 480px;">
+  <div class="login-card" style="max-width: 440px;">
     <div class="login-header">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px;">
-        <img src="assets/ats-logo.svg" alt="ATS Official Logo" style="width: 48px; height: 48px;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--bg-elevated); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center;">
+          <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 22px; height: 22px;">
+        </div>
         <div style="text-align: left;">
-          <h1 style="font-size: 1.35rem; font-weight: 800; line-height: 1.1; color: var(--brand-navy, #243B64);">Academic Tracking System</h1>
-          <span style="font-size: 0.72rem; color: var(--accent-gold, #B69A62); font-weight: 700; letter-spacing: 0.8px;">ROLE-BASED ACADEMIC PORTAL</span>
+          <h1 style="font-size: 1.15rem; font-weight: 700; line-height: 1.2; color: var(--text-primary); letter-spacing: -0.2px;">Academic Tracking System</h1>
+          <span style="font-size: 0.65rem; color: var(--accent-gold); font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;">Institutional Academic Portal</span>
         </div>
       </div>
-      <h2 style="font-size: 1.45rem; font-weight: 700; margin-top: 14px; color: var(--text-main, #17191D);" id="login-heading">Student Login</h2>
-      <p style="color: var(--text-secondary, #68707D); font-size: 0.86rem; margin-top: 4px;" id="login-subheading">Sign in with your Register Number to access your personal dashboard.</p>
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-top: 10px; color: var(--text-primary); letter-spacing: -0.2px;" id="login-heading">Student Login</h2>
+      <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;" id="login-subheading">Sign in with your Register Number to access your personal dashboard.</p>
     </div>
 
-    <!-- 4 Role Selection Options (Section 2) -->
-    <div class="role-switcher" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; margin-bottom: 20px;">
-      <div class="role-tab active" id="tab-student" onclick="selectRole('student')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">👨‍🎓 Student</div>
-      <div class="role-tab" id="tab-faculty" onclick="selectRole('faculty')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">👨‍🏫 Faculty</div>
-      <div class="role-tab" id="tab-hod" onclick="selectRole('hod')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">🏛️ HOD</div>
-      <div class="role-tab" id="tab-admin" onclick="selectRole('admin')" style="padding: 9px 4px; font-size: 0.8rem; text-align: center;">🛡️ Admin</div>
+    <!-- 4 Role Segmented Switcher -->
+    <div class="role-switcher" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 3px; margin-bottom: 20px;">
+      <div class="role-tab active" id="tab-student" onclick="selectRole('student')" style="padding: 7px 4px; font-size: 0.78rem; text-align: center;">Student</div>
+      <div class="role-tab" id="tab-faculty" onclick="selectRole('faculty')" style="padding: 7px 4px; font-size: 0.78rem; text-align: center;">Faculty</div>
+      <div class="role-tab" id="tab-hod" onclick="selectRole('hod')" style="padding: 7px 4px; font-size: 0.78rem; text-align: center;">HOD</div>
+      <div class="role-tab" id="tab-admin" onclick="selectRole('admin')" style="padding: 7px 4px; font-size: 0.78rem; text-align: center;">Admin</div>
     </div>
 
     <!-- Login Form -->
@@ -35,86 +37,74 @@
       <div class="form-group">
         <label class="form-label" id="identifier-label">Register Number / Institutional Email</label>
         <div style="position: relative;">
-          <input type="text" id="login-identifier" class="form-control" placeholder="e.g. ATS001 or student@ats.com" required autocomplete="username">
-          <span style="position: absolute; right: 14px; top: 12px; color: var(--text-dim);">👤</span>
+          <input type="text" id="login-identifier" class="form-control" placeholder="e.g. BITD0001 or student@ats.com" required autocomplete="username">
+          <span style="position: absolute; right: 12px; top: 10px; color: var(--text-dim); font-size: 0.85rem;">ID</span>
         </div>
       </div>
 
       <div class="form-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <label class="form-label" style="margin-bottom: 0;">Password</label>
-          <a href="javascript:void(0)" onclick="openModal('forgot-modal')" style="font-size: 0.78rem;">Forgot Password?</a>
+          <a href="javascript:void(0)" onclick="openModal('forgot-modal')" style="font-size: 0.76rem; color: var(--brand-navy);">Forgot Password?</a>
         </div>
         <div style="position: relative;">
           <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
-          <button type="button" id="toggle-password" style="position: absolute; right: 14px; top: 10px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1.1rem;">👁️</button>
+          <button type="button" id="toggle-password" style="position: absolute; right: 12px; top: 9px; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem;" title="Toggle Password">Show</button>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; font-size: 0.84rem;">
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--text-secondary); cursor: pointer;">
-          <input type="checkbox" id="remember-me" checked style="accent-color: var(--brand-navy); width: 16px; height: 16px;">
-          Remember Me
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 0.8rem;">
+        <label style="display: flex; align-items: center; gap: 7px; color: var(--text-secondary); cursor: pointer;">
+          <input type="checkbox" id="remember-me" checked style="accent-color: var(--brand-navy); width: 14px; height: 14px;">
+          Remember Session
         </label>
-        <span style="color: var(--text-dim); font-size: 0.75rem;">🔒 Protected by ATS Auth</span>
+        <span style="color: var(--text-dim); font-size: 0.72rem;">Encrypted TLS</span>
       </div>
 
       <!-- Error / Status Message Container -->
-      <div id="login-error" style="display: none; background: var(--status-danger-bg); border: 1px solid var(--status-danger-border); color: var(--status-danger); padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.84rem; margin-bottom: 18px; text-align: center;"></div>
+      <div id="login-error" style="display: none; background: var(--status-danger-bg); border: 1px solid var(--status-danger-border); color: var(--status-danger); padding: 9px 12px; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 16px; text-align: center;"></div>
 
-      <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.5px;">
-        <span id="btn-text">SIGN IN →</span>
-        <span id="btn-spinner" style="display: none;">Authenticating... ⏳</span>
+      <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%; padding: 11px; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.4px;">
+        <span id="btn-text">Sign In</span>
+        <span id="btn-spinner" style="display: none;">Authenticating...</span>
       </button>
 
-      <!-- Quick Demo Account Autofill Chips (Local / Demo Only) -->
-      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+      <!-- Quick Demo Account Autofill Chips -->
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-color);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-size: 0.74rem; color: var(--brand-navy); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ One-Click Demo Autofill</span>
-          <span style="font-size: 0.70rem; color: var(--text-dim);">LOCAL / DEMO ONLY</span>
+          <span style="font-size: 0.7rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;">One-Click Demo Profiles</span>
+          <span style="font-size: 0.66rem; color: var(--text-dim);">LOCAL BENCHMARK</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <button type="button" class="btn btn-secondary" onclick="autofillDemo('student')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
-            <span>👨‍🎓</span>
-            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <strong style="display: block; color: var(--text-main);">Student</strong>
-              <small style="color: var(--text-secondary);">Kavitha Sundaram</small>
-            </div>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('student')" style="padding: 7px 10px; font-size: 0.76rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+            <strong style="color: var(--text-primary); font-size: 0.78rem;">Student</strong>
+            <small style="color: var(--text-dim); font-size: 0.7rem;">Kavitha Sundaram</small>
           </button>
-          <button type="button" class="btn btn-secondary" onclick="autofillDemo('faculty')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
-            <span>👨‍🏫</span>
-            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <strong style="display: block; color: var(--text-main);">Faculty Mentor</strong>
-              <small style="color: var(--text-secondary);">Dr. Senthil Nathan</small>
-            </div>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('faculty')" style="padding: 7px 10px; font-size: 0.76rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+            <strong style="color: var(--text-primary); font-size: 0.78rem;">Faculty Mentor</strong>
+            <small style="color: var(--text-dim); font-size: 0.7rem;">Dr. Senthil Nathan</small>
           </button>
-          <button type="button" class="btn btn-secondary" onclick="autofillDemo('hod')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
-            <span>🏛️</span>
-            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <strong style="display: block; color: var(--text-main);">Head of Dept</strong>
-              <small style="color: var(--text-secondary);">Prof. Anand</small>
-            </div>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('hod')" style="padding: 7px 10px; font-size: 0.76rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+            <strong style="color: var(--text-primary); font-size: 0.78rem;">Head of Dept</strong>
+            <small style="color: var(--text-dim); font-size: 0.7rem;">Prof. Anand</small>
           </button>
-          <button type="button" class="btn btn-secondary" onclick="autofillDemo('admin')" style="padding: 7px 10px; font-size: 0.78rem; text-align: left; display: flex; align-items: center; gap: 6px;">
-            <span>🛡️</span>
-            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <strong style="display: block; color: var(--text-main);">Admin</strong>
-              <small style="color: var(--text-secondary);">Institutional Admin</small>
-            </div>
+          <button type="button" class="btn btn-secondary" onclick="autofillDemo('admin')" style="padding: 7px 10px; font-size: 0.76rem; text-align: left; display: flex; flex-direction: column; gap: 2px;">
+            <strong style="color: var(--text-primary); font-size: 0.78rem;">Administrator</strong>
+            <small style="color: var(--text-dim); font-size: 0.7rem;">Institutional Admin</small>
           </button>
         </div>
       </div>
     </form>
   </div>
 
-  <!-- Forgot Password Modal (Requirement 5) -->
+  <!-- Forgot Password Modal -->
   <div class="modal-backdrop" id="forgot-modal">
     <div class="modal-card">
       <div class="modal-header">
         <h3 class="modal-title">Reset Password</h3>
         <button class="modal-close" data-modal-close>&times;</button>
       </div>
-      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 18px;">
+      <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 16px;">
         Enter your registered institutional email to receive a password reset link.
       </p>
       <form id="forgot-form">
@@ -122,7 +112,7 @@
           <label class="form-label">Institutional Email</label>
           <input type="email" id="forgot-email" class="form-control" placeholder="e.g. student@ats.com" required>
         </div>
-        <div id="forgot-status" style="display: none; padding: 10px; border-radius: 6px; font-size: 0.84rem; margin-bottom: 14px;"></div>
+        <div id="forgot-status" style="display: none; padding: 10px; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 14px;"></div>
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button type="button" class="btn btn-secondary" data-modal-close>Cancel</button>
           <button type="submit" class="btn btn-primary">Send Reset Request</button>

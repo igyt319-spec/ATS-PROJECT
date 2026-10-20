@@ -312,16 +312,17 @@ function renderMonthlyChart(trend) {
         {
           label: 'Student Attendance %',
           data: data,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          borderColor: '#46C78B',
+          backgroundColor: 'rgba(70, 199, 139, 0.12)',
           fill: true,
           tension: 0.35,
-          pointRadius: 5
+          pointRadius: 4,
+          pointBackgroundColor: '#46C78B'
         },
         {
           label: 'Institutional Detention Line (75%)',
           data: labels.map(() => 75),
-          borderColor: '#ef4444',
+          borderColor: '#F07878',
           borderDash: [6, 6],
           fill: false,
           pointRadius: 0
@@ -335,12 +336,17 @@ function renderMonthlyChart(trend) {
         y: {
           min: 50,
           max: 100,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8', callback: v => `${v}%` }
+          grid: { color: '#252B35' },
+          ticks: { color: '#737D8C', callback: v => `${v}%` }
         },
         x: {
           grid: { display: false },
-          ticks: { color: '#94a3b8' }
+          ticks: { color: '#737D8C' }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#9BA4B1' }
         }
       }
     }

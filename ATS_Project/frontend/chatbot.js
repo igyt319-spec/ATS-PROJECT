@@ -8,10 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   studentId = user.studentId || 1;
 
-  if (user.role === 'admin' || user.role === 'faculty') {
-    document.getElementById('sidebar-role-badge').textContent = 'ADMIN CONSOLE';
-  }
-
   await loadChatHistory();
 
   // Bind Form Submit

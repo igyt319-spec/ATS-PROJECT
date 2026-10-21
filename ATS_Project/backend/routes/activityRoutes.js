@@ -10,6 +10,7 @@ router.get('/passport/verify/:token', activityController.verifyPublicPassport);
 router.get('/passport/:studentId', verifyToken, ownsStudentOrAssigned, activityController.getAchievementPassport);
 
 router.get('/student/:studentId', verifyToken, ownsStudentOrAssigned, activityController.getStudentActivities);
+router.get('/mentor-pending', verifyToken, isMentor, activityController.getMentorMenteeActivities);
 router.get('/mentor/mentees', verifyToken, isMentor, activityController.getMentorMenteeActivities);
 router.get('/department', verifyToken, isHOD, activityController.getDepartmentActivities);
 router.get('/institution', verifyToken, isFaculty, activityController.getInstitutionActivities);

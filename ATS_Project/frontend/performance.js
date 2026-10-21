@@ -10,9 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentStudentId = user.studentId || 1;
   if (user.role === 'admin' || user.role === 'faculty') await populateSubjectOptions('modal-subject-select');
 
-  // Adapt UI if Admin
+  // Adapt UI if Admin / Faculty
   if (user.role === 'admin' || user.role === 'faculty') {
-    document.getElementById('sidebar-role-badge').textContent = 'ADMIN CONSOLE';
     const actionStrip = document.getElementById('admin-marks-action-strip');
     if (actionStrip) actionStrip.style.display = 'flex';
     const thActions = document.getElementById('th-marks-actions');

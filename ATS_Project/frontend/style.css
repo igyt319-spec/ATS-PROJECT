@@ -1229,18 +1229,30 @@ a:hover {
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 1000;
   }
 
+  .sidebar.open,
   .sidebar.mobile-open {
     transform: translateX(0);
+    box-shadow: 4px 0 28px rgba(0, 0, 0, 0.75);
   }
 
   .main-wrapper {
     margin-left: 0;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .mobile-menu-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
   }
 
   .page-container {

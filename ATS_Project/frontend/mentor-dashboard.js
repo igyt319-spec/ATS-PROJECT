@@ -270,8 +270,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // View switcher with dedicated container display & URL query param
 function switchFacultyTab(tabName, pushState = true) {
+  const user = getCurrentUser();
+  const isOrdinaryFaculty = (user && (user.canMentor === false || user.facultyRole === 'faculty'));
+  const mentorOnlyTabs = ['mentees', 'leaves', 'activities', 'fees'];
+
+  let targetTab = tabName;
+  if (isOrdinaryFaculty && mentorOnlyTabs.includes(targetTab)) {
+    showToast('This module requires active Faculty Mentor authorization.', 'info');
+    targetTab = 'dashboard';
+  }
+
   const validTabs = ['dashboard', 'mentees', 'leaves', 'activities', 'results', 'fees', 'risk-radar', 'impact-loop', 'decision-trace'];
-  const activeTab = validTabs.includes(tabName) ? tabName : 'dashboard';
+  const activeTab = validTabs.includes(targetTab) ? targetTab : 'dashboard';
 
   // Update sidebar active classes
   validTabs.forEach(t => {
@@ -298,8 +308,20 @@ function switchFacultyTab(tabName, pushState = true) {
   const meta = TAB_METADATA[activeTab] || TAB_METADATA['dashboard'];
   const titleEl = document.getElementById('page-view-title');
   const subtitleEl = document.getElementById('page-view-subtitle');
-  if (titleEl) titleEl.textContent = meta.title;
-  if (subtitleEl) subtitleEl.textContent = meta.subtitle;
+  if (titleEl) {
+    if (isOrdinaryFaculty && activeTab === 'dashboard') {
+      titleEl.textContent = 'Faculty Instructional & Academic Console';
+    } else {
+      titleEl.textContent = meta.title;
+    }
+  }
+  if (subtitleEl) {
+    if (isOrdinaryFaculty && activeTab === 'dashboard') {
+      subtitleEl.textContent = 'Department Course Assessments, Performance Analysis & Learning Interventions';
+    } else {
+      subtitleEl.textContent = meta.subtitle;
+    }
+  }
 
   // Sync URL query without page reload
   if (pushState) {
@@ -322,15 +344,33 @@ function toggleSidebarDrawer() {
 
 // Master Data Loader
 async function loadAllMentorData() {
-  await Promise.all([
-    loadMentees(),
-    loadLeaves(),
-    loadActivities(),
-    loadResults(),
-    loadFees(),
-    loadImpactLoop(),
-    loadDecisionTraces()
-  ]);
+  const user = getCurrentUser();
+  const isOrdinaryFaculty = (user && (user.canMentor === false || user.facultyRole === 'faculty'));
+
+  if (isOrdinaryFaculty) {
+    // Hide mentor-specific KPI cards and advisory queue
+    const kpiGrid = document.querySelector('.kpi-grid');
+    if (kpiGrid) kpiGrid.style.display = 'none';
+
+    const priorityRadar = document.querySelector('.table-container')?.closest('.glass-card');
+    if (priorityRadar) priorityRadar.style.display = 'none';
+
+    await Promise.all([
+      loadResults(),
+      loadImpactLoop(),
+      loadDecisionTraces()
+    ]);
+  } else {
+    await Promise.all([
+      loadMentees(),
+      loadLeaves(),
+      loadActivities(),
+      loadResults(),
+      loadFees(),
+      loadImpactLoop(),
+      loadDecisionTraces()
+    ]);
+  }
 }
 
 // Load Assigned Mentees

@@ -37,7 +37,7 @@ async function getStudentActivities(req, res) {
   }
 }
 
-// GET /api/activities/mentor/mentees
+// GET /api/activities/mentor-pending AND /api/activities/mentor/mentees
 async function getMentorMenteeActivities(req, res) {
   try {
     const facultyId = req.user.facultyId;
@@ -45,16 +45,25 @@ async function getMentorMenteeActivities(req, res) {
       return res.status(403).json({ success: false, message: 'Faculty profile not resolved.' });
     }
 
-    let filterQuery = "WHERE sm.faculty_id = ? AND sm.status = 'active'";
+    let filterConditions = ["sm.faculty_id = ?", "sm.status = 'active'"];
     let filterParams = [facultyId];
 
     if (req.user.role === 'admin' && !facultyId) {
-      filterQuery = '';
+      filterConditions = [];
       filterParams = [];
     }
 
+    if (req.query && req.query.status) {
+      filterConditions.push("sa.status = ?");
+      filterParams.push(req.query.status);
+    }
+
+    const whereClause = filterConditions.length > 0 ? `WHERE ${filterConditions.join(' AND ')}` : '';
+
     const [rows] = await db.query(
       `SELECT sa.*, 
+              sa.organizing_institution AS organization_or_issuer,
+              sa.participation_level AS participation_type,
               st.name AS student_name, st.register_number, st.year,
               d.name AS department_name,
               u.name AS verified_by_name
@@ -63,7 +72,7 @@ async function getMentorMenteeActivities(req, res) {
        JOIN students st ON st.id = sa.student_id
        LEFT JOIN departments d ON d.id = st.department_id
        LEFT JOIN users u ON u.id = sa.verified_by
-       ${filterQuery}
+       ${whereClause}
        ORDER BY sa.created_at DESC`,
       filterParams
     );

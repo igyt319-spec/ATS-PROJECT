@@ -8,16 +8,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!currentUser) return;
   initLayout();
 
-  if (currentUser.role === 'admin') {
-    const badge = document.getElementById('sidebar-role-badge');
-    if (badge) badge.textContent = 'ADMIN CONSOLE';
-    const sub = document.getElementById('profile-form-subtitle');
-    if (sub) sub.textContent = 'Administrator account credentials and institutional governance profile';
-  } else if (currentUser.role === 'faculty') {
-    const badge = document.getElementById('sidebar-role-badge');
-    if (badge) badge.textContent = currentUser.facultyRole === 'hod' ? 'HOD CONSOLE' : 'MENTOR CONSOLE';
-    const sub = document.getElementById('profile-form-subtitle');
-    if (sub) sub.textContent = currentUser.facultyRole === 'hod' ? 'Department leadership credentials and official scope' : 'Faculty mentor credentials and advisory details';
+  const verifiedRole = getVerifiedUserRole(currentUser);
+  renderRoleSidebar('profile');
+
+  const sub = document.getElementById('profile-form-subtitle');
+  if (sub) {
+    if (verifiedRole === 'ADMIN') {
+      sub.textContent = 'Administrator account credentials and institutional governance profile';
+    } else if (verifiedRole === 'HOD') {
+      sub.textContent = 'Department leadership credentials and official scope';
+    } else if (verifiedRole === 'MENTOR') {
+      sub.textContent = 'Faculty mentor credentials and advisory details';
+    } else if (verifiedRole === 'FACULTY') {
+      sub.textContent = 'Faculty instructional credentials and department details';
+    } else {
+      sub.textContent = 'Student academic credentials and enrollment profile';
+    }
   }
 
   await loadProfileData();
@@ -240,13 +246,13 @@ async function loadProfileData() {
     } else if (role === 'faculty') {
       const fac = profileUser.faculty || {};
       const isHod = Boolean(fac.is_hod || profileUser.faculty_role === 'hod');
+      const isMentor = Boolean(!isHod && fac.can_mentor !== 0 && fac.can_mentor !== false && profileUser.canMentor !== false);
 
       nameEl.textContent = fac.name || profileUser.name;
-      regnoEl.textContent = fac.faculty_code || profileUser.register_number || `FAC-${fac.id || profileUser.id}`;
-      regnoEl.className = isHod ? 'kpi-pill pill-yellow' : 'kpi-pill pill-green';
-      regnoEl.textContent = isHod ? 'HEAD OF DEPARTMENT' : 'FACULTY MENTOR';
+      regnoEl.className = isHod ? 'kpi-pill pill-yellow' : (isMentor ? 'kpi-pill pill-green' : 'kpi-pill pill-blue');
+      regnoEl.textContent = isHod ? 'HEAD OF DEPARTMENT' : (isMentor ? 'FACULTY MENTOR' : 'FACULTY INSTRUCTOR');
       deptEl.textContent = fac.department || profileUser.department || 'Department';
-      metaEl.textContent = `${fac.designation || (isHod ? 'Head of Department' : 'Faculty Member')} • ${fac.department || profileUser.department}`;
+      metaEl.textContent = `${fac.designation || (isHod ? 'Head of Department' : (isMentor ? 'Faculty Mentor' : 'Faculty Member'))} • ${fac.department || profileUser.department}`;
 
       // Form Inputs
       document.getElementById('prof-name').value = fac.name || profileUser.name;
@@ -254,11 +260,11 @@ async function loadProfileData() {
       document.getElementById('prof-email').value = fac.email || profileUser.email;
       document.getElementById('prof-phone').value = fac.phone || '';
       document.getElementById('prof-dept').value = fac.department || profileUser.department || '';
-      document.getElementById('prof-year').value = fac.designation || (isHod ? 'Head of Department' : 'Faculty Mentor');
-      document.getElementById('prof-bio').value = fac.bio || `Faculty mentor in ${fac.department || 'Department'}.`;
+      document.getElementById('prof-year').value = fac.designation || (isHod ? 'Head of Department' : (isMentor ? 'Faculty Mentor' : 'Faculty Instructor'));
+      document.getElementById('prof-bio').value = fac.bio || (isMentor ? `Faculty mentor in ${fac.department || 'Department'}.` : `Faculty instructional member in ${fac.department || 'Department'}.`);
 
       // Summary Card: Faculty & Advisory Standing
-      if (summaryTitle) summaryTitle.textContent = isHod ? 'Department Leadership Standing' : 'Faculty Advisory Standing';
+      if (summaryTitle) summaryTitle.textContent = isHod ? 'Department Leadership Standing' : (isMentor ? 'Faculty Advisory Standing' : 'Faculty Instructional Standing');
       if (summarySubtitle) summarySubtitle.textContent = 'Verified Institutional Faculty Profile';
       if (summaryContent) {
         summaryContent.innerHTML = `
@@ -268,15 +274,15 @@ async function loadProfileData() {
           </div>
           <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
             <span style="color: var(--text-dim);">Official Designation:</span>
-            <strong style="color: #34d399;">${fac.designation || (isHod ? 'Head of Department' : 'Faculty Member')}</strong>
+            <strong style="color: #34d399;">${fac.designation || (isHod ? 'Head of Department' : (isMentor ? 'Faculty Mentor' : 'Faculty Member'))}</strong>
           </div>
           <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-            <span style="color: var(--text-dim);">Active Assigned Mentees:</span>
-            <strong style="color: #fbbf24;">${fac.mentee_count || 0} Scholars</strong>
+            <span style="color: var(--text-dim);">${isMentor ? 'Active Assigned Mentees:' : 'Advisory Assignment:'}</span>
+            <strong style="color: #fbbf24;">${isMentor ? `${fac.mentee_count || 0} Scholars` : 'Instructional Faculty'}</strong>
           </div>
           <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
             <span style="color: var(--text-dim);">Department Leadership:</span>
-            <strong style="color: ${isHod ? '#facc15' : 'var(--text-muted)'};">${isHod ? '👑 Active HOD' : 'Faculty Member'}</strong>
+            <strong style="color: ${isHod ? '#facc15' : 'var(--text-muted)'};">${isHod ? '👑 Active HOD' : (isMentor ? 'Faculty Mentor' : 'Faculty Member')}</strong>
           </div>
           <div style="display: flex; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
             <span style="color: var(--text-dim);">Faculty Code:</span>

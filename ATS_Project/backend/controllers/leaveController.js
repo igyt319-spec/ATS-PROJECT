@@ -28,7 +28,7 @@ async function getStudentLeaves(req, res) {
   }
 }
 
-// GET /api/leave/mentor/mentees
+// GET /api/leave/mentor-requests AND /api/leave/mentor/mentees
 async function getMentorMenteeLeaves(req, res) {
   try {
     const facultyId = req.user.facultyId;
@@ -36,13 +36,20 @@ async function getMentorMenteeLeaves(req, res) {
       return res.status(403).json({ success: false, message: 'Faculty profile not resolved.' });
     }
 
-    let filterQuery = "WHERE sm.faculty_id = ? AND sm.status = 'active'";
+    let filterConditions = ["sm.faculty_id = ?", "sm.status = 'active'"];
     let filterParams = [facultyId];
 
     if (req.user.role === 'admin' && !facultyId) {
-      filterQuery = '';
+      filterConditions = [];
       filterParams = [];
     }
+
+    if (req.query && req.query.status) {
+      filterConditions.push("lr.status = ?");
+      filterParams.push(req.query.status);
+    }
+
+    const whereClause = filterConditions.length > 0 ? `WHERE ${filterConditions.join(' AND ')}` : '';
 
     const [rows] = await db.query(
       `SELECT lr.*, 
@@ -54,7 +61,7 @@ async function getMentorMenteeLeaves(req, res) {
        JOIN students st ON st.id = lr.student_id
        LEFT JOIN departments d ON d.id = st.department_id
        LEFT JOIN users u ON u.id = lr.reviewed_by
-       ${filterQuery}
+       ${whereClause}
        ORDER BY lr.created_at DESC`,
       filterParams
     );

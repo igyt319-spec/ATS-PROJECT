@@ -99,7 +99,9 @@ function setSession(token, user) {
 
 function clearSession() {
   localStorage.removeItem('ats_token');
+  localStorage.removeItem('token');
   localStorage.removeItem('ats_user');
+  sessionStorage.clear();
 }
 
 function logout() {
@@ -232,6 +234,235 @@ function closeModal(modalId) {
   }
 }
 
+// =========================================================================
+// ROLE-AWARE CHATGPT-STYLE SIDEBAR NAVIGATION SYSTEM
+// =========================================================================
+
+function getVerifiedUserRole(user) {
+  if (!user) return null;
+  const role = String(user.role || '').toLowerCase().trim();
+  if (role === 'admin') return 'ADMIN';
+  if (role === 'faculty') {
+    if (Boolean(user.isHOD) || user.facultyRole === 'hod') return 'HOD';
+    if (user.canMentor === false || user.facultyRole === 'faculty') return 'FACULTY';
+    return 'MENTOR';
+  }
+  if (role === 'student') return 'STUDENT';
+  return 'STUDENT';
+}
+
+const ROLE_NAVIGATION_CONFIG = {
+  ADMIN: {
+    consoleTitle: 'ATS Admin',
+    badgeText: 'ADMIN CONSOLE',
+    homeUrl: 'admin-dashboard.html?view=overview',
+    items: [
+      { id: 'overview', label: 'Overview', icon: '🏛️', href: 'admin-dashboard.html?view=overview' },
+      { id: 'departments', label: 'Department Management', icon: '🏢', href: 'admin-dashboard.html?view=departments' },
+      { id: 'students', label: 'Student Management', icon: '🎓', href: 'admin-dashboard.html?view=students' },
+      { id: 'faculty', label: 'Faculty Management', icon: '👨‍🏫', href: 'admin-dashboard.html?view=faculty' },
+      { id: 'hod', label: 'HOD Management', icon: '👑', href: 'admin-dashboard.html?view=hod' },
+      { id: 'mentor-assignments', label: 'Mentor Assignments', icon: '🧭', href: 'admin-dashboard.html?view=mentor-assignments' },
+      { id: 'academic-records', label: 'Academic Records', icon: '📊', href: 'admin-dashboard.html?view=academic-records' },
+      { id: 'fees', label: 'Fee Management', icon: '💳', href: 'admin-dashboard.html?view=fees' },
+      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'admin-dashboard.html?view=activities' },
+      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'admin-dashboard.html?view=impact-loop' },
+      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'admin-dashboard.html?view=decision-trace' },
+      { id: 'audit-logs', label: 'Audit Logs', icon: '🛡️', href: 'admin-dashboard.html?view=audit-logs' },
+      { id: 'reports', label: 'Reports', icon: '📑', href: 'admin-dashboard.html?view=reports' },
+      { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
+    ]
+  },
+  HOD: {
+    consoleTitle: 'Academic ATS',
+    badgeText: 'HOD CONSOLE',
+    homeUrl: 'hod-dashboard.html?view=dashboard',
+    items: [
+      { id: 'dashboard', label: 'Dashboard', icon: '🏛️', href: 'hod-dashboard.html?view=dashboard' },
+      { id: 'overview', label: 'Department Overview', icon: '📊', href: 'hod-dashboard.html?view=overview' },
+      { id: 'faculty', label: 'Faculty Management', icon: '👨‍🏫', href: 'hod-dashboard.html?view=faculty' },
+      { id: 'students', label: 'Student Management', icon: '🎓', href: 'hod-dashboard.html?view=students' },
+      { id: 'allocations', label: 'Mentor Assignments', icon: '🧭', href: 'hod-dashboard.html?view=allocations' },
+      { id: 'performance', label: 'Academic Performance', icon: '📈', href: 'hod-dashboard.html?view=performance' },
+      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'hod-dashboard.html?view=activities' },
+      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'hod-dashboard.html?view=impact-loop' },
+      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'hod-dashboard.html?view=decision-trace' },
+      { id: 'reports', label: 'Reports', icon: '📑', href: 'hod-dashboard.html?view=reports' },
+      { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
+    ]
+  },
+  MENTOR: {
+    consoleTitle: 'Academic ATS',
+    badgeText: 'MENTOR CONSOLE',
+    homeUrl: 'mentor-dashboard.html?view=dashboard',
+    items: [
+      { id: 'dashboard', label: 'My Dashboard', icon: '📊', href: 'mentor-dashboard.html?view=dashboard' },
+      { id: 'mentees', label: 'Mentee Management', icon: '👥', href: 'mentor-dashboard.html?view=mentees' },
+      { id: 'leaves', label: 'Leave Approvals', icon: '📝', href: 'mentor-dashboard.html?view=leaves' },
+      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'mentor-dashboard.html?view=activities' },
+      { id: 'results', label: 'Mentee Results', icon: '📈', href: 'mentor-dashboard.html?view=results' },
+      { id: 'fees', label: 'Fee Tracking', icon: '💳', href: 'mentor-dashboard.html?view=fees' },
+      { id: 'risk-radar', label: 'Academic Risk Radar', icon: '📡', href: 'mentor-dashboard.html?view=risk-radar' },
+      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'mentor-dashboard.html?view=impact-loop' },
+      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'mentor-dashboard.html?view=decision-trace' },
+      { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
+    ]
+  },
+  FACULTY: {
+    consoleTitle: 'Academic ATS',
+    badgeText: 'FACULTY CONSOLE',
+    homeUrl: 'mentor-dashboard.html?view=dashboard',
+    items: [
+      { id: 'dashboard', label: 'My Dashboard', icon: '📊', href: 'mentor-dashboard.html?view=dashboard' },
+      { id: 'results', label: 'Academic Results', icon: '📈', href: 'mentor-dashboard.html?view=results' },
+      { id: 'risk-radar', label: 'Academic Risk Radar', icon: '📡', href: 'mentor-dashboard.html?view=risk-radar' },
+      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'mentor-dashboard.html?view=impact-loop' },
+      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'mentor-dashboard.html?view=decision-trace' },
+      { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
+    ]
+  },
+  STUDENT: {
+    consoleTitle: 'Academic ATS',
+    badgeText: 'STUDENT CONSOLE',
+    homeUrl: 'dashboard.html?view=view-dashboard',
+    items: [
+      { id: 'view-dashboard', label: 'My Dashboard', icon: '📊', href: 'dashboard.html?view=view-dashboard' },
+      { id: 'view-progress', label: 'My Academic Progress', icon: '🧬', href: 'dashboard.html?view=view-progress' },
+      { id: 'view-attendance', label: 'Attendance', icon: '📅', href: 'dashboard.html?view=view-attendance' },
+      { id: 'view-internal-marks', label: 'Internal Marks', icon: '📝', href: 'dashboard.html?view=view-internal-marks' },
+      { id: 'view-semester-results', label: 'Semester Results', icon: '📑', href: 'dashboard.html?view=view-semester-results' },
+      { id: 'view-gpa', label: 'GPA / CGPA', icon: '📈', href: 'dashboard.html?view=view-gpa' },
+      { id: 'view-activities', label: 'My Activities', icon: '🏆', href: 'dashboard.html?view=view-activities' },
+      { id: 'view-achievement-passport', label: 'Achievement Passport', icon: '🛡️', href: 'dashboard.html?view=view-achievement-passport' },
+      { id: 'view-career-readiness', label: 'Career Readiness', icon: '🚀', href: 'dashboard.html?view=view-career-readiness' },
+      { id: 'view-leave-requests', label: 'Leave Requests', icon: '📨', href: 'dashboard.html?view=view-leave-requests' },
+      { id: 'view-fee-status', label: 'Fee Status', icon: '💳', href: 'dashboard.html?view=view-fee-status' },
+      { id: 'view-mentor', label: 'My Mentor', icon: '👨‍🏫', href: 'dashboard.html?view=view-mentor' },
+      { id: 'view-simulator', label: 'Academic What-If Simulator', icon: '🔮', href: 'dashboard.html?view=view-simulator' },
+      { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
+    ]
+  }
+};
+
+function renderRoleSidebar(activeKey = null) {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  const role = getVerifiedUserRole(user);
+  const config = ROLE_NAVIGATION_CONFIG[role];
+  if (!config) return;
+
+  // Set role badge
+  const brandRole = document.getElementById('sidebar-role-badge');
+  if (brandRole) {
+    brandRole.textContent = config.badgeText;
+  }
+
+  // Set brand title
+  const brandTitle = document.querySelector('.brand-text h2');
+  if (brandTitle) {
+    brandTitle.textContent = config.consoleTitle;
+  }
+
+  const currentPage = (window.location.pathname || '').split('/').pop().toLowerCase();
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentView = urlParams.get('view');
+
+  let resolvedActive = activeKey;
+  if (!resolvedActive) {
+    if (currentPage.includes('profile.html')) {
+      resolvedActive = 'profile';
+    } else if (currentView) {
+      resolvedActive = currentView;
+    } else {
+      resolvedActive = config.items[0]?.id;
+    }
+  }
+
+  const navEl = document.querySelector('.sidebar-nav');
+  const isFacultyOnMentorDashboard = (role === 'FACULTY' && currentPage.includes('mentor-dashboard.html'));
+  if (navEl && (currentPage.includes('profile.html') || navEl.dataset.dynamicNav === 'true' || isFacultyOnMentorDashboard)) {
+    navEl.innerHTML = config.items.map(item => {
+      const isActive = item.id === resolvedActive;
+      return `
+        <a href="${item.href}" class="nav-item ${isActive ? 'active' : ''}" id="nav-${item.id}" data-tab="${item.id}" data-view="${item.id}">
+          <span class="icon">${item.icon}</span> ${item.label}
+        </a>
+      `;
+    }).join('');
+  } else if (navEl) {
+    // Synchronize active highlight on existing dashboard items
+    navEl.querySelectorAll('.nav-item').forEach(link => {
+      const linkId = link.id ? link.id.replace(/^nav-/, '') : '';
+      const dataView = link.getAttribute('data-view') || '';
+      if (linkId === resolvedActive || dataView === resolvedActive || (resolvedActive === 'profile' && link.href && link.href.includes('profile.html'))) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    });
+  }
+}
+
+// Global Accessible Mobile Sidebar Drawer Toggle
+window.toggleSidebarDrawer = function() {
+  const sidebar = document.querySelector('.sidebar') || document.getElementById('app-sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+    sidebar.classList.toggle('mobile-open');
+  }
+};
+
+// Global click delegation for:
+// 1. In-page navigation switcher without full page reloads
+// 2. Mobile drawer auto-dismissal on click
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const navItem = e.target.closest('.sidebar-nav .nav-item');
+    const sidebar = document.querySelector('.sidebar') || document.getElementById('app-sidebar');
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+
+    // In-page view switcher delegation: If link targets current page with ?view=, prevent full reload
+    if (navItem) {
+      const href = navItem.getAttribute('href');
+      if (href && href.includes('?view=')) {
+        const [targetPage, targetQuery] = href.split('?');
+        const cleanTargetPage = targetPage.split('/').pop().toLowerCase();
+        const currentPath = (window.location.pathname || '').split('/').pop().toLowerCase();
+
+        if (cleanTargetPage === currentPath) {
+          e.preventDefault();
+          const params = new URLSearchParams(targetQuery);
+          const viewId = params.get('view');
+          if (viewId) {
+            if (typeof window.switchAdminTab === 'function') {
+              window.switchAdminTab(viewId);
+            } else if (typeof window.switchHODTab === 'function') {
+              window.switchHODTab(viewId);
+            } else if (typeof window.switchFacultyTab === 'function') {
+              window.switchFacultyTab(viewId);
+            } else if (typeof window.switchStudentTab === 'function') {
+              window.switchStudentTab(viewId);
+            }
+          }
+        }
+      }
+
+      // Close mobile drawer on navigation
+      if (sidebar) {
+        sidebar.classList.remove('open');
+        sidebar.classList.remove('mobile-open');
+      }
+    } else if (sidebar && (sidebar.classList.contains('open') || sidebar.classList.contains('mobile-open'))) {
+      // Dismiss if clicked outside sidebar & mobile toggle
+      if (!sidebar.contains(e.target) && (!mobileBtn || !mobileBtn.contains(e.target))) {
+        sidebar.classList.remove('open');
+        sidebar.classList.remove('mobile-open');
+      }
+    }
+  });
+}
+
 // Initialize Topbar Info & Navigation
 function initLayout() {
   const user = getCurrentUser();
@@ -242,13 +473,14 @@ function initLayout() {
 
     if (nameEl) nameEl.textContent = user.name || 'User';
 
+    const verifiedRole = getVerifiedUserRole(user);
     let displayRole = 'Student';
-    if (user.role === 'admin') displayRole = 'Administrator';
-    else if (user.role === 'faculty') {
-      displayRole = user.facultyRole === 'hod' ? `HOD (${user.department || 'Dept'})` : 'Faculty Mentor';
-    } else {
-      displayRole = user.register_number || 'Student';
-    }
+    if (verifiedRole === 'ADMIN') displayRole = 'Administrator';
+    else if (verifiedRole === 'HOD') displayRole = `HOD (${user.department || 'Dept'})`;
+    else if (verifiedRole === 'MENTOR') displayRole = 'Faculty Mentor';
+    else if (verifiedRole === 'FACULTY') displayRole = `Faculty (${user.department || 'Dept'})`;
+    else displayRole = user.register_number || 'Student';
+
     if (roleEl) roleEl.textContent = displayRole;
 
     // Set individual avatar with fallback to generated initials badge
@@ -260,22 +492,17 @@ function initLayout() {
       };
     }
 
-    // Role-specific sidebar adjustments
-    const brandRole = document.getElementById('sidebar-role-badge');
-    if (user.role === 'admin') {
-      if (brandRole) brandRole.textContent = 'ADMIN CONSOLE';
-      const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
+    // Role-specific sidebar adjustments & rendering
+    renderRoleSidebar();
+
+    // Preserve legacy dashboard links if any still point to generic dashboard.html
+    const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
+    if (verifiedRole === 'ADMIN') {
       dashLinks.forEach(link => { link.href = 'admin-dashboard.html'; });
-    } else if (user.role === 'faculty') {
-      if (user.facultyRole === 'hod') {
-        if (brandRole) brandRole.textContent = 'HOD CONSOLE';
-        const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
-        dashLinks.forEach(link => { link.href = 'hod-dashboard.html'; });
-      } else {
-        if (brandRole) brandRole.textContent = 'MENTOR CONSOLE';
-        const dashLinks = document.querySelectorAll('.sidebar-nav a[href="dashboard.html"]');
-        dashLinks.forEach(link => { link.href = 'mentor-dashboard.html'; });
-      }
+    } else if (verifiedRole === 'HOD') {
+      dashLinks.forEach(link => { link.href = 'hod-dashboard.html'; });
+    } else if (verifiedRole === 'MENTOR' || verifiedRole === 'FACULTY') {
+      dashLinks.forEach(link => { link.href = 'mentor-dashboard.html'; });
     }
   }
 
@@ -287,12 +514,13 @@ function initLayout() {
     dateEl.textContent = `📅 ${now.toLocaleDateString('en-US', options)}`;
   }
 
-  // Mobile menu button toggle
+  // Mobile menu button toggle listener
   const mobileBtn = document.getElementById('mobile-menu-btn');
-  const sidebar = document.querySelector('.sidebar');
+  const sidebar = document.querySelector('.sidebar') || document.getElementById('app-sidebar');
   if (mobileBtn && sidebar) {
-    mobileBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('mobile-open');
+    mobileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.toggleSidebarDrawer();
     });
   }
 

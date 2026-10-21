@@ -49,7 +49,7 @@ async function getStudentFees(req, res) {
   }
 }
 
-// GET /api/fees/mentor/mentees
+// GET /api/fees/mentor-overview AND /api/fees/mentor/mentees
 async function getMentorMenteeFees(req, res) {
   try {
     const facultyId = req.user.facultyId;

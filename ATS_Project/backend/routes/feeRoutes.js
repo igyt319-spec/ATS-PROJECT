@@ -4,6 +4,7 @@ const feeController = require('../controllers/feeController');
 const { verifyToken, isHOD, isMentor, isStrictAdmin, ownsStudentOrAssigned } = require('../middleware/authMiddleware');
 
 router.get('/student/:studentId', verifyToken, ownsStudentOrAssigned, feeController.getStudentFees);
+router.get('/mentor-overview', verifyToken, isMentor, feeController.getMentorMenteeFees);
 router.get('/mentor/mentees', verifyToken, isMentor, feeController.getMentorMenteeFees);
 router.get('/department', verifyToken, isHOD, feeController.getDepartmentFees);
 router.get('/institution', verifyToken, isStrictAdmin, feeController.getInstitutionFees);

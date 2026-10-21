@@ -12,7 +12,7 @@
 
 <div class="app-layout">
   <!-- Sidebar Navigation (Role-Based Student Console) -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="app-sidebar">
     <div class="sidebar-header">
       <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 4px;">
         <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 26px; height: 26px;">
@@ -86,7 +86,7 @@
   <div class="main-wrapper">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebarDrawer()">☰</button>
         <div>
           <h1 class="page-title" id="student-portal-title">Undergraduate Scholar Dashboard</h1>
           <span style="font-size: 0.76rem; color: var(--text-dim);" id="header-student-subtitle">Loading academic profile...</span>

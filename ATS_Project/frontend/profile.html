@@ -10,7 +10,7 @@
 <body>
 
 <div class="app-layout">
-  <aside class="sidebar">
+  <aside class="sidebar" id="app-sidebar">
     <div class="sidebar-header">
       <div class="logo-badge" style="display: flex; align-items: center; justify-content: center; padding: 4px;">
         <img src="assets/ats-logo.svg" alt="ATS Logo" style="width: 26px; height: 26px;">
@@ -21,31 +21,8 @@
       </div>
     </div>
 
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-item">
-        <span class="icon">📊</span> Dashboard
-      </a>
-      <a href="performance.html" class="nav-item">
-        <span class="icon">🎯</span> Performance
-      </a>
-      <a href="attendance.html" class="nav-item">
-        <span class="icon">📅</span> Attendance
-      </a>
-      <a href="achievements.html" class="nav-item">
-        <span class="icon">🏆</span> Achievements
-      </a>
-      <a href="recommendations.html" class="nav-item">
-        <span class="icon">💡</span> AI Recommendations
-      </a>
-      <a href="chatbot.html" class="nav-item">
-        <span class="icon">🤖</span> AI Assistant
-      </a>
-      <a href="notifications.html" class="nav-item">
-        <span class="icon">🔔</span> Notifications
-      </a>
-      <a href="profile.html" class="nav-item active">
-        <span class="icon">👤</span> Profile
-      </a>
+    <nav class="sidebar-nav" id="sidebar-nav" data-dynamic-nav="true">
+      <!-- Role-specific sidebar navigation items dynamically rendered by renderRoleSidebar() based on verified user role -->
     </nav>
 
     <div class="sidebar-footer">
@@ -58,7 +35,7 @@
   <div class="main-wrapper">
     <header class="topbar">
       <div class="topbar-left">
-        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebarDrawer()">☰</button>
         <div>
           <h1 class="page-title">Identity & Account Profile</h1>
           <span style="font-size: 0.76rem; color: var(--text-dim);">Official Institutional Identity & Credentials</span>

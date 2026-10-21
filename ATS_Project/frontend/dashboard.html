@@ -51,26 +51,29 @@
       <a href="javascript:void(0)" class="nav-item" data-view="view-achievement-passport" onclick="switchStudentTab('view-achievement-passport')">
         <span class="icon">🛡️</span> Achievement Passport
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-knowledge-graph" onclick="switchStudentTab('view-knowledge-graph')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-risk-overview" id="nav-risk-overview" onclick="switchStudentTab('view-risk-overview')">
+        <span class="icon">⚠️</span> Academic Risk Overview
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-knowledge-graph" id="nav-knowledge-graph" onclick="switchStudentTab('view-knowledge-graph')">
         <span class="icon">🕸️</span> Academic Knowledge Graph
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-trajectory-predictor" onclick="switchStudentTab('view-trajectory-predictor')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-trajectory-predictor" id="nav-trajectory-predictor" onclick="switchStudentTab('view-trajectory-predictor')">
         <span class="icon">📈</span> Academic Trajectory Predictor
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-study-planner" onclick="switchStudentTab('view-study-planner')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-study-planner" id="nav-study-planner" onclick="switchStudentTab('view-study-planner')">
         <span class="icon">📅</span> Adaptive Study Planner
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-skill-evidence" onclick="switchStudentTab('view-skill-evidence')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-skill-evidence" id="nav-skill-evidence" onclick="switchStudentTab('view-skill-evidence')">
         <span class="icon">🌟</span> Skill Evidence Graph
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-career-readiness" onclick="switchStudentTab('view-career-readiness')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-career-readiness" id="nav-career-readiness" onclick="switchStudentTab('view-career-readiness')">
         <span class="icon">🚀</span> Career Readiness
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-simulator" onclick="switchStudentTab('view-simulator')">
+      <a href="javascript:void(0)" class="nav-item" data-view="view-simulator" id="nav-simulator" onclick="switchStudentTab('view-simulator')">
         <span class="icon">🔮</span> Academic What-If Simulator
       </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-interventions" onclick="switchStudentTab('view-interventions')">
-        <span class="icon">🔄</span> Intervention Progress
+      <a href="javascript:void(0)" class="nav-item" data-view="view-interventions" id="nav-interventions" onclick="switchStudentTab('view-interventions')">
+        <span class="icon">🔄</span> Intervention Effectiveness
       </a>
 
       <div class="nav-section-title" style="margin-top: 14px;">Services & Advisory</div>
@@ -1079,6 +1082,13 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ACADEMIC RISK OVERVIEW
+           ========================================================================= -->
+      <div id="view-risk-overview" class="content-view">
+        <!-- Injected dynamically by AdvancedModules.initTrajectoryPredictor -->
       </div>
 
       <!-- =========================================================================

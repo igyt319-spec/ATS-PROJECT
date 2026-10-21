@@ -76,11 +76,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // View switcher for Admin Console
 function switchAdminTab(tabName, pushState = true) {
+  const RESTRICTED_STUDENT_MODULES = [
+    'knowledge-graph', 'trajectory-predictor', 'study-planner', 'skill-evidence', 'interventions', 'risk-overview'
+  ];
+  if (RESTRICTED_STUDENT_MODULES.includes(tabName)) {
+    showToast('Access Restricted: This academic intelligence module is available only in the Student Console.', 'info');
+    tabName = 'overview';
+  }
+
   const validTabs = [
     'overview', 'departments', 'students', 'faculty', 'hod',
     'mentor-assignments', 'department-mini-dashboards', 'academic-records',
-    'knowledge-graph', 'trajectory-predictor', 'study-planner', 'skill-evidence',
-    'career-readiness', 'interventions', 'activities', 'fees',
+    'career-readiness', 'activities', 'fees',
     'demo-payments', 'impact-loop', 'decision-trace', 'audit-logs', 'reports'
   ];
   const activeTab = validTabs.includes(tabName) ? tabName : 'overview';

@@ -7,17 +7,28 @@ let cachedDashboardData = null;
 
 // Tab switcher with URL persistence and browser history
 window.switchStudentTab = function(tabId, pushState = true) {
+  // Normalize alias (e.g. 'risk-overview' -> 'view-risk-overview')
+  let effectiveTabId = tabId || 'view-dashboard';
+  if (!effectiveTabId.startsWith('view-')) {
+    effectiveTabId = 'view-' + effectiveTabId;
+  }
+
   const views = document.querySelectorAll('.content-view');
   views.forEach(v => v.classList.remove('active'));
 
-  const targetView = document.getElementById(tabId);
+  let targetView = document.getElementById(effectiveTabId);
+  if (!targetView && effectiveTabId === 'view-risk-overview') {
+    targetView = document.getElementById('view-trajectory-predictor');
+  }
   if (targetView) {
     targetView.classList.add('active');
   }
 
   const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
   navItems.forEach(item => {
-    if (item.getAttribute('data-view') === tabId) {
+    const dView = item.getAttribute('data-view');
+    const itemId = item.id;
+    if (dView === effectiveTabId || itemId === `nav-${effectiveTabId}` || itemId === effectiveTabId || (effectiveTabId === 'view-risk-overview' && dView === 'view-risk-overview')) {
       item.classList.add('active');
     } else {
       item.classList.remove('active');
@@ -36,40 +47,42 @@ window.switchStudentTab = function(tabId, pushState = true) {
       'view-gpa': 'GPA / CGPA Credit Trajectory',
       'view-activities': 'Co-Curricular Activities & Portfolio',
       'view-achievement-passport': 'Verified Academic Achievement Passport',
+      'view-risk-overview': 'Academic Risk Overview & Statistical Performance Model',
       'view-knowledge-graph': 'Academic Knowledge Graph & Prerequisite Map',
       'view-trajectory-predictor': 'Academic Trajectory Predictor & Statistical OLS Model',
       'view-study-planner': 'Adaptive Weekly Study Workload Planner',
       'view-skill-evidence': 'Skill Evidence Graph & Portfolio Competencies',
       'view-career-readiness': 'Career Readiness & Competency Roadmap',
       'view-simulator': 'Academic What-If Scenario Simulator',
-      'view-interventions': 'Academic Support & Intervention Progress',
+      'view-interventions': 'Academic Support & Intervention Effectiveness',
       'view-leave-requests': 'Student Leave Management & History',
       'view-fee-status': 'Fee Status & Demo Payment Simulation',
       'view-mentor': 'Assigned Faculty Mentor Advisory',
       'view-profile': 'Official Student Academic Profile'
     };
-    if (titles[tabId]) titleEl.textContent = titles[tabId];
+    if (titles[effectiveTabId]) titleEl.textContent = titles[effectiveTabId];
   }
 
   // Lazy trigger module data loaders
   const user = getCurrentUser();
   const currentStudentId = user?.studentId || 1;
 
-  if (tabId === 'view-knowledge-graph' && window.AdvancedModules) {
+  if (effectiveTabId === 'view-knowledge-graph' && window.AdvancedModules) {
     AdvancedModules.initKnowledgeGraph(document.getElementById('view-knowledge-graph'), currentStudentId);
-  } else if (tabId === 'view-trajectory-predictor' && window.AdvancedModules) {
-    AdvancedModules.initTrajectoryPredictor(document.getElementById('view-trajectory-predictor'), currentStudentId);
-  } else if (tabId === 'view-study-planner' && window.AdvancedModules) {
+  } else if ((effectiveTabId === 'view-trajectory-predictor' || effectiveTabId === 'view-risk-overview') && window.AdvancedModules) {
+    const container = document.getElementById(effectiveTabId) || document.getElementById('view-trajectory-predictor');
+    AdvancedModules.initTrajectoryPredictor(container, currentStudentId);
+  } else if (effectiveTabId === 'view-study-planner' && window.AdvancedModules) {
     AdvancedModules.initStudyPlanner(document.getElementById('view-study-planner'), currentStudentId);
-  } else if (tabId === 'view-skill-evidence' && window.AdvancedModules) {
+  } else if (effectiveTabId === 'view-skill-evidence' && window.AdvancedModules) {
     AdvancedModules.initSkillEvidence(document.getElementById('view-skill-evidence'), currentStudentId);
-  } else if (tabId === 'view-fee-status' && window.AdvancedModules) {
+  } else if (effectiveTabId === 'view-fee-status' && window.AdvancedModules) {
     AdvancedModules.initDemoPaymentWorkflow(document.getElementById('view-fee-status'), currentStudentId);
-  } else if (tabId === 'view-interventions') {
+  } else if (effectiveTabId === 'view-interventions') {
     loadStudentInterventionsList(currentStudentId);
-  } else if (tabId === 'view-achievement-passport') {
+  } else if (effectiveTabId === 'view-achievement-passport') {
     loadAchievementPassportPage();
-  } else if (tabId === 'view-progress') {
+  } else if (effectiveTabId === 'view-progress') {
     loadStudentImpactLoop();
     loadStudentDecisionTrace();
   }

@@ -21,7 +21,8 @@ const testSuites = [
   { name: 'ATS Impact Loop & Explainable Decision Trace Engine', script: 'test_impact_loop_and_decision_trace.js' },
   { name: 'Mentor API Repair & Cross-Mentor Data Isolation', script: 'test_mentor_api_repair.js' },
   { name: 'Role-Aware Sidebars & ChatGPT-Style Navigation', script: 'test_role_navigation_and_sidebar.js' },
-  { name: 'Phase 1-10 Master Product: Advanced Modules, Admin Dashboards & Demo Payments', script: 'test_final_master_product.js' }
+  { name: 'Phase 1-10 Master Product: Advanced Modules, Admin Dashboards & Demo Payments', script: 'test_final_master_product.js' },
+  { name: 'Correction: Restrict Advanced Modules to Student Sidebar Only', script: 'test_student_only_advanced_modules.js' }
 ];
 
 function checkPortListening(port = 5000) {

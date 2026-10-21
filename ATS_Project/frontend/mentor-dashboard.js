@@ -281,6 +281,17 @@ function switchFacultyTab(tabName, pushState = true) {
   const mentorOnlyTabs = ['mentees', 'leaves', 'activities', 'fees'];
 
   let targetTab = tabName;
+  const RESTRICTED_STUDENT_MODULES = [
+    'risk-overview', 'knowledge-graph', 'trajectory-predictor',
+    'study-planner', 'skill-evidence', 'interventions'
+  ];
+  if (RESTRICTED_STUDENT_MODULES.includes(targetTab)) {
+    if (typeof showToast === 'function') {
+      showToast('This advanced module is reserved for the Student Console.', 'info');
+    }
+    targetTab = 'dashboard';
+  }
+
   if (isOrdinaryFaculty && mentorOnlyTabs.includes(targetTab)) {
     showToast('This module requires active Faculty Mentor authorization.', 'info');
     targetTab = 'dashboard';
@@ -288,8 +299,7 @@ function switchFacultyTab(tabName, pushState = true) {
 
   const validTabs = [
     'dashboard', 'mentees', 'leaves', 'results', 'activities',
-    'knowledge-graph', 'trajectory-predictor', 'study-planner', 'skill-evidence',
-    'career-readiness', 'interventions', 'fees', 'risk-radar', 'impact-loop', 'decision-trace'
+    'career-readiness', 'fees', 'risk-radar', 'impact-loop', 'decision-trace'
   ];
   const activeTab = validTabs.includes(targetTab) ? targetTab : 'dashboard';
 

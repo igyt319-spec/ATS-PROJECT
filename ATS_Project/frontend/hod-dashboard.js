@@ -97,10 +97,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // View switcher for HOD Console
 function switchHODTab(tabName, pushState = true) {
+  const RESTRICTED_STUDENT_MODULES = [
+    'risk-overview', 'knowledge-graph', 'trajectory-predictor',
+    'study-planner', 'skill-evidence', 'interventions'
+  ];
+  if (RESTRICTED_STUDENT_MODULES.includes(tabName)) {
+    if (typeof showToast === 'function') {
+      showToast('This advanced module is reserved for the Student Console.', 'info');
+    }
+    tabName = 'dashboard';
+  }
+
   const validTabs = [
     'dashboard', 'overview', 'students', 'faculty', 'allocations', 'performance',
-    'risk-overview', 'risk-radar', 'knowledge-graph', 'trajectory-predictor',
-    'study-planner', 'skill-evidence', 'interventions', 'activities',
+    'risk-radar', 'activities',
     'impact-loop', 'decision-trace', 'reports'
   ];
   const activeTab = validTabs.includes(tabName) ? tabName : 'dashboard';

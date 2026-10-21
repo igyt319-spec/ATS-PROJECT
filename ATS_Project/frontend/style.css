@@ -1406,3 +1406,311 @@ a:hover {
   letter-spacing: 0.3px;
 }
 
+/* ============================================================
+   ADVANCED MODULES ACCENT THEMING & ACTIVE SIDEBAR HIGHLIGHTS
+   ============================================================ */
+:root {
+  --mod-cyan: #38bdf8;
+  --mod-cyan-bg: rgba(56, 189, 248, 0.12);
+  --mod-cyan-border: rgba(56, 189, 248, 0.35);
+
+  --mod-purple: #a855f7;
+  --mod-purple-bg: rgba(168, 85, 247, 0.12);
+  --mod-purple-border: rgba(168, 85, 247, 0.35);
+
+  --mod-emerald: #10b981;
+  --mod-emerald-bg: rgba(16, 185, 129, 0.12);
+  --mod-emerald-border: rgba(16, 185, 129, 0.35);
+
+  --mod-amber: #f59e0b;
+  --mod-amber-bg: rgba(245, 158, 11, 0.12);
+  --mod-amber-border: rgba(245, 158, 11, 0.35);
+
+  --mod-indigo: #6366f1;
+  --mod-indigo-bg: rgba(99, 102, 241, 0.12);
+  --mod-indigo-border: rgba(99, 102, 241, 0.35);
+
+  --mod-rose: #f43f5e;
+  --mod-rose-bg: rgba(244, 63, 94, 0.12);
+  --mod-rose-border: rgba(244, 63, 94, 0.35);
+}
+
+/* Module Active Sidebar Accent Overrides */
+.sidebar-nav .nav-item[data-view="view-knowledge-graph"].active,
+.sidebar-nav .nav-item[data-view="knowledge-graph"].active,
+.sidebar-nav .nav-item#nav-knowledge-graph.active {
+  background: var(--mod-cyan-bg) !important;
+  color: var(--mod-cyan) !important;
+  border-left: 3px solid var(--mod-cyan) !important;
+}
+
+.sidebar-nav .nav-item[data-view="view-trajectory-predictor"].active,
+.sidebar-nav .nav-item[data-view="trajectory-predictor"].active,
+.sidebar-nav .nav-item#nav-trajectory-predictor.active {
+  background: var(--mod-purple-bg) !important;
+  color: var(--mod-purple) !important;
+  border-left: 3px solid var(--mod-purple) !important;
+}
+
+.sidebar-nav .nav-item[data-view="view-study-planner"].active,
+.sidebar-nav .nav-item[data-view="study-planner"].active,
+.sidebar-nav .nav-item#nav-study-planner.active {
+  background: var(--mod-emerald-bg) !important;
+  color: var(--mod-emerald) !important;
+  border-left: 3px solid var(--mod-emerald) !important;
+}
+
+.sidebar-nav .nav-item[data-view="view-skill-evidence"].active,
+.sidebar-nav .nav-item[data-view="skill-evidence"].active,
+.sidebar-nav .nav-item#nav-skill-evidence.active {
+  background: var(--mod-amber-bg) !important;
+  color: var(--mod-amber) !important;
+  border-left: 3px solid var(--mod-amber) !important;
+}
+
+.sidebar-nav .nav-item[data-view="view-interventions"].active,
+.sidebar-nav .nav-item[data-view="interventions"].active,
+.sidebar-nav .nav-item[data-view="impact-loop"].active,
+.sidebar-nav .nav-item#nav-interventions.active,
+.sidebar-nav .nav-item#nav-impact-loop.active {
+  background: var(--mod-indigo-bg) !important;
+  color: var(--mod-indigo) !important;
+  border-left: 3px solid var(--mod-indigo) !important;
+}
+
+.sidebar-nav .nav-item[data-view="view-fee-status"].active,
+.sidebar-nav .nav-item[data-view="fees"].active,
+.sidebar-nav .nav-item[data-view="demo-payments"].active,
+.sidebar-nav .nav-item#nav-demo-payments.active {
+  background: var(--mod-rose-bg) !important;
+  color: var(--mod-rose) !important;
+  border-left: 3px solid var(--mod-rose) !important;
+}
+
+/* Module Hero Header Cards */
+.module-hero-banner {
+  border-radius: var(--radius-md);
+  padding: 22px 26px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.module-hero-banner.cyan {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-cyan-border);
+}
+.module-hero-banner.purple {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-purple-border);
+}
+.module-hero-banner.emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-emerald-border);
+}
+.module-hero-banner.amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-amber-border);
+}
+.module-hero-banner.indigo {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-indigo-border);
+}
+.module-hero-banner.rose {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(17, 20, 25, 0.8));
+  border: 1px solid var(--mod-rose-border);
+}
+
+/* Graph Canvas & Controls */
+.graph-canvas-container {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  min-height: 520px;
+  overflow: hidden;
+  display: flex;
+}
+.graph-svg-wrapper {
+  flex: 1;
+  min-height: 520px;
+  position: relative;
+}
+.graph-side-panel {
+  width: 340px;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  padding: 20px;
+  overflow-y: auto;
+  max-height: 600px;
+  transition: all 0.3s ease;
+}
+.graph-side-panel.collapsed {
+  display: none;
+}
+
+/* Interactive Graph Nodes */
+.graph-node {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.graph-node:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+.graph-node.weakness-node circle {
+  animation: pulse-weakness 2s infinite;
+}
+@keyframes pulse-weakness {
+  0% { stroke: #f43f5e; stroke-width: 2px; }
+  50% { stroke: #fda4af; stroke-width: 5px; }
+  100% { stroke: #f43f5e; stroke-width: 2px; }
+}
+
+/* Trajectory Predictor UI */
+.trajectory-projection-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+.trajectory-stat-badge {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.factor-bar-wrapper {
+  margin-bottom: 14px;
+}
+.factor-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  margin-bottom: 5px;
+}
+.factor-progress-bg {
+  height: 8px;
+  background: var(--bg-surface-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.factor-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+/* Study Planner UI */
+.study-task-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.study-task-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+.study-task-card.completed {
+  opacity: 0.7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.priority-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.priority-tag.High {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+.priority-tag.Medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.priority-tag.Low {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Skill Evidence UI */
+.skill-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+.skill-card:hover {
+  border-color: var(--mod-amber-border);
+}
+.evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.evidence-badge.verified {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.evidence-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.evidence-badge.self {
+  background: rgba(115, 125, 140, 0.15);
+  color: #9ba4b1;
+  border: 1px solid rgba(115, 125, 140, 0.3);
+}
+
+/* Demo Payment Simulation Overlay */
+.demo-payment-badge {
+  background: rgba(244, 63, 94, 0.15);
+  color: #f43f5e;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.demo-payment-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.demo-receipt-container {
+  background: #ffffff;
+  color: #111827;
+  padding: 28px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+

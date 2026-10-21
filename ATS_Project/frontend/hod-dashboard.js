@@ -12,11 +12,17 @@ let allDeptDecisionTraces = [];
 const HOD_TAB_METADATA = {
   'dashboard': { title: 'Department Executive Console', subtitle: 'Head of Department Academic Supervision & Governance' },
   'overview': { title: 'Department Intelligence & Digital Twin', subtitle: 'Continuous Assessment Distribution, Pass Rate Metrics & Faculty Workload' },
-  'faculty': { title: 'Department Faculty & Mentors', subtitle: 'Faculty Staff Directory, Advisory Assignments & Workload Capacity' },
   'students': { title: 'Department Student Roster', subtitle: 'Enrolled Department Scholars, Academic Records & Mentorship Status' },
+  'faculty': { title: 'Department Faculty & Mentors', subtitle: 'Faculty Staff Directory, Advisory Assignments & Workload Capacity' },
   'allocations': { title: 'Mentor Allocation Matrix', subtitle: 'Manage, Auto-Allocate, and Reassign Department Mentors' },
   'performance': { title: 'Academic Performance & Results', subtitle: 'Multi-Tier Assessment Records (CIA Exams, Lab Practicals, Semester Results)' },
+  'risk-overview': { title: 'Department Academic Risk Overview', subtitle: 'Students Breaching Attendance Thresholds or Academic Good Standing' },
   'risk-radar': { title: 'Department Academic Risk Radar', subtitle: 'Students Breaching Attendance Thresholds or Academic Good Standing' },
+  'knowledge-graph': { title: 'Academic Knowledge Graph', subtitle: 'Curriculum Prerequisite Architecture & Department Performance Tracing' },
+  'trajectory-predictor': { title: 'Academic Trajectory Predictor', subtitle: 'Statistical OLS Performance Projections & Explainable Signals' },
+  'study-planner': { title: 'Adaptive Study Planner Advisory', subtitle: 'Review Mentee Revision Workloads & Prerequisite Priorities' },
+  'skill-evidence': { title: 'Skill Evidence Graph & Verification', subtitle: 'Department Student Industry Competencies & Portfolio Audit' },
+  'interventions': { title: 'Intervention Effectiveness Engine', subtitle: 'Department Academic Interventions, Follow-up Dates & Measured Outcomes' },
   'activities': { title: 'Activity & Achievement Oversight', subtitle: 'Department-Wide Co-Curricular Submissions and Verification Portfolio' },
   'impact-loop': { title: 'ATS Impact Loop — Department Interventions', subtitle: 'Academic Interventions, Assigned Owners, Follow-up Dates & Measured Outcomes' },
   'decision-trace': { title: 'Academic Decision Trace', subtitle: 'Traceable Rule Evidence, Policy Thresholds & Mentor Decision Actions' },
@@ -91,7 +97,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // View switcher for HOD Console
 function switchHODTab(tabName, pushState = true) {
-  const validTabs = ['dashboard', 'overview', 'faculty', 'students', 'allocations', 'performance', 'risk-radar', 'activities', 'impact-loop', 'decision-trace', 'reports'];
+  const validTabs = [
+    'dashboard', 'overview', 'students', 'faculty', 'allocations', 'performance',
+    'risk-overview', 'risk-radar', 'knowledge-graph', 'trajectory-predictor',
+    'study-planner', 'skill-evidence', 'interventions', 'activities',
+    'impact-loop', 'decision-trace', 'reports'
+  ];
   const activeTab = validTabs.includes(tabName) ? tabName : 'dashboard';
 
   validTabs.forEach(t => {
@@ -112,6 +123,31 @@ function switchHODTab(tabName, pushState = true) {
       }
     }
   });
+
+  // Trigger Advanced Modules
+  if (window.AdvancedModules) {
+    const representativeStudentId = departmentStudents[0]?.id || 1;
+    if (activeTab === 'knowledge-graph') {
+      AdvancedModules.initKnowledgeGraph(document.getElementById('view-knowledge-graph'), representativeStudentId);
+    } else if (activeTab === 'trajectory-predictor') {
+      AdvancedModules.initTrajectoryPredictor(document.getElementById('view-trajectory-predictor'), representativeStudentId);
+    } else if (activeTab === 'study-planner') {
+      AdvancedModules.initStudyPlanner(document.getElementById('view-study-planner'), representativeStudentId);
+    } else if (activeTab === 'skill-evidence') {
+      AdvancedModules.initSkillEvidence(document.getElementById('view-skill-evidence'), representativeStudentId);
+    } else if (activeTab === 'risk-overview') {
+      const target = document.getElementById('view-risk-overview');
+      const radar = document.getElementById('view-risk-radar');
+      if (target && radar) target.innerHTML = radar.innerHTML;
+    } else if (activeTab === 'interventions') {
+      const target = document.getElementById('view-interventions');
+      const impactView = document.getElementById('view-impact-loop');
+      if (target && impactView) {
+        target.innerHTML = impactView.innerHTML;
+        loadDeptInterventions();
+      }
+    }
+  }
 
   const meta = HOD_TAB_METADATA[activeTab] || HOD_TAB_METADATA['dashboard'];
   const titleEl = document.getElementById('page-dept-title');

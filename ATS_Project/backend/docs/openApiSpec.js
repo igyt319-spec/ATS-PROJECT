@@ -402,6 +402,78 @@ what-if academic simulations, and immutable audit logs.
           200: { description: 'Rule-based anomaly detection results (rapid modifications, off-hours grade edits).' }
         }
       }
+    },
+    '/knowledge-graph': {
+      get: {
+        summary: 'Advanced Module 1: Academic Knowledge Graph & Prerequisite Chains',
+        tags: ['Advanced Modules'],
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'studentId', in: 'query', schema: { type: 'integer' }, description: 'Optional student ID to highlight weak areas from CIA assessment marks' }
+        ],
+        responses: {
+          200: { description: 'Curriculum graph nodes, edges, category clusters, and CIA weakness indicators.' }
+        }
+      }
+    },
+    '/trajectory/predict/{studentId}': {
+      get: {
+        summary: 'Advanced Module 2: Academic Trajectory Predictor (OLS Statistical Regression)',
+        tags: ['Advanced Modules'],
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'studentId', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: { description: 'Projected GPA range, 90% confidence interval, explainable factors, and methodology.' }
+        }
+      }
+    },
+    '/study-planner/{studentId}': {
+      get: {
+        summary: 'Advanced Module 3: Adaptive Study Planner & Remedial Tasks',
+        tags: ['Advanced Modules'],
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'studentId', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: { description: 'Personalized adaptive study plan, weekly goals, and prerequisite prioritized tasks.' }
+        }
+      }
+    },
+    '/skill-evidence/{studentId}': {
+      get: {
+        summary: 'Advanced Module 4: Skill Evidence Graph & Career Gap Analysis',
+        tags: ['Advanced Modules'],
+        security: [{ BearerAuth: [] }],
+        parameters: [
+          { name: 'studentId', in: 'path', required: true, schema: { type: 'integer' } }
+        ],
+        responses: {
+          200: { description: 'Validated skills linked to coursework, certifications, and activities with role gap analysis.' }
+        }
+      }
+    },
+    '/departments/mini-dashboards': {
+      get: {
+        summary: 'Institution Administration: Department Mini Dashboards Overview',
+        tags: ['Institution Management'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          200: { description: 'Department-level student count, faculty, HOD, attendance, CGPA distribution, and fee rates.' }
+        }
+      }
+    },
+    '/fees/transactions': {
+      get: {
+        summary: 'Simulated Demo Payment Transactions Audit Ledger',
+        tags: ['Demo Payments'],
+        security: [{ BearerAuth: [] }],
+        responses: {
+          200: { description: 'Audit trail of demo transactions with simulated outcomes and student attribution.' }
+        }
+      }
     }
   }
 };

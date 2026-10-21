@@ -43,6 +43,10 @@ const collegeTwinRoutes = require('./routes/collegeTwinRoutes');
 const docsRoutes = require('./routes/docsRoutes');
 const impactLoopRoutes = require('./routes/impactLoopRoutes');
 const decisionTraceRoutes = require('./routes/decisionTraceRoutes');
+const knowledgeGraphRoutes = require('./routes/knowledgeGraphRoutes');
+const studyPlannerRoutes = require('./routes/studyPlannerRoutes');
+const trajectoryRoutes = require('./routes/trajectoryRoutes');
+const skillEvidenceRoutes = require('./routes/skillEvidenceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -84,6 +88,10 @@ app.use('/api/leave', leaveRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/mentors', mentorRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/knowledge-graph', knowledgeGraphRoutes);
+app.use('/api/study-planner', studyPlannerRoutes);
+app.use('/api/trajectory', trajectoryRoutes);
+app.use('/api/skill-evidence', skillEvidenceRoutes);
 app.use('/api', catalogRoutes);
 
 // Health check endpoint (both /api/health and /health supported for Render)
@@ -123,7 +131,12 @@ app.get(['/api/health', '/health'], async (req, res) => {
       '/api/college-twin',
       '/api/docs',
       '/api/departments',
-      '/api/audit-logs'
+      '/api/audit-logs',
+      '/api/knowledge-graph',
+      '/api/study-planner',
+      '/api/trajectory',
+      '/api/skill-evidence',
+      '/api/fees'
     ]
   });
 });

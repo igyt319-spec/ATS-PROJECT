@@ -44,7 +44,8 @@ async function verifyUserPassword(submittedPassword, storedHash) {
 // POST /api/auth/login
 async function login(req, res) {
   try {
-    const { identifier, password, role } = req.body;
+    const identifier = req.body.identifier || req.body.email || req.body.username;
+    const { password, role } = req.body;
 
     if (!identifier || !password) {
       return res.status(400).json({

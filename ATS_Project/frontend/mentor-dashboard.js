@@ -9,8 +9,14 @@ const TAB_METADATA = {
   'dashboard': { title: 'Faculty Mentorship & Advisory Console', subtitle: 'Authorized Mentee Group Academic Progress & Approvals' },
   'mentees': { title: 'Mentee Roster & Student Profiles', subtitle: 'Official Scholar Advisory Assignments & Real-Time Academic Records' },
   'leaves': { title: 'Mentee Leave Approvals', subtitle: 'Review and Authorize Student Absence and Duty Leave Applications' },
-  'activities': { title: 'Activity & Achievement Verification', subtitle: 'Inspect Proof Documents, Verify Credentials, and Credit Portfolio Points' },
   'results': { title: 'Mentee Academic Results', subtitle: 'Continuous Assessments (CIA), Lab Practicals, and Semester Examinations' },
+  'activities': { title: 'Activity & Achievement Verification', subtitle: 'Inspect Proof Documents, Verify Credentials, and Credit Portfolio Points' },
+  'knowledge-graph': { title: 'Academic Knowledge Graph', subtitle: 'Curriculum Prerequisite Architecture & Mentee Performance Tracing' },
+  'trajectory-predictor': { title: 'Academic Trajectory Predictor', subtitle: 'Statistical OLS Performance Projections & Explainable Signals' },
+  'study-planner': { title: 'Adaptive Study Planner Advisory', subtitle: 'Review Mentee Revision Workloads & Prerequisite Priorities' },
+  'skill-evidence': { title: 'Skill Evidence Graph & Verification', subtitle: 'Mentee Industry Competencies & Portfolio Audit' },
+  'career-readiness': { title: 'Mentee Career Readiness & Placement Mapping', subtitle: 'Evaluate Graduating Mentee Competency Portfolios & Interview Fit' },
+  'interventions': { title: 'Intervention Effectiveness Engine', subtitle: 'Mentee Academic Support Plans, Follow-up Dates & Measured Outcomes' },
   'fees': { title: 'Mentee Fee Obligations & Status', subtitle: 'Institutional Advisory View of Tuition Dues and Payment Verifications' },
   'risk-radar': { title: 'Academic Risk Radar', subtitle: 'Proactive Early-Warning Detection for Low Attendance and Assessment Deficits' },
   'impact-loop': { title: 'ATS Impact Loop — Intervention Tracking', subtitle: 'Assigned Support Plans, Follow-up Dates, and Measured Learning Outcomes' },
@@ -280,7 +286,11 @@ function switchFacultyTab(tabName, pushState = true) {
     targetTab = 'dashboard';
   }
 
-  const validTabs = ['dashboard', 'mentees', 'leaves', 'activities', 'results', 'fees', 'risk-radar', 'impact-loop', 'decision-trace'];
+  const validTabs = [
+    'dashboard', 'mentees', 'leaves', 'results', 'activities',
+    'knowledge-graph', 'trajectory-predictor', 'study-planner', 'skill-evidence',
+    'career-readiness', 'interventions', 'fees', 'risk-radar', 'impact-loop', 'decision-trace'
+  ];
   const activeTab = validTabs.includes(targetTab) ? targetTab : 'dashboard';
 
   // Update sidebar active classes
@@ -303,6 +313,27 @@ function switchFacultyTab(tabName, pushState = true) {
       }
     }
   });
+
+  // Trigger Advanced Modules
+  if (window.AdvancedModules) {
+    const activeStudentId = menteesList[0]?.id || 1;
+    if (activeTab === 'knowledge-graph') {
+      AdvancedModules.initKnowledgeGraph(document.getElementById('view-knowledge-graph'), activeStudentId);
+    } else if (activeTab === 'trajectory-predictor') {
+      AdvancedModules.initTrajectoryPredictor(document.getElementById('view-trajectory-predictor'), activeStudentId);
+    } else if (activeTab === 'study-planner') {
+      AdvancedModules.initStudyPlanner(document.getElementById('view-study-planner'), activeStudentId);
+    } else if (activeTab === 'skill-evidence') {
+      AdvancedModules.initSkillEvidence(document.getElementById('view-skill-evidence'), activeStudentId);
+    } else if (activeTab === 'interventions') {
+      const target = document.getElementById('view-interventions');
+      const impactView = document.getElementById('view-impact-loop');
+      if (target && impactView) {
+        target.innerHTML = impactView.innerHTML;
+        loadInterventions();
+      }
+    }
+  }
 
   // Update topbar headers
   const meta = TAB_METADATA[activeTab] || TAB_METADATA['dashboard'];

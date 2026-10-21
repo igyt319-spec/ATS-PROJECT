@@ -27,34 +27,43 @@
         <span class="icon">🏛️</span> My Dashboard
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-overview" onclick="switchHODTab('overview')">
-        <span class="icon">📊</span> Department Overview
-      </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-faculty" onclick="switchHODTab('faculty')">
-        <span class="icon">👨‍🏫</span> Faculty Management
+        <span class="icon">🏢</span> Department Overview
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-students" onclick="switchHODTab('students')">
         <span class="icon">🎓</span> Student Management
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-faculty" onclick="switchHODTab('faculty')">
+        <span class="icon">👨‍🏫</span> Faculty Management
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-allocations" onclick="switchHODTab('allocations')">
         <span class="icon">🧭</span> Mentor Assignments
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-performance" onclick="switchHODTab('performance')">
-        <span class="icon">📈</span> Academic Performance
+        <span class="icon">📊</span> Academic Performance
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-risk-radar" onclick="switchHODTab('risk-radar')">
-        <span class="icon">📡</span> Academic Risk Radar
+      <a href="javascript:void(0)" class="nav-item" id="nav-risk-overview" onclick="switchHODTab('risk-overview')">
+        <span class="icon">📡</span> Academic Risk Overview
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-knowledge-graph" onclick="switchHODTab('knowledge-graph')">
+        <span class="icon">🕸️</span> Academic Knowledge Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-trajectory-predictor" onclick="switchHODTab('trajectory-predictor')">
+        <span class="icon">📈</span> Academic Trajectory Predictor
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-study-planner" onclick="switchHODTab('study-planner')">
+        <span class="icon">📅</span> Adaptive Study Planner
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-skill-evidence" onclick="switchHODTab('skill-evidence')">
+        <span class="icon">🌟</span> Skill Evidence Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-interventions" onclick="switchHODTab('interventions')">
+        <span class="icon">🔄</span> Intervention Effectiveness
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchHODTab('activities')">
         <span class="icon">🏆</span> Activity Verification
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-impact-loop" onclick="switchHODTab('impact-loop')">
-        <span class="icon">🔄</span> Impact Loop
-      </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-decision-trace" onclick="switchHODTab('decision-trace')">
-        <span class="icon">🔍</span> Decision Trace
-      </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-reports" onclick="switchHODTab('reports')">
-        <span class="icon">📑</span> Reports
+        <span class="icon">📋</span> Reports
       </a>
       <a href="profile.html" class="nav-item" id="nav-profile">
         <span class="icon">👤</span> My Profile
@@ -570,7 +579,31 @@
               </div>
             </div>
           </div>
-        </div>
+      <!-- =========================================================================
+           ADVANCED MODULE VIEWS
+           ========================================================================= -->
+      <div class="content-view" id="view-risk-overview">
+        <!-- Reuses risk radar and academic follow-up metrics -->
+      </div>
+
+      <div class="content-view" id="view-knowledge-graph">
+        <!-- Injected dynamically by AdvancedModules.initKnowledgeGraph -->
+      </div>
+
+      <div class="content-view" id="view-trajectory-predictor">
+        <!-- Injected dynamically by AdvancedModules.initTrajectoryPredictor -->
+      </div>
+
+      <div class="content-view" id="view-study-planner">
+        <!-- Injected dynamically by AdvancedModules.initStudyPlanner -->
+      </div>
+
+      <div class="content-view" id="view-skill-evidence">
+        <!-- Injected dynamically by AdvancedModules.initSkillEvidence -->
+      </div>
+
+      <div class="content-view" id="view-interventions">
+        <!-- Injected dynamically or synchronized with impact-loop -->
       </div>
 
     </main>
@@ -608,6 +641,7 @@
 <div id="toast-container"></div>
 
 <script src="api.js"></script>
+<script src="advanced-modules.js"></script>
 <script src="hod-dashboard.js"></script>
 </body>
 </html>

@@ -257,19 +257,25 @@ const ROLE_NAVIGATION_CONFIG = {
     badgeText: 'ADMIN CONSOLE',
     homeUrl: 'admin-dashboard.html?view=overview',
     items: [
-      { id: 'overview', label: 'Overview', icon: '🏛️', href: 'admin-dashboard.html?view=overview' },
+      { id: 'overview', label: 'Institution Overview', icon: '🏛️', href: 'admin-dashboard.html?view=overview' },
       { id: 'departments', label: 'Department Management', icon: '🏢', href: 'admin-dashboard.html?view=departments' },
       { id: 'students', label: 'Student Management', icon: '🎓', href: 'admin-dashboard.html?view=students' },
       { id: 'faculty', label: 'Faculty Management', icon: '👨‍🏫', href: 'admin-dashboard.html?view=faculty' },
       { id: 'hod', label: 'HOD Management', icon: '👑', href: 'admin-dashboard.html?view=hod' },
       { id: 'mentor-assignments', label: 'Mentor Assignments', icon: '🧭', href: 'admin-dashboard.html?view=mentor-assignments' },
+      { id: 'department-mini-dashboards', label: 'Department Mini Dashboards', icon: '📑', href: 'admin-dashboard.html?view=department-mini-dashboards' },
       { id: 'academic-records', label: 'Academic Records', icon: '📊', href: 'admin-dashboard.html?view=academic-records' },
-      { id: 'fees', label: 'Fee Management', icon: '💳', href: 'admin-dashboard.html?view=fees' },
+      { id: 'knowledge-graph', label: 'Academic Knowledge Graph', icon: '🕸️', href: 'admin-dashboard.html?view=knowledge-graph' },
+      { id: 'trajectory-predictor', label: 'Academic Trajectory Predictor', icon: '📈', href: 'admin-dashboard.html?view=trajectory-predictor' },
+      { id: 'study-planner', label: 'Adaptive Study Planner', icon: '📅', href: 'admin-dashboard.html?view=study-planner' },
+      { id: 'skill-evidence', label: 'Skill Evidence Graph', icon: '🌟', href: 'admin-dashboard.html?view=skill-evidence' },
+      { id: 'career-readiness', label: 'Career Readiness', icon: '🚀', href: 'admin-dashboard.html?view=career-readiness' },
+      { id: 'interventions', label: 'Intervention Effectiveness', icon: '🔄', href: 'admin-dashboard.html?view=interventions' },
       { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'admin-dashboard.html?view=activities' },
-      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'admin-dashboard.html?view=impact-loop' },
-      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'admin-dashboard.html?view=decision-trace' },
+      { id: 'fees', label: 'Fee Management', icon: '💳', href: 'admin-dashboard.html?view=fees' },
+      { id: 'demo-payments', label: 'Demo Payment Transactions', icon: '🧾', href: 'admin-dashboard.html?view=demo-payments' },
       { id: 'audit-logs', label: 'Audit Logs', icon: '🛡️', href: 'admin-dashboard.html?view=audit-logs' },
-      { id: 'reports', label: 'Reports', icon: '📑', href: 'admin-dashboard.html?view=reports' },
+      { id: 'reports', label: 'Reports', icon: '📋', href: 'admin-dashboard.html?view=reports' },
       { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
     ]
   },
@@ -278,16 +284,20 @@ const ROLE_NAVIGATION_CONFIG = {
     badgeText: 'HOD CONSOLE',
     homeUrl: 'hod-dashboard.html?view=dashboard',
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: '🏛️', href: 'hod-dashboard.html?view=dashboard' },
-      { id: 'overview', label: 'Department Overview', icon: '📊', href: 'hod-dashboard.html?view=overview' },
-      { id: 'faculty', label: 'Faculty Management', icon: '👨‍🏫', href: 'hod-dashboard.html?view=faculty' },
+      { id: 'dashboard', label: 'My Dashboard', icon: '🏛️', href: 'hod-dashboard.html?view=dashboard' },
+      { id: 'overview', label: 'Department Overview', icon: '🏢', href: 'hod-dashboard.html?view=overview' },
       { id: 'students', label: 'Student Management', icon: '🎓', href: 'hod-dashboard.html?view=students' },
+      { id: 'faculty', label: 'Faculty Management', icon: '👨‍🏫', href: 'hod-dashboard.html?view=faculty' },
       { id: 'allocations', label: 'Mentor Assignments', icon: '🧭', href: 'hod-dashboard.html?view=allocations' },
-      { id: 'performance', label: 'Academic Performance', icon: '📈', href: 'hod-dashboard.html?view=performance' },
+      { id: 'performance', label: 'Academic Performance', icon: '📊', href: 'hod-dashboard.html?view=performance' },
+      { id: 'risk-overview', label: 'Academic Risk Overview', icon: '📡', href: 'hod-dashboard.html?view=risk-overview' },
+      { id: 'knowledge-graph', label: 'Academic Knowledge Graph', icon: '🕸️', href: 'hod-dashboard.html?view=knowledge-graph' },
+      { id: 'trajectory-predictor', label: 'Academic Trajectory Predictor', icon: '📈', href: 'hod-dashboard.html?view=trajectory-predictor' },
+      { id: 'study-planner', label: 'Adaptive Study Planner', icon: '📅', href: 'hod-dashboard.html?view=study-planner' },
+      { id: 'skill-evidence', label: 'Skill Evidence Graph', icon: '🌟', href: 'hod-dashboard.html?view=skill-evidence' },
+      { id: 'interventions', label: 'Intervention Effectiveness', icon: '🔄', href: 'hod-dashboard.html?view=interventions' },
       { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'hod-dashboard.html?view=activities' },
-      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'hod-dashboard.html?view=impact-loop' },
-      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'hod-dashboard.html?view=decision-trace' },
-      { id: 'reports', label: 'Reports', icon: '📑', href: 'hod-dashboard.html?view=reports' },
+      { id: 'reports', label: 'Reports', icon: '📋', href: 'hod-dashboard.html?view=reports' },
       { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
     ]
   },
@@ -299,12 +309,15 @@ const ROLE_NAVIGATION_CONFIG = {
       { id: 'dashboard', label: 'My Dashboard', icon: '📊', href: 'mentor-dashboard.html?view=dashboard' },
       { id: 'mentees', label: 'Mentee Management', icon: '👥', href: 'mentor-dashboard.html?view=mentees' },
       { id: 'leaves', label: 'Leave Approvals', icon: '📝', href: 'mentor-dashboard.html?view=leaves' },
-      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'mentor-dashboard.html?view=activities' },
       { id: 'results', label: 'Mentee Results', icon: '📈', href: 'mentor-dashboard.html?view=results' },
+      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'mentor-dashboard.html?view=activities' },
+      { id: 'knowledge-graph', label: 'Academic Knowledge Graph', icon: '🕸️', href: 'mentor-dashboard.html?view=knowledge-graph' },
+      { id: 'trajectory-predictor', label: 'Academic Trajectory Predictor', icon: '📈', href: 'mentor-dashboard.html?view=trajectory-predictor' },
+      { id: 'study-planner', label: 'Adaptive Study Planner', icon: '📅', href: 'mentor-dashboard.html?view=study-planner' },
+      { id: 'skill-evidence', label: 'Skill Evidence Graph', icon: '🌟', href: 'mentor-dashboard.html?view=skill-evidence' },
+      { id: 'career-readiness', label: 'Career Readiness', icon: '🚀', href: 'mentor-dashboard.html?view=career-readiness' },
+      { id: 'interventions', label: 'Intervention Effectiveness', icon: '🔄', href: 'mentor-dashboard.html?view=interventions' },
       { id: 'fees', label: 'Fee Tracking', icon: '💳', href: 'mentor-dashboard.html?view=fees' },
-      { id: 'risk-radar', label: 'Academic Risk Radar', icon: '📡', href: 'mentor-dashboard.html?view=risk-radar' },
-      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'mentor-dashboard.html?view=impact-loop' },
-      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'mentor-dashboard.html?view=decision-trace' },
       { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
     ]
   },
@@ -314,10 +327,16 @@ const ROLE_NAVIGATION_CONFIG = {
     homeUrl: 'mentor-dashboard.html?view=dashboard',
     items: [
       { id: 'dashboard', label: 'My Dashboard', icon: '📊', href: 'mentor-dashboard.html?view=dashboard' },
-      { id: 'results', label: 'Academic Results', icon: '📈', href: 'mentor-dashboard.html?view=results' },
-      { id: 'risk-radar', label: 'Academic Risk Radar', icon: '📡', href: 'mentor-dashboard.html?view=risk-radar' },
-      { id: 'impact-loop', label: 'Impact Loop', icon: '🔄', href: 'mentor-dashboard.html?view=impact-loop' },
-      { id: 'decision-trace', label: 'Decision Trace', icon: '🔍', href: 'mentor-dashboard.html?view=decision-trace' },
+      { id: 'results', label: 'Mentee Results', icon: '📈', href: 'mentor-dashboard.html?view=results' },
+      { id: 'leaves', label: 'Leave Approvals', icon: '📝', href: 'mentor-dashboard.html?view=leaves' },
+      { id: 'activities', label: 'Activity Verification', icon: '🏆', href: 'mentor-dashboard.html?view=activities' },
+      { id: 'knowledge-graph', label: 'Academic Knowledge Graph', icon: '🕸️', href: 'mentor-dashboard.html?view=knowledge-graph' },
+      { id: 'trajectory-predictor', label: 'Academic Trajectory Predictor', icon: '📈', href: 'mentor-dashboard.html?view=trajectory-predictor' },
+      { id: 'study-planner', label: 'Adaptive Study Planner', icon: '📅', href: 'mentor-dashboard.html?view=study-planner' },
+      { id: 'skill-evidence', label: 'Skill Evidence Graph', icon: '🌟', href: 'mentor-dashboard.html?view=skill-evidence' },
+      { id: 'career-readiness', label: 'Career Readiness', icon: '🚀', href: 'mentor-dashboard.html?view=career-readiness' },
+      { id: 'interventions', label: 'Intervention Effectiveness', icon: '🔄', href: 'mentor-dashboard.html?view=interventions' },
+      { id: 'fees', label: 'Fee Tracking', icon: '💳', href: 'mentor-dashboard.html?view=fees' },
       { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
     ]
   },
@@ -334,11 +353,16 @@ const ROLE_NAVIGATION_CONFIG = {
       { id: 'view-gpa', label: 'GPA / CGPA', icon: '📈', href: 'dashboard.html?view=view-gpa' },
       { id: 'view-activities', label: 'My Activities', icon: '🏆', href: 'dashboard.html?view=view-activities' },
       { id: 'view-achievement-passport', label: 'Achievement Passport', icon: '🛡️', href: 'dashboard.html?view=view-achievement-passport' },
+      { id: 'view-knowledge-graph', label: 'Academic Knowledge Graph', icon: '🕸️', href: 'dashboard.html?view=view-knowledge-graph' },
+      { id: 'view-trajectory-predictor', label: 'Academic Trajectory Predictor', icon: '📈', href: 'dashboard.html?view=view-trajectory-predictor' },
+      { id: 'view-study-planner', label: 'Adaptive Study Planner', icon: '📅', href: 'dashboard.html?view=view-study-planner' },
+      { id: 'view-skill-evidence', label: 'Skill Evidence Graph', icon: '🌟', href: 'dashboard.html?view=view-skill-evidence' },
       { id: 'view-career-readiness', label: 'Career Readiness', icon: '🚀', href: 'dashboard.html?view=view-career-readiness' },
+      { id: 'view-simulator', label: 'Academic What-If Simulator', icon: '🔮', href: 'dashboard.html?view=view-simulator' },
+      { id: 'view-interventions', label: 'Intervention Progress', icon: '🔄', href: 'dashboard.html?view=view-interventions' },
       { id: 'view-leave-requests', label: 'Leave Requests', icon: '📨', href: 'dashboard.html?view=view-leave-requests' },
       { id: 'view-fee-status', label: 'Fee Status', icon: '💳', href: 'dashboard.html?view=view-fee-status' },
       { id: 'view-mentor', label: 'My Mentor', icon: '👨‍🏫', href: 'dashboard.html?view=view-mentor' },
-      { id: 'view-simulator', label: 'Academic What-If Simulator', icon: '🔮', href: 'dashboard.html?view=view-simulator' },
       { id: 'profile', label: 'My Profile', icon: '👤', href: 'profile.html' }
     ]
   }
@@ -380,8 +404,7 @@ function renderRoleSidebar(activeKey = null) {
   }
 
   const navEl = document.querySelector('.sidebar-nav');
-  const isFacultyOnMentorDashboard = (role === 'FACULTY' && currentPage.includes('mentor-dashboard.html'));
-  if (navEl && (currentPage.includes('profile.html') || navEl.dataset.dynamicNav === 'true' || isFacultyOnMentorDashboard)) {
+  if (navEl) {
     navEl.innerHTML = config.items.map(item => {
       const isActive = item.id === resolvedActive;
       return `
@@ -390,17 +413,6 @@ function renderRoleSidebar(activeKey = null) {
         </a>
       `;
     }).join('');
-  } else if (navEl) {
-    // Synchronize active highlight on existing dashboard items
-    navEl.querySelectorAll('.nav-item').forEach(link => {
-      const linkId = link.id ? link.id.replace(/^nav-/, '') : '';
-      const dataView = link.getAttribute('data-view') || '';
-      if (linkId === resolvedActive || dataView === resolvedActive || (resolvedActive === 'profile' && link.href && link.href.includes('profile.html'))) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    });
   }
 }
 

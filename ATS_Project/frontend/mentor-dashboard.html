@@ -32,23 +32,32 @@
       <a href="javascript:void(0)" class="nav-item" id="nav-leaves" onclick="switchFacultyTab('leaves')">
         <span class="icon">📝</span> Leave Approvals
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchFacultyTab('activities')">
-        <span class="icon">🏆</span> Activity Verification
-      </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-results" onclick="switchFacultyTab('results')">
         <span class="icon">📈</span> Mentee Results
       </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchFacultyTab('activities')">
+        <span class="icon">🏆</span> Activity Verification
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-knowledge-graph" onclick="switchFacultyTab('knowledge-graph')">
+        <span class="icon">🕸️</span> Academic Knowledge Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-trajectory-predictor" onclick="switchFacultyTab('trajectory-predictor')">
+        <span class="icon">📈</span> Academic Trajectory Predictor
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-study-planner" onclick="switchFacultyTab('study-planner')">
+        <span class="icon">📅</span> Adaptive Study Planner
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-skill-evidence" onclick="switchFacultyTab('skill-evidence')">
+        <span class="icon">🌟</span> Skill Evidence Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-career-readiness" onclick="switchFacultyTab('career-readiness')">
+        <span class="icon">🚀</span> Career Readiness
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-interventions" onclick="switchFacultyTab('interventions')">
+        <span class="icon">🔄</span> Intervention Effectiveness
+      </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-fees" onclick="switchFacultyTab('fees')">
         <span class="icon">💳</span> Fee Tracking
-      </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-risk-radar" onclick="switchFacultyTab('risk-radar')">
-        <span class="icon">📡</span> Academic Risk Radar
-      </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-impact-loop" onclick="switchFacultyTab('impact-loop')">
-        <span class="icon">🔄</span> Impact Loop
-      </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-decision-trace" onclick="switchFacultyTab('decision-trace')">
-        <span class="icon">🔍</span> Decision Trace
       </a>
       <a href="profile.html" class="nav-item" id="nav-profile">
         <span class="icon">👤</span> My Profile
@@ -546,7 +555,44 @@
               </tbody>
             </table>
           </div>
+      <!-- =====================================================================
+           ADVANCED MODULE VIEWS
+           ===================================================================== -->
+      <div class="content-view" id="view-knowledge-graph">
+        <!-- Injected dynamically by AdvancedModules.initKnowledgeGraph -->
+      </div>
+
+      <div class="content-view" id="view-trajectory-predictor">
+        <!-- Injected dynamically by AdvancedModules.initTrajectoryPredictor -->
+      </div>
+
+      <div class="content-view" id="view-study-planner">
+        <!-- Injected dynamically by AdvancedModules.initStudyPlanner -->
+      </div>
+
+      <div class="content-view" id="view-skill-evidence">
+        <!-- Injected dynamically by AdvancedModules.initSkillEvidence -->
+      </div>
+
+      <div class="content-view" id="view-career-readiness">
+        <div class="module-hero-banner amber">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 1.4rem;">🚀</span>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff;">Mentee Career Readiness & Placement Mapping</h2>
+              <span class="rule-engine-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
+                PLACEMENTS & CREDENTIALS
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.86rem; max-width: 720px;">
+              Evaluate graduating mentee competency portfolios, interview readiness, and skill gaps to target top technology recruiters.
+            </p>
+          </div>
         </div>
+      </div>
+
+      <div class="content-view" id="view-interventions">
+        <!-- Injected dynamically or synchronized with impact-loop -->
       </div>
 
     </main>
@@ -824,6 +870,7 @@
 <div id="toast-container"></div>
 
 <script src="api.js"></script>
+<script src="advanced-modules.js"></script>
 <script src="mentor-dashboard.js"></script>
 </body>
 </html>

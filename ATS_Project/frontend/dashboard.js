@@ -36,18 +36,38 @@ window.switchStudentTab = function(tabId, pushState = true) {
       'view-gpa': 'GPA / CGPA Credit Trajectory',
       'view-activities': 'Co-Curricular Activities & Portfolio',
       'view-achievement-passport': 'Verified Academic Achievement Passport',
+      'view-knowledge-graph': 'Academic Knowledge Graph & Prerequisite Map',
+      'view-trajectory-predictor': 'Academic Trajectory Predictor & Statistical OLS Model',
+      'view-study-planner': 'Adaptive Weekly Study Workload Planner',
+      'view-skill-evidence': 'Skill Evidence Graph & Portfolio Competencies',
       'view-career-readiness': 'Career Readiness & Competency Roadmap',
-      'view-leave-requests': 'Student Leave Management & History',
-      'view-fee-status': 'Fee Status & Simulated Payments',
-      'view-mentor': 'Assigned Faculty Mentor Advisory',
       'view-simulator': 'Academic What-If Scenario Simulator',
+      'view-interventions': 'Academic Support & Intervention Progress',
+      'view-leave-requests': 'Student Leave Management & History',
+      'view-fee-status': 'Fee Status & Demo Payment Simulation',
+      'view-mentor': 'Assigned Faculty Mentor Advisory',
       'view-profile': 'Official Student Academic Profile'
     };
     if (titles[tabId]) titleEl.textContent = titles[tabId];
   }
 
-  // Lazy trigger module data loaders if needed
-  if (tabId === 'view-achievement-passport') {
+  // Lazy trigger module data loaders
+  const user = getCurrentUser();
+  const currentStudentId = user?.studentId || 1;
+
+  if (tabId === 'view-knowledge-graph' && window.AdvancedModules) {
+    AdvancedModules.initKnowledgeGraph(document.getElementById('view-knowledge-graph'), currentStudentId);
+  } else if (tabId === 'view-trajectory-predictor' && window.AdvancedModules) {
+    AdvancedModules.initTrajectoryPredictor(document.getElementById('view-trajectory-predictor'), currentStudentId);
+  } else if (tabId === 'view-study-planner' && window.AdvancedModules) {
+    AdvancedModules.initStudyPlanner(document.getElementById('view-study-planner'), currentStudentId);
+  } else if (tabId === 'view-skill-evidence' && window.AdvancedModules) {
+    AdvancedModules.initSkillEvidence(document.getElementById('view-skill-evidence'), currentStudentId);
+  } else if (tabId === 'view-fee-status' && window.AdvancedModules) {
+    AdvancedModules.initDemoPaymentWorkflow(document.getElementById('view-fee-status'), currentStudentId);
+  } else if (tabId === 'view-interventions') {
+    loadStudentInterventionsList(currentStudentId);
+  } else if (tabId === 'view-achievement-passport') {
     loadAchievementPassportPage();
   } else if (tabId === 'view-progress') {
     loadStudentImpactLoop();
@@ -1140,6 +1160,55 @@ async function loadStudentImpactLoop() {
   } catch (err) {
     console.warn('[Student Impact Loop Error]', err.message);
     tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">Support plan ledger is up to date.</td></tr>`;
+  }
+}
+
+async function loadStudentInterventionsList(studentId) {
+  const container = document.getElementById('student-interventions-list');
+  if (!container) return;
+
+  try {
+    const res = await apiCall('/impact-loop', 'GET');
+    if (!res || !res.success || !Array.isArray(res.data) || res.data.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 36px 20px; color: var(--text-muted);">
+          <div style="font-size: 2.2rem; margin-bottom: 8px;">✅</div>
+          <div style="font-weight: 700; color: #fff;">Academic Good Standing</div>
+          <div style="font-size: 0.85rem; margin-top: 4px;">No academic recovery interventions or remedial plans are currently required for your academic profile.</div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        ${res.data.map(i => {
+          const isDone = i.status === 'Completed';
+          return `
+            <div class="glass-card" style="padding: 18px; border-left: 4px solid ${isDone ? '#10b981' : '#6366f1'}; background: var(--bg-surface-subtle);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div>
+                  <h4 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0 0 4px;">${escapeHtml(i.title)}</h4>
+                  <span class="badge badge-primary">${escapeHtml(i.intervention_type)}</span>
+                </div>
+                <span class="badge ${isDone ? 'badge-success' : 'badge-warning'}">${escapeHtml(i.status)}</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5;">
+                <strong>Action Plan:</strong> ${escapeHtml(i.action_plan || 'Mentor-guided academic revision')}
+              </div>
+              <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.78rem; color: var(--text-dim); border-top: 1px solid var(--border-color); padding-top: 8px;">
+                <span>Advisor: <strong>${escapeHtml(i.assigned_to_name || 'Faculty Mentor')}</strong></span>
+                <span>Follow-up: <strong>${i.follow_up_date ? new Date(i.follow_up_date).toLocaleDateString() : 'Active Period'}</strong></span>
+                ${i.outcome_assessment ? `<span>Outcome: <strong style="color: #10b981;">${escapeHtml(i.outcome_assessment)}</strong></span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } catch (err) {
+    console.warn('[Student Interventions List Error]', err);
+    container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 24px;">Support plans synchronized with faculty advisory.</div>`;
   }
 }
 

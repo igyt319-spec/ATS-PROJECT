@@ -27,7 +27,7 @@
 
     <nav class="sidebar-nav">
       <a href="javascript:void(0)" class="nav-item active" id="nav-overview" onclick="switchAdminTab('overview')">
-        <span class="icon">🏛️</span> Overview
+        <span class="icon">🏛️</span> Institution Overview
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-departments" onclick="switchAdminTab('departments')">
         <span class="icon">🏢</span> Department Management
@@ -44,26 +44,44 @@
       <a href="javascript:void(0)" class="nav-item" id="nav-mentor-assignments" onclick="switchAdminTab('mentor-assignments')">
         <span class="icon">🧭</span> Mentor Assignments
       </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-department-mini-dashboards" onclick="switchAdminTab('department-mini-dashboards')">
+        <span class="icon">📑</span> Department Mini Dashboards
+      </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-academic-records" onclick="switchAdminTab('academic-records')">
         <span class="icon">📊</span> Academic Records
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-fees" onclick="switchAdminTab('fees')">
-        <span class="icon">💳</span> Fee Management
+      <a href="javascript:void(0)" class="nav-item" id="nav-knowledge-graph" onclick="switchAdminTab('knowledge-graph')">
+        <span class="icon">🕸️</span> Academic Knowledge Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-trajectory-predictor" onclick="switchAdminTab('trajectory-predictor')">
+        <span class="icon">📈</span> Academic Trajectory Predictor
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-study-planner" onclick="switchAdminTab('study-planner')">
+        <span class="icon">📅</span> Adaptive Study Planner
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-skill-evidence" onclick="switchAdminTab('skill-evidence')">
+        <span class="icon">🌟</span> Skill Evidence Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-career-readiness" onclick="switchAdminTab('career-readiness')">
+        <span class="icon">🚀</span> Career Readiness
+      </a>
+      <a href="javascript:void(0)" class="nav-item" id="nav-interventions" onclick="switchAdminTab('interventions')">
+        <span class="icon">🔄</span> Intervention Effectiveness
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-activities" onclick="switchAdminTab('activities')">
         <span class="icon">🏆</span> Activity Verification
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-impact-loop" onclick="switchAdminTab('impact-loop')">
-        <span class="icon">🔄</span> Impact Loop
+      <a href="javascript:void(0)" class="nav-item" id="nav-fees" onclick="switchAdminTab('fees')">
+        <span class="icon">💳</span> Fee Management
       </a>
-      <a href="javascript:void(0)" class="nav-item" id="nav-decision-trace" onclick="switchAdminTab('decision-trace')">
-        <span class="icon">🔍</span> Decision Trace
+      <a href="javascript:void(0)" class="nav-item" id="nav-demo-payments" onclick="switchAdminTab('demo-payments')">
+        <span class="icon">🧾</span> Demo Payment Transactions
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-audit-logs" onclick="switchAdminTab('audit-logs')">
         <span class="icon">🛡️</span> Audit Logs
       </a>
       <a href="javascript:void(0)" class="nav-item" id="nav-reports" onclick="switchAdminTab('reports')">
-        <span class="icon">📑</span> Reports
+        <span class="icon">📋</span> Reports
       </a>
       <a href="profile.html" class="nav-item" id="nav-profile">
         <span class="icon">👤</span> My Profile
@@ -715,6 +733,73 @@
             </div>
           </div>
         </div>
+      <!-- =========================================================================
+           VIEW: DEPARTMENT MINI DASHBOARDS
+           ========================================================================= -->
+      <div class="content-view" id="view-department-mini-dashboards">
+        <!-- Injected dynamically by AdvancedModules.initDepartmentMiniDashboards -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ACADEMIC KNOWLEDGE GRAPH
+           ========================================================================= -->
+      <div class="content-view" id="view-knowledge-graph">
+        <!-- Injected dynamically by AdvancedModules.initKnowledgeGraph -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ACADEMIC TRAJECTORY PREDICTOR
+           ========================================================================= -->
+      <div class="content-view" id="view-trajectory-predictor">
+        <!-- Injected dynamically by AdvancedModules.initTrajectoryPredictor -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ADAPTIVE STUDY PLANNER
+           ========================================================================= -->
+      <div class="content-view" id="view-study-planner">
+        <!-- Injected dynamically by AdvancedModules.initStudyPlanner -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: SKILL EVIDENCE GRAPH
+           ========================================================================= -->
+      <div class="content-view" id="view-skill-evidence">
+        <!-- Injected dynamically by AdvancedModules.initSkillEvidence -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: CAREER READINESS
+           ========================================================================= -->
+      <div class="content-view" id="view-career-readiness">
+        <div class="module-hero-banner amber">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 1.4rem;">🚀</span>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff;">Institution Career Readiness Governance</h2>
+              <span class="rule-engine-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
+                PLACEMENTS & INDUSTRY COMPETENCY
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.86rem; max-width: 720px;">
+              Cross-departmental monitoring of graduating student placement readiness scores, credential verification velocity, and industry skill coverage.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
+           VIEW: INTERVENTION EFFECTIVENESS
+           ========================================================================= -->
+      <div class="content-view" id="view-interventions">
+        <!-- Injected dynamically or synchronized with impact-loop -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: DEMO PAYMENT TRANSACTIONS AUDIT
+           ========================================================================= -->
+      <div class="content-view" id="view-demo-payments">
+        <!-- Injected dynamically by AdvancedModules.initDemoPaymentAuditTable -->
       </div>
 
     </main>
@@ -909,6 +994,7 @@
 <div id="toast-container"></div>
 
 <script src="api.js"></script>
+<script src="advanced-modules.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

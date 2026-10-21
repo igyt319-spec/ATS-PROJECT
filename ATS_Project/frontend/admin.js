@@ -17,9 +17,17 @@ const ADMIN_TAB_METADATA = {
   'faculty': { title: 'Faculty & Mentors Directory', subtitle: 'Institutional Academic Staff, Advisory Assignments & Department Affiliations' },
   'hod': { title: 'Head of Department (HOD) Governance', subtitle: 'Executive Appointments, Single Active Constraint Enforcement & Audit Trails' },
   'mentor-assignments': { title: 'Institutional Mentor Allocations', subtitle: 'Advisory Coverage, Unassigned Scholars & Departmental Load Balancing' },
+  'department-mini-dashboards': { title: 'Department-Wise Mini Dashboards', subtitle: 'Live Database Aggregation, CGPA Distribution & Student Drill-Down' },
   'academic-records': { title: 'Institutional Academic Records & Digital Twin', subtitle: 'College-Wide Macro Telemetry, Pass Rates & Read-Only Governance' },
-  'fees': { title: 'Institutional Fee Management', subtitle: 'Tuition Fee Structure Overview, Dues Tracking & Telemetry' },
+  'knowledge-graph': { title: 'Academic Knowledge Graph', subtitle: 'Curriculum Prerequisite Architecture & Performance Tracing' },
+  'trajectory-predictor': { title: 'Academic Trajectory Predictor', subtitle: 'OLS Linear Trend Forecasting & Explainable Academic Signals' },
+  'study-planner': { title: 'Adaptive Study Planner', subtitle: 'Prerequisite-Prioritized Revision Workloads & Task Tracking' },
+  'skill-evidence': { title: 'Skill Evidence Graph', subtitle: 'Validated Portfolio Competencies & Career Fit Analysis' },
+  'career-readiness': { title: 'Institution Career Readiness Governance', subtitle: 'Placements Readiness & Industry Competency Monitoring' },
+  'interventions': { title: 'Intervention Effectiveness Engine', subtitle: 'Track Academic Support Plans, Follow-ups & Measured Outcomes' },
   'activities': { title: 'Activity Verification Oversight', subtitle: 'Institutional Co-Curricular Credentials and Verification Monitoring' },
+  'fees': { title: 'Institutional Fee Management', subtitle: 'Tuition Fee Structure Overview, Dues Tracking & Telemetry' },
+  'demo-payments': { title: 'Demo Payment Transactions & Reconciliation', subtitle: 'Audit Simulated Transactions, Gateways Outcomes & Ledger Matching' },
   'impact-loop': { title: 'ATS Impact Loop — Institutional Analytics', subtitle: 'Cross-Departmental Academic Interventions, Efficacy & Outcome Measures' },
   'decision-trace': { title: 'Academic Decision Trace Telemetry', subtitle: 'Transparent Heuristic Rules, Policy Thresholds & Decision Audits' },
   'audit-logs': { title: 'Smart Academic Integrity & Audit Trail', subtitle: 'Immutable Ledger, Anomaly Detection & Forensic Traceability' },
@@ -70,8 +78,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function switchAdminTab(tabName, pushState = true) {
   const validTabs = [
     'overview', 'departments', 'students', 'faculty', 'hod',
-    'mentor-assignments', 'academic-records', 'fees', 'activities',
-    'impact-loop', 'decision-trace', 'audit-logs', 'reports'
+    'mentor-assignments', 'department-mini-dashboards', 'academic-records',
+    'knowledge-graph', 'trajectory-predictor', 'study-planner', 'skill-evidence',
+    'career-readiness', 'interventions', 'activities', 'fees',
+    'demo-payments', 'impact-loop', 'decision-trace', 'audit-logs', 'reports'
   ];
   const activeTab = validTabs.includes(tabName) ? tabName : 'overview';
 
@@ -93,6 +103,30 @@ function switchAdminTab(tabName, pushState = true) {
       }
     }
   });
+
+  // Trigger Advanced Intelligence Modules
+  if (window.AdvancedModules) {
+    if (activeTab === 'department-mini-dashboards') {
+      AdvancedModules.initDepartmentMiniDashboards(document.getElementById('view-department-mini-dashboards'));
+    } else if (activeTab === 'knowledge-graph') {
+      AdvancedModules.initKnowledgeGraph(document.getElementById('view-knowledge-graph'), null);
+    } else if (activeTab === 'trajectory-predictor') {
+      AdvancedModules.initTrajectoryPredictor(document.getElementById('view-trajectory-predictor'), 1);
+    } else if (activeTab === 'study-planner') {
+      AdvancedModules.initStudyPlanner(document.getElementById('view-study-planner'), 1);
+    } else if (activeTab === 'skill-evidence') {
+      AdvancedModules.initSkillEvidence(document.getElementById('view-skill-evidence'), 1);
+    } else if (activeTab === 'demo-payments') {
+      AdvancedModules.initDemoPaymentAuditTable(document.getElementById('view-demo-payments'));
+    } else if (activeTab === 'interventions') {
+      const target = document.getElementById('view-interventions');
+      const impactView = document.getElementById('view-impact-loop');
+      if (target && impactView) {
+        target.innerHTML = impactView.innerHTML;
+        loadAdminInterventions();
+      }
+    }
+  }
 
   const meta = ADMIN_TAB_METADATA[activeTab] || ADMIN_TAB_METADATA['overview'];
   const titleEl = document.getElementById('page-admin-title');

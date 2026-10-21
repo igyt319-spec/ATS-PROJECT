@@ -492,11 +492,295 @@ async function getFacultyMiniDashboard(req, res) {
   }
 }
 
+// GET /api/departments/mini-dashboards (Institution Admin Department-Wise Mini Dashboards)
+async function getDepartmentMiniDashboards(req, res) {
+  try {
+    const [departments] = await db.query('SELECT id, code, name FROM departments ORDER BY name ASC');
+
+    // 1. Student stats per dept
+    const [studStats] = await db.query(`
+      SELECT 
+        st.department_id,
+        COUNT(*) AS total_students,
+        AVG(st.cgpa) AS avg_cgpa,
+        AVG(st.attendance_percentage) AS avg_attendance,
+        SUM(CASE WHEN st.attendance_percentage < 75 OR st.cgpa < 6.0 THEN 1 ELSE 0 END) AS follow_up_count,
+        SUM(CASE WHEN st.cgpa >= 8.5 THEN 1 ELSE 0 END) AS cgpa_distinction,
+        SUM(CASE WHEN st.cgpa >= 7.0 AND st.cgpa < 8.5 THEN 1 ELSE 0 END) AS cgpa_first_class,
+        SUM(CASE WHEN st.cgpa >= 6.0 AND st.cgpa < 7.0 THEN 1 ELSE 0 END) AS cgpa_second_class,
+        SUM(CASE WHEN st.cgpa < 6.0 THEN 1 ELSE 0 END) AS cgpa_at_risk
+      FROM students st
+      WHERE st.status = 'active'
+      GROUP BY st.department_id
+    `);
+    const studStatsMap = {};
+    studStats.forEach(s => { studStatsMap[s.department_id] = s; });
+
+    // 2. Faculty counts per dept
+    const [facStats] = await db.query(`
+      SELECT department_id, COUNT(*) AS total_faculty
+      FROM faculty
+      GROUP BY department_id
+    `);
+    const facStatsMap = {};
+    facStats.forEach(f => { facStatsMap[f.department_id] = f.total_faculty; });
+
+    // 3. Active HODs
+    const [hodRows] = await db.query(`
+      SELECT f.id, f.faculty_code, f.name, f.email, f.designation, f.avatar, f.department_id,
+             dha.start_date AS assigned_date
+      FROM department_hod_assignments dha
+      JOIN faculty f ON f.id = dha.faculty_id
+      WHERE dha.status = 'active'
+    `);
+    const hodMap = {};
+    hodRows.forEach(h => { hodMap[h.department_id] = h; });
+
+    // 4. Verified activities per department
+    const [actStats] = await db.query(`
+      SELECT st.department_id, COUNT(*) AS verified_activities_count
+      FROM student_activities sa
+      JOIN students st ON st.id = sa.student_id
+      WHERE sa.status = 'Verified'
+      GROUP BY st.department_id
+    `);
+    const actStatsMap = {};
+    actStats.forEach(a => { actStatsMap[a.department_id] = a.verified_activities_count; });
+
+    // 5. Interventions per department
+    const [intervStats] = await db.query(`
+      SELECT st.department_id,
+             SUM(CASE WHEN ili.status IN ('Assigned', 'In Progress', 'Follow-up Due') THEN 1 ELSE 0 END) AS active_interventions,
+             SUM(CASE WHEN ili.status = 'Completed' THEN 1 ELSE 0 END) AS completed_interventions
+      FROM impact_loop_interventions ili
+      JOIN students st ON st.id = ili.student_id
+      GROUP BY st.department_id
+    `);
+    const intervMap = {};
+    intervStats.forEach(i => { intervMap[i.department_id] = i; });
+
+    // 6. Fee collection summary per department
+    const [feeStats] = await db.query(`
+      SELECT st.department_id,
+             SUM(sf.total_amount) AS total_due,
+             SUM(sf.paid_amount) AS total_paid,
+             SUM(sf.balance_amount) AS total_balance,
+             SUM(CASE WHEN sf.balance_amount > 0 THEN 1 ELSE 0 END) AS unpaid_records
+      FROM student_fees sf
+      JOIN students st ON st.id = sf.student_id
+      GROUP BY st.department_id
+    `);
+    const feeStatsMap = {};
+    feeStats.forEach(f => { feeStatsMap[f.department_id] = f; });
+
+    const miniDashboards = departments.map(d => {
+      const ss = studStatsMap[d.id] || {};
+      const totalStudents = Number(ss.total_students || 0);
+      const totalFaculty = Number(facStatsMap[d.id] || 0);
+      const hod = hodMap[d.id] || null;
+      const fs = feeStatsMap[d.id] || {};
+      const totalDue = Number(fs.total_due || 0);
+      const totalPaid = Number(fs.total_paid || 0);
+      const totalBalance = Number(fs.total_balance || 0);
+      const collectionRate = totalDue > 0 ? Number(((totalPaid / totalDue) * 100).toFixed(1)) : 0;
+      const interv = intervMap[d.id] || {};
+
+      return {
+        id: d.id,
+        code: d.code,
+        name: d.name,
+        studentCount: totalStudents,
+        facultyCount: totalFaculty,
+        hod: hod ? {
+          id: hod.id,
+          code: hod.faculty_code,
+          name: hod.name,
+          email: hod.email,
+          designation: hod.designation || 'Head of Department',
+          avatar: hod.avatar,
+          assignedDate: hod.assigned_date
+        } : null,
+        attendance: {
+          average: ss.avg_attendance ? Number(Number(ss.avg_attendance).toFixed(1)) : 0,
+          belowThresholdCount: Number(ss.follow_up_count || 0)
+        },
+        academicPerformance: {
+          averageCgpa: ss.avg_cgpa ? Number(Number(ss.avg_cgpa).toFixed(2)) : 0,
+          distribution: {
+            distinction: Number(ss.cgpa_distinction || 0),
+            firstClass: Number(ss.cgpa_first_class || 0),
+            secondClass: Number(ss.cgpa_second_class || 0),
+            atRisk: Number(ss.cgpa_at_risk || 0)
+          }
+        },
+        studentsRequiringFollowUp: Number(ss.follow_up_count || 0),
+        verifiedActivitiesCount: Number(actStatsMap[d.id] || 0),
+        interventions: {
+          activeCount: Number(interv.active_interventions || 0),
+          completedCount: Number(interv.completed_interventions || 0)
+        },
+        feeCollection: {
+          totalDue,
+          totalPaid,
+          totalBalance,
+          collectionRatePct: collectionRate,
+          unpaidRecordsCount: Number(fs.unpaid_records || 0)
+        }
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      totalDepartments: departments.length,
+      data: miniDashboards
+    });
+  } catch (err) {
+    console.error('[getDepartmentMiniDashboards Error]', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+// GET /api/departments/:id/student-mini-dashboards (Student Mini Dashboards for Admin/HOD)
+async function getDepartmentStudentCards(req, res) {
+  try {
+    const departmentId = parseInt(req.params.id, 10);
+
+    const [deptRows] = await db.query('SELECT id, code, name FROM departments WHERE id = ?', [departmentId]);
+    if (deptRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Department not found.' });
+    }
+    const dept = deptRows[0];
+
+    // Students with mentor
+    const [students] = await db.query(`
+      SELECT st.id, st.register_number, st.name, st.email, st.year, st.semester, st.avatar,
+             st.cgpa, st.gpa, st.attendance_percentage, st.risk_level,
+             f.id AS mentor_id, f.name AS mentor_name, f.faculty_code AS mentor_code
+      FROM students st
+      LEFT JOIN student_mentors sm ON sm.student_id = st.id AND sm.status = 'active'
+      LEFT JOIN faculty f ON f.id = sm.faculty_id
+      WHERE st.department_id = ? AND st.status = 'active'
+      ORDER BY st.register_number ASC
+    `, [departmentId]);
+
+    if (students.length === 0) {
+      return res.status(200).json({
+        success: true,
+        department: dept,
+        count: 0,
+        data: []
+      });
+    }
+
+    const studentIds = students.map(s => s.id);
+
+    // Verified activities count
+    const [activities] = await db.query(`
+      SELECT student_id, COUNT(*) AS verified_count
+      FROM student_activities
+      WHERE student_id IN (?) AND status = 'Verified'
+      GROUP BY student_id
+    `, [studentIds]);
+    const actMap = {};
+    activities.forEach(a => { actMap[a.student_id] = a.verified_count; });
+
+    // Active interventions
+    const [interventions] = await db.query(`
+      SELECT student_id, COUNT(*) AS active_count,
+             MAX(title) AS latest_title, MAX(status) AS latest_status
+      FROM impact_loop_interventions
+      WHERE student_id IN (?) AND status IN ('Assigned', 'In Progress', 'Follow-up Due')
+      GROUP BY student_id
+    `, [studentIds]);
+    const intervMap = {};
+    interventions.forEach(i => { intervMap[i.student_id] = i; });
+
+    // Fee status
+    const [fees] = await db.query(`
+      SELECT student_id,
+             SUM(total_amount) AS total_due,
+             SUM(paid_amount) AS total_paid,
+             SUM(balance_amount) AS total_balance,
+             MIN(status) AS fee_status
+      FROM student_fees
+      WHERE student_id IN (?)
+      GROUP BY student_id
+    `, [studentIds]);
+    const feeMap = {};
+    fees.forEach(f => { feeMap[f.student_id] = f; });
+
+    // Academic results summary
+    const [results] = await db.query(`
+      SELECT student_id,
+             COUNT(*) AS total_assessments,
+             AVG(CASE WHEN max_marks > 0 THEN (marks_obtained / max_marks) * 100 ELSE NULL END) AS avg_score_pct
+      FROM academic_results
+      WHERE student_id IN (?)
+      GROUP BY student_id
+    `, [studentIds]);
+    const resMap = {};
+    results.forEach(r => { resMap[r.student_id] = r; });
+
+    const studentCards = students.map(st => {
+      const fs = feeMap[st.id] || {};
+      const rs = resMap[st.id] || {};
+      const inv = intervMap[st.id] || {};
+
+      return {
+        id: st.id,
+        registerNumber: st.register_number,
+        name: st.name,
+        email: st.email,
+        year: st.year,
+        semester: st.semester,
+        avatar: st.avatar,
+        cgpa: st.cgpa !== null ? Number(st.cgpa) : null,
+        gpa: st.gpa !== null ? Number(st.gpa) : null,
+        attendancePercentage: st.attendance_percentage !== null ? Number(st.attendance_percentage) : null,
+        riskLevel: st.risk_level || 'Low',
+        mentor: st.mentor_name ? {
+          id: st.mentor_id,
+          name: st.mentor_name,
+          code: st.mentor_code
+        } : null,
+        academics: {
+          totalAssessments: Number(rs.total_assessments || 0),
+          averageScorePct: rs.avg_score_pct ? Number(Number(rs.avg_score_pct).toFixed(1)) : null
+        },
+        verifiedActivitiesCount: Number(actMap[st.id] || 0),
+        intervention: {
+          activeCount: Number(inv.active_count || 0),
+          latestTitle: inv.latest_title || null,
+          latestStatus: inv.latest_status || null
+        },
+        fees: {
+          totalDue: Number(fs.total_due || 0),
+          paidAmount: Number(fs.total_paid || 0),
+          balanceAmount: Number(fs.total_balance || 0),
+          status: fs.fee_status || 'Paid'
+        }
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      department: dept,
+      count: studentCards.length,
+      data: studentCards
+    });
+  } catch (err) {
+    console.error('[getDepartmentStudentCards Error]', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
 module.exports = {
   getAllDepartments,
   getDepartmentById,
   assignDepartmentHOD,
   createDepartment,
   getInstitutionDepartmentOverview,
-  getFacultyMiniDashboard
+  getFacultyMiniDashboard,
+  getDepartmentMiniDashboards,
+  getDepartmentStudentCards
 };

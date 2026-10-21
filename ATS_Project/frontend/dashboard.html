@@ -51,8 +51,26 @@
       <a href="javascript:void(0)" class="nav-item" data-view="view-achievement-passport" onclick="switchStudentTab('view-achievement-passport')">
         <span class="icon">🛡️</span> Achievement Passport
       </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-knowledge-graph" onclick="switchStudentTab('view-knowledge-graph')">
+        <span class="icon">🕸️</span> Academic Knowledge Graph
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-trajectory-predictor" onclick="switchStudentTab('view-trajectory-predictor')">
+        <span class="icon">📈</span> Academic Trajectory Predictor
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-study-planner" onclick="switchStudentTab('view-study-planner')">
+        <span class="icon">📅</span> Adaptive Study Planner
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-skill-evidence" onclick="switchStudentTab('view-skill-evidence')">
+        <span class="icon">🌟</span> Skill Evidence Graph
+      </a>
       <a href="javascript:void(0)" class="nav-item" data-view="view-career-readiness" onclick="switchStudentTab('view-career-readiness')">
         <span class="icon">🚀</span> Career Readiness
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-simulator" onclick="switchStudentTab('view-simulator')">
+        <span class="icon">🔮</span> Academic What-If Simulator
+      </a>
+      <a href="javascript:void(0)" class="nav-item" data-view="view-interventions" onclick="switchStudentTab('view-interventions')">
+        <span class="icon">🔄</span> Intervention Progress
       </a>
 
       <div class="nav-section-title" style="margin-top: 14px;">Services & Advisory</div>
@@ -64,9 +82,6 @@
       </a>
       <a href="javascript:void(0)" class="nav-item" data-view="view-mentor" onclick="switchStudentTab('view-mentor')">
         <span class="icon">👨‍🏫</span> My Mentor
-      </a>
-      <a href="javascript:void(0)" class="nav-item" data-view="view-simulator" onclick="switchStudentTab('view-simulator')">
-        <span class="icon">🔮</span> Academic What-If Simulator
       </a>
 
       <div class="nav-section-title" style="margin-top: 14px;">Account</div>
@@ -1067,6 +1082,65 @@
       </div>
 
       <!-- =========================================================================
+           VIEW: ACADEMIC KNOWLEDGE GRAPH
+           ========================================================================= -->
+      <div id="view-knowledge-graph" class="content-view">
+        <!-- Injected dynamically by AdvancedModules.initKnowledgeGraph -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ACADEMIC TRAJECTORY PREDICTOR
+           ========================================================================= -->
+      <div id="view-trajectory-predictor" class="content-view">
+        <!-- Injected dynamically by AdvancedModules.initTrajectoryPredictor -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: ADAPTIVE STUDY PLANNER
+           ========================================================================= -->
+      <div id="view-study-planner" class="content-view">
+        <!-- Injected dynamically by AdvancedModules.initStudyPlanner -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: SKILL EVIDENCE GRAPH
+           ========================================================================= -->
+      <div id="view-skill-evidence" class="content-view">
+        <!-- Injected dynamically by AdvancedModules.initSkillEvidence -->
+      </div>
+
+      <!-- =========================================================================
+           VIEW: INTERVENTION PROGRESS
+           ========================================================================= -->
+      <div id="view-interventions" class="content-view">
+        <div class="module-hero-banner indigo">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 1.4rem;">🔄</span>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: #fff;">Academic Support & Intervention Progress</h2>
+              <span class="rule-engine-tag" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">
+                STUDENT-SAFE ADVISORY
+              </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.86rem; max-width: 720px;">
+              Track approved academic support plans, remedial sessions, and mentor follow-ups formulated to ensure university exam eligibility and grade recovery.
+            </p>
+          </div>
+        </div>
+
+        <div class="glass-card" style="padding: 22px;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 16px;">
+            Active Support Plans & Follow-ups
+          </h3>
+          <div id="student-interventions-list">
+            <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+              Loading academic support records...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================================
            VIEW 14: MY PROFILE
            ========================================================================= -->
       <div id="view-profile" class="content-view">
@@ -1473,6 +1547,7 @@
 <div id="toast-container"></div>
 
 <script src="api.js"></script>
+<script src="advanced-modules.js"></script>
 <script src="dashboard.js"></script>
 </body>
 </html>
